@@ -50,3 +50,40 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# ============================================================
+# YMGUI 项目专属(上面是 GitHub C 模板,按扩展名忽略;下面按目录/产物忽略)
+# ============================================================
+
+# CMake 构建目录:可执行文件无扩展名(demo_*/test_*),上面的 *.exe/*.out 抓不到,整目录忽略
+build/
+build*/
+cmake-build-*/
+
+# in-source build 时 CMake 散落的产物(防有人在源码树里直接 cmake .)
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+Makefile
+Testing/
+
+# 本机个人配置(权限/会话设置,不该进仓库)
+.claude/
+
+# 生成物:GB2312 字模 blob 由 Demo/gen_font.py 复现,不入库(865KB 二进制)
+#   重新生成:python3 Demo/gen_font.py --cjk --gb2312 --extern --bin Demo/gb2312_glyphs.bin YMGUI/CORE/YMGUI_FontDataGB2312.c
+Demo/gb2312_glyphs.bin
+
+# 编辑器 / IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+#未开放文档
+代码风格.md

@@ -1,0 +1,42 @@
+# YMCV 代码格式配置 —— 复刻现有主流代码风格
+# 用法: 在 YMCV/ 目录下对新文件执行  clang-format -i 你的文件.c
+# 注意: 本配置刻意贴合存量门面代码(如 CORE/YMCV_ChannelCal.c)的风格，
+#       目的是让新代码与主流代码 diff 干净，而不是引入新标准。
+
+Language:        Cpp
+BasedOnStyle:    LLVM
+
+# 缩进: 用 Tab (库主流 18600 行 Tab)，宽度按 4 显示
+UseTab:          Always
+TabWidth:        4
+IndentWidth:     4
+
+# 大括号: Allman —— { 另起一行
+BreakBeforeBraces: Allman
+
+# 指针左靠类型: uint8* p  (库主流 684:19)
+PointerAlignment: Left
+DerivePointerAlignment: false
+
+# 控制语句括号前留空格: if (  for (  (库主流 1027:21)
+SpaceBeforeParens: ControlStatements
+
+# switch 内 case 不额外缩进 (与现有一致)
+IndentCaseLabels: false
+
+# 不强制列宽: 保留行尾中文注释与长表达式(库内大量 //注释 贴在行尾)
+ColumnLimit:     0
+
+# 不自动重排 #include (库用裸头式，顺序有人工意图，交给作者)
+SortIncludes:    false
+
+# 连续赋值/声明不强制对齐(存量未对齐，避免大 diff)
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+
+# 允许短小结构保持原样，减少对存量的扰动
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+KeepEmptyLinesAtTheStartOfBlocks: true
+MaxEmptyLinesToKeep: 3
