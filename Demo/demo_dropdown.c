@@ -3,6 +3,7 @@
 #include "YMGUI_Hal.h"
 #include "YMGUI_Mem.h"
 #include "YMGUI_Obj.h"
+#include "YMGUI_Event.h"
 #include "YMGUI_Invalidate.h"
 #include "YMGUI_Label.h"
 #include "YMGUI_Dropdown.h"
@@ -76,6 +77,14 @@ int main(int argc, char** argv)
 	YMGUI_Label_SetTextColor(g_status, GY_ARGB(0xFF, 0xA0, 0xE0, 0xA0));
 
 	YMGUI_Inject_SetCtx(ctx);
+
+	//截图模式(YMGUI_SHOT 已设):点开顶部下拉,让截图截到浮层展开态
+	if (getenv("YMGUI_SHOT") != NULL)
+	{
+		GYrect a; YMGUI_Obj_GetAbsArea(ddColor, &a);
+		YMGUI_Event_Pointer(ctx, (GYcoord)(a.x + a.w / 2), (GYcoord)(a.y + a.h / 2), 1);
+		YMGUI_Event_Pointer(ctx, (GYcoord)(a.x + a.w / 2), (GYcoord)(a.y + a.h / 2), 0);
+	}
 
 	while (SDL_LCD_PumpEvents())
 	{

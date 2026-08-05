@@ -4,10 +4,66 @@
 
 ## 状态
 
-25 控件 · 5 类图元 · 30 单测全过 · 23 个交互 demo · ~8900 行库代码 · clean build 0 错 0 警。
-（Button/Label/Checkbox/Switch/Slider/Bar/Image/Arc/Spinner/Meter/TextInput/TextView/EditView/List/Chart/Dropdown/Table/Tabview/TreeView/Grid/Canvas/ColorPicker/Roller/BarChart + base 容器）
+26 控件 · 5 类图元 · 31 单测全过 · 24 个交互 demo · 8 个完整应用 · clean build 0 错 0 警。
+（Button/Label/Checkbox/Switch/Slider/Bar/Image/Arc/Spinner/Meter/TextInput/TextView/EditView/List/Chart/Dropdown/Table/Tabview/TreeView/Grid/Canvas/ColorPicker/Roller/BarChart/MsgBox + base 容器）
 
 抗锯齿(4bpp 灰度字体 + Wu 斜线 + 距离场圆弧，`YMGUI_ANTIALIAS` 可裁)、中文/CJK(UTF-8 回退链 + 稀疏字模 + 外部 flash 回调，`YMGUI_FONT_CJK` 可裁)、状态/数据绑定地基均已落地。
+
+## 效果预览
+
+截图由 `./capture_shots.sh` 一键生成(SDL dummy 驱动无头渲染，产物落 `docs/shots/`)。
+
+### 完整应用（`project_Demo/`）
+
+用真实小应用验证"库够不够用"，每个都催生或压榨了一批控件。
+
+| | |
+|---|---|
+| **闹钟** 三滚轮设时 + 到点弹阻塞模态(MsgBox)<br><img src="docs/shots/alarm_clock.png" width="420"> | **实时监控面板** Tabview/Meter/Arc/Chart + 数据绑定<br><img src="docs/shots/dashboard.png" width="420"> |
+| **电子表格** Grid + 公式引擎(SUM/AVG，定点)<br><img src="docs/shots/excel_edit.png" width="420"> | **文件管理器** TreeView 懒加载 + 预览 + 沙箱增删改<br><img src="docs/shots/files_manager.png" width="420"> |
+| **图层画板** Canvas + ColorPicker + 图层融合/工具<br><img src="docs/shots/image_edit.png" width="420"> | **音乐播放器** BarChart 频谱 + Roller 歌词 + ffmpeg 解码<br><img src="docs/shots/music_player.png" width="420"> |
+| **多行编辑器** EditView 选区/剪贴板/撤销/查找替换 + 菜单栏<br><img src="docs/shots/txt_edit.png" width="420"> | **视频播放器** Image 缩放模式 + 流式解码 + A/V 同步<br><img src="docs/shots/video_player.png" width="420"> |
+
+### 控件演示（`Demo/`）
+
+<table>
+<tr>
+<td align="center"><img src="docs/shots/demo_button.png" width="200"><br>button</td>
+<td align="center"><img src="docs/shots/demo_form.png" width="200"><br>form（复选/开关/滑块）</td>
+<td align="center"><img src="docs/shots/demo_list.png" width="200"><br>list</td>
+<td align="center"><img src="docs/shots/demo_chart.png" width="200"><br>chart</td>
+</tr>
+<tr>
+<td align="center"><img src="docs/shots/demo_dropdown.png" width="200"><br>dropdown（浮层展开）</td>
+<td align="center"><img src="docs/shots/demo_table.png" width="200"><br>table</td>
+<td align="center"><img src="docs/shots/demo_tabview.png" width="200"><br>tabview</td>
+<td align="center"><img src="docs/shots/demo_treeview.png" width="200"><br>treeview</td>
+</tr>
+<tr>
+<td align="center"><img src="docs/shots/demo_msgbox.png" width="200"><br>msgbox（模态弹窗）</td>
+<td align="center"><img src="docs/shots/demo_roller.png" width="200"><br>roller</td>
+<td align="center"><img src="docs/shots/demo_barchart.png" width="200"><br>barchart</td>
+<td align="center"><img src="docs/shots/demo_dashboard.png" width="200"><br>dashboard（表盘簇）</td>
+</tr>
+<tr>
+<td align="center"><img src="docs/shots/demo_canvas.png" width="200"><br>canvas</td>
+<td align="center"><img src="docs/shots/demo_colorpicker.png" width="200"><br>colorpicker</td>
+<td align="center"><img src="docs/shots/demo_image.png" width="200"><br>image（缩放模式）</td>
+<td align="center"><img src="docs/shots/demo_draw.png" width="200"><br>draw（图元）</td>
+</tr>
+<tr>
+<td align="center"><img src="docs/shots/demo_textinput.png" width="200"><br>textinput</td>
+<td align="center"><img src="docs/shots/demo_textview.png" width="200"><br>textview</td>
+<td align="center"><img src="docs/shots/demo_editview.png" width="200"><br>editview</td>
+<td align="center"><img src="docs/shots/demo_layout.png" width="200"><br>layout（Stack/Align）</td>
+</tr>
+<tr>
+<td align="center"><img src="docs/shots/demo_bind.png" width="200"><br>bind（数据绑定）</td>
+<td align="center"><img src="docs/shots/demo_font_cjk.png" width="200"><br>font_cjk</td>
+<td align="center"><img src="docs/shots/demo_font_gb2312.png" width="200"><br>font_gb2312</td>
+<td align="center"><img src="docs/shots/demo_flush_band.png" width="200"><br>flush_band（分块刷新）</td>
+</tr>
+</table>
 
 ## 构建 & 运行
 
@@ -17,6 +73,9 @@ cmake -B build -S . && cmake --build build
 cd build && ctest --output-on-failure # 跑全部单测
 ./build/demo_dashboard                # 看效果(需显示器)
 ./build/demo_font_gb2312              # 中文字体(GB2312 全集走外部 flash 回调)
+
+./build_all.sh                        # 一键建库 + 全部 Demo + 8 个 project_Demo 应用
+./capture_shots.sh -b                 # 先构建再批量截图到 docs/shots/(无头,需 ffmpeg)
 ```
 
 ## 文档导航（按需读）

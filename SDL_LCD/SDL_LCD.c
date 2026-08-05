@@ -27,6 +27,9 @@ static SDL_Renderer* s_ren = NULL;
 static SDL_Texture*  s_tex = NULL;
 static int           s_w = 0, s_h = 0;
 static int           s_scale = 1;
+//全帧累积 buffer:flush 只给分条(band)像素,截图要整屏,故每条 band 落进这里。
+//退出时若设了环境变量 YMGUI_SHOT=<path.bmp> 就存图(所有 demo 零改动即可截屏)。
+static GYpx*         s_frame = NULL;
 
 #if YMGUI_COLOR_DEPTH == 16
 #define SDL_LCD_PIXFMT SDL_PIXELFORMAT_RGB565
@@ -74,6 +77,17 @@ static void sdlFlushCb(GYdisp* d, const GYrect* area, const GYpx* buf)
 	//buf 是这条 band 的连续像素,pitch = 一行字节数 = w * sizeof(GYpx)
 	SDL_UpdateTexture(s_tex, &r, buf, area->w * (int)sizeof(GYpx));
 
+	//把这条 band 落进全帧累积 buffer(供退出时截图);逐行拷贝对齐到全屏 pitch
+	if (s_frame != NULL)
+	{
+		for (int row = 0; row < area->h; row++)
+		{
+			GYpx*       dst = s_frame + (size_t)(area->y + row) * s_w + area->x;
+			const GYpx* src = buf + (size_t)row * area->w;
+			SDL_memcpy(dst, src, (size_t)area->w * sizeof(GYpx));
+		}
+	}
+
 	//整帧最后一条 band 刷完再 present(这里简单起见每条都 present)
 	SDL_RenderClear(s_ren);
 	SDL_RenderCopy(s_ren, s_tex, NULL, NULL);
@@ -102,6 +116,10 @@ void SDL_LCD_Init(GYDISP disp, int scale)
 	s_tex = SDL_CreateTexture(s_ren, SDL_LCD_PIXFMT,
 		SDL_TEXTUREACCESS_STREAMING, s_w, s_h);
 
+	//截图用全帧 buffer(仅当设了 YMGUI_SHOT 才分配,不截图零开销)
+	if (SDL_getenv("YMGUI_SHOT") != NULL)
+		s_frame = (GYpx*)SDL_calloc((size_t)s_w * s_h, sizeof(GYpx));
+
 	//挂上 flush 回调 —— 这是库与硬件之间唯一的连接点
 	disp->flush_cb = sdlFlushCb;
 	//把剪贴板缝接到系统剪贴板(裸机不注册则用库内静态缓冲)
@@ -114,6 +132,25 @@ void SDL_LCD_Init(GYDISP disp, int scale)
   */
 void SDL_LCD_Destroy(void)
 {
+	//若设了 YMGUI_SHOT,把最后一帧存成 BMP(RGB565 → SDL surface → SaveBMP)
+	if (s_frame != NULL)
+	{
+		const char* path = SDL_getenv("YMGUI_SHOT");
+		if (path != NULL && path[0] != '\0')
+		{
+			SDL_Surface* surf = SDL_CreateRGBSurfaceWithFormatFrom(
+				s_frame, s_w, s_h, YMGUI_COLOR_DEPTH,
+				s_w * (int)sizeof(GYpx), SDL_LCD_PIXFMT);
+			if (surf != NULL)
+			{
+				if (SDL_SaveBMP(surf, path) != 0)
+					SDL_Log("YMGUI_SHOT: SaveBMP 失败: %s", SDL_GetError());
+				SDL_FreeSurface(surf);
+			}
+		}
+		SDL_free(s_frame);
+		s_frame = NULL;
+	}
 	if (s_tex) SDL_DestroyTexture(s_tex);
 	if (s_ren) SDL_DestroyRenderer(s_ren);
 	if (s_win) SDL_DestroyWindow(s_win);

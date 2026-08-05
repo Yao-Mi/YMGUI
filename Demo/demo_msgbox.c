@@ -145,6 +145,13 @@ int main(int argc, char** argv)
 		if (!fail) gy_log_print("selftest: modal open + button dismiss OK\n");
 	}
 
+	//截图模式(YMGUI_SHOT 已设):开一个双按钮模态定住,让截图截到弹窗展开态
+	if (getenv("YMGUI_SHOT") != NULL)
+	{
+		openConfirm(NULL);
+		setStatus("Modal is up - background locked");
+	}
+
 	while (SDL_LCD_PumpEvents())
 	{
 		YMGUI_Refresh(ctx);

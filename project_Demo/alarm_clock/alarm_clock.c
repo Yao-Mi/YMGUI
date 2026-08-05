@@ -310,13 +310,18 @@ int main(int argc, char** argv)
 	YMGUI_Roller_SetSelected(g_roll_s, 0, 0);
 	refreshAlarmLabel();
 
-	if (max_frames > 0)
+	//截图模式(YMGUI_SHOT 已设):直接弹到点模态定住,时钟冻结,让截图截到弹窗态
+	int shot = (getenv("YMGUI_SHOT") != NULL);
+	if (shot)
+		ringAlarm();
+	else if (max_frames > 0)
 		selftest();
 
-	//帧循环:每帧走 1 秒假时钟 + 滚轮缓动 Tick
+	//帧循环:每帧走 1 秒假时钟 + 滚轮缓动 Tick(截图模式冻结时钟保持模态)
 	while (SDL_LCD_PumpEvents())
 	{
-		tickClock();
+		if (!shot)
+			tickClock();
 		YMGUI_Roller_Tick(g_roll_h);
 		YMGUI_Roller_Tick(g_roll_m);
 		YMGUI_Roller_Tick(g_roll_s);
