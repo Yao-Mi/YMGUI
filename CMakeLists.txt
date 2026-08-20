@@ -64,6 +64,14 @@ target_link_libraries(test_fill ymgui m)
 add_executable(test_event ${CMAKE_SOURCE_DIR}/Demo/test_event.c)
 target_link_libraries(test_event ymgui m)
 
+# SDL 输入映射单测:右键短点击/拖动 + 触摸长按后拖动
+add_executable(test_sdl_context
+	${CMAKE_SOURCE_DIR}/SDL_LCD/SDL_LCD.c
+	${CMAKE_SOURCE_DIR}/Demo/test_sdl_context.c
+)
+target_include_directories(test_sdl_context PRIVATE ${SDL2_INCLUDE_DIRS})
+target_link_libraries(test_sdl_context ymgui ${SDL2_LIBRARIES} m)
+
 # 无 SDL 的多矩形脏区单测
 add_executable(test_invalidate ${CMAKE_SOURCE_DIR}/Demo/test_invalidate.c)
 target_link_libraries(test_invalidate ymgui m)
@@ -365,6 +373,8 @@ target_link_libraries(demo_font_gb2312 ymgui ${SDL2_LIBRARIES} m)
 enable_testing()
 add_test(NAME test_fill COMMAND test_fill)
 add_test(NAME test_event COMMAND test_event)
+add_test(NAME test_sdl_context COMMAND test_sdl_context)
+set_tests_properties(test_sdl_context PROPERTIES ENVIRONMENT "SDL_VIDEODRIVER=dummy")
 add_test(NAME test_invalidate COMMAND test_invalidate)
 add_test(NAME test_font COMMAND test_font)
 add_test(NAME test_widget COMMAND test_widget)

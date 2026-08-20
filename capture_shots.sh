@@ -90,7 +90,7 @@ for exe in build/demo_*; do
 	shoot "$(basename "$exe")" "$exe"
 done
 
-# ---- 2) project_Demo/ 下 8 个完整应用(各自 build 目录)----
+# ---- 2) project_Demo/ 下 9 个完整应用(各自 build 目录)----
 echo "${C_HD}==> project_Demo/ 完整应用${C_RST}"
 for d in project_Demo/*/; do
 	name="$(basename "$d")"

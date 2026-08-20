@@ -10,7 +10,8 @@
 //初始化窗口 + 纹理,并填好 disp 的 flush_cb / user_data。
 //  disp:调用者提供的 GYdisp,本函数负责挂上 flush_cb
 //  scale:窗口放大倍数(小屏调试用,1=原始)
-void SDL_LCD_Init(GYDISP disp, int scale);
+//  返回 0 表示成功,非 0 表示 SDL 资源初始化失败。
+int SDL_LCD_Init(GYDISP disp, int scale);
 //销毁
 void SDL_LCD_Destroy(void);
 //抽干事件队列;返回 0 表示收到退出请求

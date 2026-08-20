@@ -78,6 +78,12 @@ void YMGUI_Refresh(GYCTX ctx);                           // 刷新一帧(无脏�
 // 注入（port 调用；裸机把触摸/按键翻译成这些）
 void  YMGUI_Inject_SetCtx(void* ctx);                    // 先注册接收事件的 ctx
 void  YMGUI_Inject_Pointer(GYcoord x, GYcoord y, uint8 pressed);
+void  YMGUI_Inject_PointerCancel(void);                  // 取消捕获,不产生 Clicked
+void  YMGUI_Inject_ContextRequest(GYcoord x, GYcoord y); // 一次性右键/上下文操作
+void  YMGUI_Inject_ContextBegin(GYcoord x, GYcoord y);   // 捕获式上下文拖动
+void  YMGUI_Inject_ContextMove(GYcoord x, GYcoord y);
+void  YMGUI_Inject_ContextEnd(GYcoord x, GYcoord y);
+void  YMGUI_Inject_ContextCancel(void);
 void  YMGUI_Inject_Key(uint32 key, uint8 pressed);
 // 内部/进阶
 GYOBJ YMGUI_HitTest(GYCTX ctx, GYcoord x, GYcoord y);    // 命中最上层对象
@@ -85,8 +91,9 @@ void  YMGUI_SetFocus(GYCTX ctx, GYOBJ obj);              // 设焦点(派发 Foc
 ```
 
 键码：可打印字符用 ASCII；控制键用 `GY_KEY_BACKSPACE/ENTER/LEFT/RIGHT/UP/DOWN/DEL`。
-事件类型（控件 event_cb 收）：`GY_EVENT_Pressed/Pressing/Released/ReleasedOff/Clicked/FocusGot/FocusLost/Key`。
-坐标/键值从 `ctx->point_x`、`ctx->point_y`、`ctx->last_key` 读。
+事件类型（控件 event_cb 收）：`GY_EVENT_Pressed/Pressing/Released/ReleasedOff/Clicked/DoubleClicked/ContextRequested/ContextDragging/ContextReleased/ContextCancelled/FocusGot/FocusLost/Key`。
+鼠标右键和触摸长按统一为上下文语义，不等价于普通 `Clicked`，也不自动改变焦点。右键短点击只派一次 `ContextRequested`；右键拖动和长按后拖动走 `ContextRequested → ContextDragging* → ContextReleased/ContextCancelled`，捕获对象保存在 `ctx->context_obj`。`PointerCancel` 会清除普通按下状态并派 `ReleasedOff`，但不会派 `Clicked`。
+坐标/键值从 `ctx->point_x`、`ctx->point_y`、`ctx->last_key` 读。SDL 触摸长按依靠周期调用 `SDL_LCD_PumpEvents()` 检查超时。
 
 ## 控件目录
 

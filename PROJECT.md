@@ -35,7 +35,7 @@ YMGUI 是一个**面向嵌入式/裸机优先**的跨平台 GUI 库，用 C99 + 
 
 **代码规模**：约 8900 行库代码（不含 Demo/测试），39 个 `.c` 源文件（.c+.h 共 78）。
 
-**已完成控件（25 个）**：
+**已完成控件（26 个，含 base 容器）**：
 - 基础：base 容器、Button、Label
 - 表单：Checkbox、Switch、Slider、Bar(进度条)
 - 显示：Image、Arc(环形进度)、Spinner(加载转圈)、Meter(仪表盘)、Chart(折线图)
@@ -47,13 +47,13 @@ YMGUI 是一个**面向嵌入式/裸机优先**的跨平台 GUI 库，用 C99 + 
 
 **图元层**：DrawFill(矩形)、DrawText(位图字体，UTF-8/CJK 回退链)、DrawLine(Bresenham + Wu 抗锯齿)、DrawImg(blit+colorkey)、DrawArc(画圆/圆盘/圆弧/粗弧环，距离场 AA)。
 
-**事件/交互**：指针注入(按下/抬起/拖动)、命中测试、pressed/clicked/pressing 语义、键盘注入、焦点系统、失效/脏矩形(多矩形列表)、分块刷新管线、滚动+子裁剪机制、top_layer 弹出层。
+**事件/交互**：普通指针注入(按下/抬起/拖动/取消)、命中测试、pressed/clicked/pressing 语义、键盘注入、焦点系统；平台无关上下文输入(`ContextRequested/Dragging/Released/Cancelled`)，右键短点击与触摸长按统一、上下文拖动独立捕获且不产生普通 Clicked；失效/脏矩形(多矩形列表)、分块刷新管线、滚动+子裁剪机制、top_layer 弹出层。
 
 **可裁减特性**：抗锯齿(`YMGUI_ANTIALIAS`，4bpp 灰度字体 + Wu 斜线 + 距离场圆弧，单色屏强制关)、中文/CJK(`YMGUI_FONT_CJK`，UTF-8 解码 + 稀疏排序码点表 + 外部 flash `glyph_read` 回调 + 运行期全局兜底钩子)、状态/数据绑定地基。
 
 **中文字体三轴决策**：①CJK 开/关=编译期宏 `YMGUI_FONT_CJK`；②字集范围(方案1 精简 ~75字/9.6KB · 方案3 GB2312 6763字/~866KB)=字模**生成期** `gen_font.py` 参数(非宏)；③字模存放(内部 rodata / 外部 flash)=**运行期** `GYfont.glyph_read` 回调。方案切换不改任何控件代码，详见 `API.md` 表格。
 
-**测试**：30 个无 SDL 单测(ctest)，全部通过；23 个 SDL 交互 demo；5 个 project_Demo 验证项目(txt_edit 文本编辑器、files_manager 沙箱文件管理器、excel_edit 电子表格、image_edit 类 PS 图层画板、music_player 音乐播放器)。
+**测试**：32 个 CTest（31 个无 SDL + 1 个 SDL dummy 输入映射测试），全部通过；24 个 SDL 交互 demo；9 个 project_Demo 验证项目(txt_edit、files_manager、excel_edit、image_edit、music_player、video_player、dashboard、alarm_clock、context_gesture)。`context_gesture` 可视化验证右键/长按菜单、上下文拖动与取消恢复。
 
 **验证环境**：Ubuntu 22.04 + gcc 11.4 + cmake 3.22 + SDL2 2.0.20。
 
@@ -73,7 +73,7 @@ YMGUI/          ★库本体,自包含,移植时整个拷走
   WIDGET/   控件
   STATE/    状态/数据绑定（UI=f(state)）
 ── 以下是 PC 演示外壳,移植时不带走 ──
-SDL_LCD/  HAL 的 Linux 实现（假 LCD）
+SDL_LCD/  HAL 的 SDL 实现（Linux/Windows/Android 假 LCD，鼠标/触摸/文本输入桥接）
 Demo/     示例 + 单测 + 字体/三角表生成脚本 + GB2312 字模 blob
 CMakeLists.txt  桌面构建(GLOB YMGUI/ 各层 + SDL demo)
 ```
@@ -104,6 +104,7 @@ cd build && ctest --output-on-failure
 ./build/demo_font_gb2312   # 中文字体(方案3 GB2312 全集,走外部 flash 回调)
 ./build/demo_draw          # 图元展示
 ./build/demo_button        # 按钮
+./build/project_Demo/context_gesture/context_gesture # 右键/长按菜单 + 上下文拖动 + 实时事件流
 ```
 
 方案3 demo 的 GB2312 字模放在 `Demo/gb2312_glyphs.bin`（865664 B = 6763×128，模拟外部 flash 内容），由 `Demo/gen_font.py --cjk --gb2312 --extern --bin` 生成；固件内只驻留码点索引 `CORE/YMGUI_FontDataGB2312.c`（~13.5KB，无 bitmap）。
@@ -115,4 +116,4 @@ cd build && ctest --output-on-failure
 - `代码风格.md` — 命名/格式/目录归位/性能惯用手法（权威规范）
 - `ARCHITECTURE.md` — 分层、核心类型、渲染管线、各机制设计
 - `DEVLOG.md` — 逐轮开发进程 + 踩过的坑
-- `移植指南`（待补）— 移植到具体 MCU 的步骤
+- `CROSS_PLATFORM_PORTING.md` — Linux/Windows/Android SDL 桥接、鼠标/触摸输入、资源与构建验证；真实 MCU 仍照 `flush_cb` 最窄腰部实现

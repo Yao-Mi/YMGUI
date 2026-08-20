@@ -33,6 +33,10 @@ typedef enum
 	GY_EVENT_FocusGot,    //获得焦点
 	GY_EVENT_FocusLost,   //失去焦点
 	GY_EVENT_Key,         //键盘输入(焦点对象收,键值在 ctx->last_key)
+	GY_EVENT_ContextRequested,//请求上下文操作(鼠标右键/触摸长按等平台等效输入)
+	GY_EVENT_ContextDragging, //上下文手势拖动中(派给起点捕获对象)
+	GY_EVENT_ContextReleased, //上下文手势正常结束
+	GY_EVENT_ContextCancelled,//上下文手势被后台/失焦等取消
 }GYEvent;
 
 //对象状态位(可组合)
@@ -88,7 +92,8 @@ typedef struct GYctx
 	struct GYobj* top_layer;
 	void*  disp;           //GYDISP(void* 避免 OPOBJ 依赖 HAL)
 	//交互状态
-	struct GYobj* pressed_obj; //当前按下的对象
+	struct GYobj* pressed_obj; //当前普通指针按下的对象
+	struct GYobj* context_obj; //当前上下文拖动捕获对象(右键/长按,与 pressed 独立)
 	struct GYobj* focus_obj;   //当前焦点对象
 	GYcoord point_x, point_y;  //当前指针位置(屏幕坐标,控件事件里可读)
 	uint8   point_pressed;     //指针当前是否按下

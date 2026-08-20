@@ -6,7 +6,8 @@
 
 - 每个项目一个子文件夹,内含自己的 `CMakeLists.txt` 和源码。
 - 各项目 CMakeLists 只需 include 共享咬合层 `../ymgui_app.cmake`,再一行 `ymgui_add_app(...)`。样板(9 层裸头 include、GLOB 库源码建 `ymgui`、SDL_LCD 建 `sdl_lcd`、找 SDL2)全在咬合层里,不必每项目重抄。
-- 编译输出统一收到 `build/project_Demo/<项目名>/` 下(configure 时用 `-B` 指定)。
+- 共享咬合层在 Linux 上通过 `pkg-config` 找 SDL2,在 Windows/Android 上使用 SDL2 CMake target；Android 应用目标构建为 shared library,Windows 可用 `-DYMGUI_SDL_STATIC=ON` 优先选择静态 SDL2 target。
+- 编译输出统一收到 `build/project_Demo/<项目名>/` 下(configure 时用 `-B` 指定)。跨平台工具链和输入适配见 [`../CROSS_PLATFORM_PORTING.md`](../CROSS_PLATFORM_PORTING.md)。
 
 ## 加一个新项目
 
@@ -37,3 +38,4 @@ ymgui_add_app(my_app my_app.c)
 - **excel_edit** —— 电子表格。第三个验证项目,催生库控件 `Grid`,公式引擎在 app 侧(见 `excel_edit/README.md`)。
 - **image_edit** —— 类 PS 图层画板。第四个验证项目,催生库控件 `Canvas` + `ColorPicker`,图层/融合/合成全在 app 侧(见 `image_edit/README.md`)。
 - **music_player** —— 音乐播放器。第五个验证项目,催生库控件 `Roller`(居中高亮平滑滚动列表) + `BarChart`(通用柱状图,此处当频谱用);音乐语义(ffmpeg 解码 / SDL2 声卡 / .lrc 解析 / 频段分析)全在 app 侧(见 `music_player/README.md`)。
+- **context_gesture** —— 上下文手势实验室。用基础对象、自定义绘制和 top_layer 菜单验证右键/触摸长按、捕获式拖动及取消恢复；不新增控件(见 `context_gesture/README.md`)。

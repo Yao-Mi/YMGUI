@@ -185,6 +185,90 @@ void YMGUI_Event_DoubleClick(GYCTX ctx, GYcoord x, GYcoord y)
 }
 
 /**
+  * @brief 取消当前指针捕获:恢复对象状态并派 ReleasedOff,不产生 Clicked
+  */
+void YMGUI_Event_PointerCancel(GYCTX ctx)
+{
+	gy_assert(ctx);
+	gy_log_explain(ctx == NULL, GY_LOG_PtrI, "上下文不存在");
+	ctx->point_pressed = 0;
+	GYOBJ pobj = ctx->pressed_obj;
+	if (pobj == NULL)
+		return;
+	pobj->state &= (uint8)~GY_STATE_Pressed;
+	ctx->pressed_obj = NULL;
+	sendEvent(pobj, GY_EVENT_ReleasedOff);
+}
+
+/**
+  * @brief 上下文请求:命中对象派 ContextRequested,不改变焦点/普通指针状态
+  */
+void YMGUI_Event_ContextRequest(GYCTX ctx, GYcoord x, GYcoord y)
+{
+	gy_assert(ctx);
+	gy_log_explain(ctx == NULL, GY_LOG_PtrI, "上下文不存在");
+	ctx->point_x = x;
+	ctx->point_y = y;
+	GYOBJ hit = YMGUI_HitTest(ctx, x, y);
+	sendEvent(hit, GY_EVENT_ContextRequested);
+}
+
+/**
+  * @brief 开始捕获式上下文手势:命中起点对象并派 ContextRequested
+  */
+void YMGUI_Event_ContextBegin(GYCTX ctx, GYcoord x, GYcoord y)
+{
+	gy_assert(ctx);
+	gy_log_explain(ctx == NULL, GY_LOG_PtrI, "上下文不存在");
+	if (ctx->context_obj != NULL)
+		YMGUI_Event_ContextCancel(ctx);
+	ctx->point_x = x;
+	ctx->point_y = y;
+	GYOBJ hit = YMGUI_HitTest(ctx, x, y);
+	ctx->context_obj = hit;
+	sendEvent(hit, GY_EVENT_ContextRequested);
+}
+
+/**
+  * @brief 移动捕获式上下文手势:始终派给起点对象
+  */
+void YMGUI_Event_ContextMove(GYCTX ctx, GYcoord x, GYcoord y)
+{
+	gy_assert(ctx);
+	gy_log_explain(ctx == NULL, GY_LOG_PtrI, "上下文不存在");
+	ctx->point_x = x;
+	ctx->point_y = y;
+	if (ctx->context_obj != NULL)
+		sendEvent(ctx->context_obj, GY_EVENT_ContextDragging);
+}
+
+/**
+  * @brief 正常结束上下文手势:回调前先清捕获,保证回调可安全释放对象
+  */
+void YMGUI_Event_ContextEnd(GYCTX ctx, GYcoord x, GYcoord y)
+{
+	gy_assert(ctx);
+	gy_log_explain(ctx == NULL, GY_LOG_PtrI, "上下文不存在");
+	ctx->point_x = x;
+	ctx->point_y = y;
+	GYOBJ obj = ctx->context_obj;
+	ctx->context_obj = NULL;
+	sendEvent(obj, GY_EVENT_ContextReleased);
+}
+
+/**
+  * @brief 异常取消上下文手势:回调前先清捕获,重复调用幂等
+  */
+void YMGUI_Event_ContextCancel(GYCTX ctx)
+{
+	gy_assert(ctx);
+	gy_log_explain(ctx == NULL, GY_LOG_PtrI, "上下文不存在");
+	GYOBJ obj = ctx->context_obj;
+	ctx->context_obj = NULL;
+	sendEvent(obj, GY_EVENT_ContextCancelled);
+}
+
+/**
   * @brief 处理一次指针状态,维护 pressed/pressing/clicked 语义
   *        同一位置连续调用即"移动"(SDL 每次鼠标事件都调一次)
   */

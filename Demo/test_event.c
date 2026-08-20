@@ -26,6 +26,15 @@ static int fails = 0;
 static GYcoord g_flush_ymin, g_flush_ymax;
 static int     g_flush_count;
 static int     g_clicked;
+static int     g_context_requested;
+static int     g_context_dragging;
+static int     g_context_released;
+static int     g_context_cancelled;
+static int     g_capture_during_request;
+static int     g_capture_during_finish;
+static int     g_released_off;
+static int     g_event_clicked;
+static GYcoord g_context_x, g_context_y;
 
 static void testFlushCb(GYdisp* d, const GYrect* area, const GYpx* buf)
 {
@@ -36,6 +45,37 @@ static void testFlushCb(GYdisp* d, const GYrect* area, const GYpx* buf)
 }
 
 static void onClicked(GYOBJ btn) { (void)btn; g_clicked++; }
+
+static void onEvent(GYOBJ obj, GYEvent e)
+{
+	if (e == GY_EVENT_ContextRequested)
+	{
+		g_context_requested++;
+		g_context_x = obj->ctx->point_x;
+		g_context_y = obj->ctx->point_y;
+		g_capture_during_request = (obj->ctx->context_obj == obj);
+	}
+	else if (e == GY_EVENT_ContextDragging)
+	{
+		g_context_dragging++;
+		g_context_x = obj->ctx->point_x;
+		g_context_y = obj->ctx->point_y;
+	}
+	else if (e == GY_EVENT_ContextReleased)
+	{
+		g_context_released++;
+		g_capture_during_finish = (obj->ctx->context_obj != NULL);
+	}
+	else if (e == GY_EVENT_ContextCancelled)
+	{
+		g_context_cancelled++;
+		g_capture_during_finish = (obj->ctx->context_obj != NULL);
+	}
+	else if (e == GY_EVENT_ReleasedOff)
+		g_released_off++;
+	else if (e == GY_EVENT_Clicked)
+		g_event_clicked++;
+}
 
 static void resetFlush(void)
 {
@@ -91,6 +131,67 @@ int main(void)
 	YMGUI_Inject_Pointer(110, 100, 1);//按下
 	YMGUI_Inject_Pointer(10, 10, 0);  //移出后抬起
 	CHECK(g_clicked == 1, "release off-button does NOT click");
+
+	//---- 上下文请求:只命中派发,不改变焦点/按下状态 ----
+	GYOBJ target = YMGUI_Creat_Obj_Creat(ctx->root, 10, 10, 50, 40);
+	target->event_cb = onEvent;
+	GYOBJ focus_before = ctx->focus_obj;
+	YMGUI_Inject_ContextRequest(20, 20);
+	CHECK(g_context_requested == 1, "context request dispatched once");
+	CHECK(g_context_x == 20 && g_context_y == 20, "context request stores coordinates");
+	CHECK(ctx->focus_obj == focus_before, "context request does not change focus");
+	CHECK(!(target->state & GY_STATE_Pressed), "context request does not press target");
+	CHECK(g_event_clicked == 0, "context request does not click");
+
+	//---- 指针取消:ReleasedOff 一次,清状态,后续物理抬起也不 Click ----
+	YMGUI_Inject_Pointer(20, 20, 1);
+	CHECK(target->state & GY_STATE_Pressed, "cancel target starts pressed");
+	YMGUI_Inject_PointerCancel();
+	CHECK(!(target->state & GY_STATE_Pressed), "cancel clears pressed state");
+	CHECK(ctx->pressed_obj == NULL && !ctx->point_pressed, "cancel clears pointer capture");
+	CHECK(g_released_off == 1, "cancel dispatches ReleasedOff once");
+	YMGUI_Inject_PointerCancel();
+	CHECK(g_released_off == 1, "repeated cancel is idempotent");
+	YMGUI_Inject_Pointer(20, 20, 0);
+	CHECK(g_event_clicked == 0, "physical up after cancel does not click");
+
+	//---- 捕获式上下文拖动:跨出对象仍归起点对象,结束/取消先清捕获 ----
+	g_capture_during_request = 0;
+	YMGUI_Inject_ContextBegin(20, 20);
+	CHECK(ctx->context_obj == target, "context begin captures hit target");
+	CHECK(g_capture_during_request, "capture is visible during request callback");
+	YMGUI_Inject_ContextMove(200, 200);
+	CHECK(g_context_dragging == 1, "context move dispatched to captured target");
+	CHECK(g_context_x == 200 && g_context_y == 200, "context move stores current coordinates");
+	CHECK(ctx->pressed_obj == NULL && !ctx->point_pressed, "context drag is independent from pointer");
+	g_capture_during_finish = 1;
+	YMGUI_Inject_ContextEnd(210, 205);
+	CHECK(g_context_released == 1, "context end dispatches released once");
+	CHECK(ctx->context_obj == NULL && !g_capture_during_finish, "context end clears capture before callback");
+	YMGUI_Inject_ContextEnd(210, 205);
+	CHECK(g_context_released == 1, "repeated context end is idempotent");
+
+	YMGUI_Inject_ContextBegin(20, 20);
+	g_capture_during_finish = 1;
+	YMGUI_Inject_ContextCancel();
+	CHECK(g_context_cancelled == 1, "context cancel dispatched once");
+	CHECK(ctx->context_obj == NULL && !g_capture_during_finish, "context cancel clears capture before callback");
+	YMGUI_Inject_ContextCancel();
+	CHECK(g_context_cancelled == 1, "repeated context cancel is idempotent");
+
+	//捕获对象中途销毁后 Move/End 必须安全无操作,不得重新命中底层对象。
+	GYOBJ doomed = YMGUI_Creat_Obj_Creat(ctx->root, 70, 10, 40, 40);
+	doomed->event_cb = onEvent;
+	YMGUI_Inject_ContextBegin(80, 20);
+	CHECK(ctx->context_obj == doomed, "context captures object before free");
+	int drag_before = g_context_dragging;
+	int release_before = g_context_released;
+	YMGUI_Free_ObjFree(doomed);
+	CHECK(ctx->context_obj == NULL, "free clears context capture");
+	YMGUI_Inject_ContextMove(90, 20);
+	YMGUI_Inject_ContextEnd(90, 20);
+	CHECK(g_context_dragging == drag_before && g_context_released == release_before,
+	      "events after captured object free are ignored");
 
 	//---- 释放:级联释放不崩,引用清理 ----
 	YMGUI_Free_CtxFree(ctx);

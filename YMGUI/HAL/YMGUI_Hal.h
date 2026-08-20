@@ -45,6 +45,15 @@ void YMGUI_Inject_Pointer(GYcoord x, GYcoord y, uint8 pressed);
 void YMGUI_Inject_Key(uint32 key, uint8 pressed);
 //双击(触摸/鼠标 button.clicks==2):x,y 屏幕坐标。派 GY_EVENT_DoubleClicked 给命中对象
 void YMGUI_Inject_DoubleClick(GYcoord x, GYcoord y);
+//取消当前指针捕获:派 ReleasedOff 并清按下状态,不产生 Clicked
+void YMGUI_Inject_PointerCancel(void);
+//一次性上下文请求(右键短点击):派 ContextRequested,不建立拖动捕获
+void YMGUI_Inject_ContextRequest(GYcoord x, GYcoord y);
+//捕获式上下文手势(右键拖动/长按后拖动)
+void YMGUI_Inject_ContextBegin(GYcoord x, GYcoord y);
+void YMGUI_Inject_ContextMove(GYcoord x, GYcoord y);
+void YMGUI_Inject_ContextEnd(GYcoord x, GYcoord y);
+void YMGUI_Inject_ContextCancel(void);
 
 //===========================================================================
 // 剪贴板 HAL 缝(移植点,与 flush_cb/glyph_read 同哲学)

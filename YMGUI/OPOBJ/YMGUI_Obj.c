@@ -79,6 +79,7 @@ GYCTX YMGUI_Creat_Ctx_Creat(void* disp, GYcoord w, GYcoord h)
 
 	ctx->disp = disp;
 	ctx->pressed_obj = NULL;
+	ctx->context_obj = NULL;
 	ctx->focus_obj = NULL;
 	ctx->point_x = 0;
 	ctx->point_y = 0;
@@ -191,6 +192,7 @@ void YMGUI_Free_ObjFree(GYOBJ obj)
 	if (obj->ctx != NULL)
 	{
 		if (obj->ctx->pressed_obj == obj) obj->ctx->pressed_obj = NULL;
+		if (obj->ctx->context_obj == obj) obj->ctx->context_obj = NULL;
 		if (obj->ctx->focus_obj == obj)   obj->ctx->focus_obj = NULL;
 	}
 

@@ -53,6 +53,16 @@ void YMGUI_Event_Key(GYCTX ctx, uint32 key);
 //  先按普通指针语义确保对象已聚焦/光标已定位(内部走一次 press+release),再派双击。
 void YMGUI_Event_DoubleClick(GYCTX ctx, GYcoord x, GYcoord y);
 
+//取消当前指针捕获:清按下状态并派 ReleasedOff,不产生 Clicked。无捕获时幂等。
+void YMGUI_Event_PointerCancel(GYCTX ctx);
+//一次性上下文请求(右键短点击):命中测试后派 ContextRequested,不建立拖动捕获。
+void YMGUI_Event_ContextRequest(GYCTX ctx, GYcoord x, GYcoord y);
+//捕获式上下文手势:Begin 命中并派 Requested;Move/End 始终归起点对象;Cancel 异常结束。
+void YMGUI_Event_ContextBegin(GYCTX ctx, GYcoord x, GYcoord y);
+void YMGUI_Event_ContextMove(GYCTX ctx, GYcoord x, GYcoord y);
+void YMGUI_Event_ContextEnd(GYCTX ctx, GYcoord x, GYcoord y);
+void YMGUI_Event_ContextCancel(GYCTX ctx);
+
 //设置焦点对象(NULL 表示清焦点)。切换时派发 FocusLost/FocusGot
 void YMGUI_SetFocus(GYCTX ctx, GYOBJ obj);
 

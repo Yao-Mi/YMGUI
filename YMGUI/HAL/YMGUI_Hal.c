@@ -68,6 +68,48 @@ void YMGUI_Inject_DoubleClick(GYcoord x, GYcoord y)
 		YMGUI_Event_DoubleClick(s_inject_ctx, x, y);
 }
 
+/**
+  * @brief 取消当前指针捕获,不产生普通点击
+  */
+void YMGUI_Inject_PointerCancel(void)
+{
+	if (s_inject_ctx != NULL)
+		YMGUI_Event_PointerCancel(s_inject_ctx);
+}
+
+/**
+  * @brief 上下文请求注入入口:右键/长按等平台输入统一走此语义
+  */
+void YMGUI_Inject_ContextRequest(GYcoord x, GYcoord y)
+{
+	if (s_inject_ctx != NULL)
+		YMGUI_Event_ContextRequest(s_inject_ctx, x, y);
+}
+
+void YMGUI_Inject_ContextBegin(GYcoord x, GYcoord y)
+{
+	if (s_inject_ctx != NULL)
+		YMGUI_Event_ContextBegin(s_inject_ctx, x, y);
+}
+
+void YMGUI_Inject_ContextMove(GYcoord x, GYcoord y)
+{
+	if (s_inject_ctx != NULL)
+		YMGUI_Event_ContextMove(s_inject_ctx, x, y);
+}
+
+void YMGUI_Inject_ContextEnd(GYcoord x, GYcoord y)
+{
+	if (s_inject_ctx != NULL)
+		YMGUI_Event_ContextEnd(s_inject_ctx, x, y);
+}
+
+void YMGUI_Inject_ContextCancel(void)
+{
+	if (s_inject_ctx != NULL)
+		YMGUI_Event_ContextCancel(s_inject_ctx);
+}
+
 //===========================================================================
 // 剪贴板:默认库内静态缓冲(裸机);SDL_LCD 可注册系统剪贴板后端覆盖之
 //===========================================================================

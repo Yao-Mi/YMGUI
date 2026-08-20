@@ -1,10 +1,12 @@
 # YMGUI
 
-面向**嵌入式/裸机优先**的跨平台 GUI 库，C99 + GNU 扩展。软件光栅化 + 保留模式 + 分块刷新，桌面(Linux/SDL)开发、裸机(MCU + LCD)部署，两者共用同一套渲染代码，只换一个显示驱动回调。
+面向**嵌入式/裸机优先**的跨平台 GUI 库，C99 + GNU 扩展。软件光栅化 + 保留模式 + 分块刷新，桌面(Linux/SDL)开发、裸机(MCU + LCD)部署，两者共用同一套渲染代码，只换一个显示驱动回调。Windows、Android 和真实硬件的平台逻辑集中在 `SDL_LCD/` 或应用桥接层，不进入控件核心。
+
+跨平台显示、输入与构建实践见 [CROSS_PLATFORM_PORTING.md](CROSS_PLATFORM_PORTING.md)。
 
 ## 状态
 
-26 控件 · 5 类图元 · 31 单测全过 · 24 个交互 demo · 8 个完整应用 · clean build 0 错 0 警。
+26 控件 · 5 类图元 · 32 单测全过 · 24 个交互 demo · 9 个完整应用 · clean build 0 错 0 警。
 （Button/Label/Checkbox/Switch/Slider/Bar/Image/Arc/Spinner/Meter/TextInput/TextView/EditView/List/Chart/Dropdown/Table/Tabview/TreeView/Grid/Canvas/ColorPicker/Roller/BarChart/MsgBox + base 容器）
 
 抗锯齿(4bpp 灰度字体 + Wu 斜线 + 距离场圆弧，`YMGUI_ANTIALIAS` 可裁)、中文/CJK(UTF-8 回退链 + 稀疏字模 + 外部 flash 回调，`YMGUI_FONT_CJK` 可裁)、状态/数据绑定地基均已落地。
@@ -23,6 +25,7 @@
 | **电子表格** Grid + 公式引擎(SUM/AVG，定点)<br><img src="docs/shots/excel_edit.png" width="420"> | **文件管理器** TreeView 懒加载 + 预览 + 沙箱增删改<br><img src="docs/shots/files_manager.png" width="420"> |
 | **图层画板** Canvas + ColorPicker + 图层融合/工具<br><img src="docs/shots/image_edit.png" width="420"> | **音乐播放器** BarChart 频谱 + Roller 歌词 + ffmpeg 解码<br><img src="docs/shots/music_player.png" width="420"> |
 | **多行编辑器** EditView 选区/剪贴板/撤销/查找替换 + 菜单栏<br><img src="docs/shots/txt_edit.png" width="420"> | **视频播放器** Image 缩放模式 + 流式解码 + A/V 同步<br><img src="docs/shots/video_player.png" width="420"> |
+| **上下文手势实验室** 右键/触摸长按菜单 + 捕获式卡片拖动<br><img src="docs/shots/context_gesture.png" width="420"> | |
 
 ### 控件演示（`Demo/`）
 
@@ -74,7 +77,7 @@ cd build && ctest --output-on-failure # 跑全部单测
 ./build/demo_dashboard                # 看效果(需显示器)
 ./build/demo_font_gb2312              # 中文字体(GB2312 全集走外部 flash 回调)
 
-./build_all.sh                        # 一键建库 + 全部 Demo + 8 个 project_Demo 应用
+./build_all.sh                        # 一键建库 + 全部 Demo + 9 个 project_Demo 应用
 ./capture_shots.sh -b                 # 先构建再批量截图到 docs/shots/(无头,需 ffmpeg)
 ```
 
@@ -86,6 +89,7 @@ cd build && ctest --output-on-failure # 跑全部单测
 | **理解架构、扩展库** | `ARCHITECTURE.md`（分层/核心类型/渲染管线/各机制设计） |
 | **写代码，查控件怎么用** | `API.md`（控件速查 + 最小程序骨架 + demo 索引） |
 | **写代码，守规范** | `代码风格.md`（命名/格式/目录归位/性能惯用手法） |
+| **移植到 Windows、Android 或真机** | `CROSS_PLATFORM_PORTING.md`（显示/输入桥接 + CMake + 验证清单） |
 | **了解怎么一路走来、踩过啥坑** | `DEVLOG.md`（逐轮进程 + 问题记录） |
 
 ## 一分钟理解设计
