@@ -39,6 +39,7 @@ static GYcoord       s_right_start_x = 0, s_right_start_y = 0;
 //全帧累积 buffer:flush 只给分条(band)像素,截图要整屏,故每条 band 落进这里。
 //退出时若设了环境变量 YMGUI_SHOT=<path.bmp> 就存图(所有 demo 零改动即可截屏)。
 static GYpx*         s_frame = NULL;
+static GYDISP        s_disp = NULL;
 
 #define SDL_LCD_LONG_PRESS_MS   600u
 #define SDL_LCD_LONG_PRESS_SLOP 10
@@ -147,7 +148,7 @@ static const char* sdlClipGet(void)
 }
 
 /**
-  * @brief HAL flush 回调:把 buf 里 area 大小的一块连续像素更新到纹理并呈现
+  * @brief HAL flush 回调:把 buf 里 area 大小的一块连续像素更新到纹理
   *        真实硬件在此改成 SPI/并口 DMA 传输
   */
 static void sdlFlushCb(GYdisp* d, const GYrect* area, const GYpx* buf)
@@ -171,13 +172,16 @@ static void sdlFlushCb(GYdisp* d, const GYrect* area, const GYpx* buf)
 		}
 	}
 
-	//整帧最后一条 band 刷完再 present(这里简单起见每条都 present)
+	//本回调只上传当前 band；整帧显示由 frame-done 回调统一提交。
+	YMGUI_Disp_FlushReady(d);
+}
+
+static void sdlFrameDoneCb(GYdisp* d)
+{
+	(void)d;
 	SDL_RenderClear(s_ren);
 	SDL_RenderCopy(s_ren, s_tex, NULL, NULL);
 	SDL_RenderPresent(s_ren);
-
-	//同步实现:传完即可复用 buffer
-	YMGUI_Disp_FlushReady(d);
 }
 
 /**
@@ -190,6 +194,7 @@ int SDL_LCD_Init(GYDISP disp, int scale)
 	s_scale = scale;
 	s_w = disp->hor_res;
 	s_h = disp->ver_res;
+	s_disp = disp;
 	sdlTouchReset();
 	sdlRightReset();
 
@@ -221,6 +226,7 @@ int SDL_LCD_Init(GYDISP disp, int scale)
 
 	//挂上 flush 回调 —— 这是库与硬件之间唯一的连接点
 	disp->flush_cb = sdlFlushCb;
+	YMGUI_Disp_SetFrameDoneCb(disp, sdlFrameDoneCb);
 	//把剪贴板缝接到系统剪贴板(裸机不注册则用库内静态缓冲)
 	YMGUI_Clipboard_SetBackend(sdlClipSet, sdlClipGet);
 	SDL_StartTextInput();//启用文本输入事件(SDL_TEXTINPUT)
@@ -236,6 +242,11 @@ fail:
   */
 void SDL_LCD_Destroy(void)
 {
+	if (s_disp != NULL)
+	{
+		YMGUI_Disp_SetFrameDoneCb(s_disp, NULL);
+		s_disp = NULL;
+	}
 	//若设了 YMGUI_SHOT,把最后一帧存成 BMP(RGB565 → SDL surface → SaveBMP)
 	if (s_frame != NULL)
 	{

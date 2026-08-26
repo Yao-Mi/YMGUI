@@ -29,6 +29,57 @@ void YMGUI_Disp_FlushReady(GYDISP d)
 		d->flush_busy = 0;
 }
 
+#define GY_FRAME_DONE_SLOT_MAX 4
+typedef struct
+{
+	GYDISP display;
+	GYframe_done_cb callback;
+} gy_frame_done_slot;
+
+static gy_frame_done_slot s_frame_done_slots[GY_FRAME_DONE_SLOT_MAX];
+
+void YMGUI_Disp_SetFrameDoneCb(GYDISP d, GYframe_done_cb cb)
+{
+	if (d == NULL)
+		return;
+	for (uint8 i = 0; i < GY_FRAME_DONE_SLOT_MAX; i++)
+	{
+		if (s_frame_done_slots[i].display == d)
+		{
+			s_frame_done_slots[i].callback = cb;
+			if (cb == NULL)
+				s_frame_done_slots[i].display = NULL;
+			return;
+		}
+	}
+	if (cb == NULL)
+		return;
+	for (uint8 i = 0; i < GY_FRAME_DONE_SLOT_MAX; i++)
+	{
+		if (s_frame_done_slots[i].display == NULL)
+		{
+			s_frame_done_slots[i].display = d;
+			s_frame_done_slots[i].callback = cb;
+			return;
+		}
+	}
+}
+
+void YMGUI_Disp_FrameDone(GYDISP d)
+{
+	if (d == NULL)
+		return;
+	for (uint8 i = 0; i < GY_FRAME_DONE_SLOT_MAX; i++)
+	{
+		if (s_frame_done_slots[i].display == d)
+		{
+			if (s_frame_done_slots[i].callback != NULL)
+				s_frame_done_slots[i].callback(d);
+			return;
+		}
+	}
+}
+
 //接收注入事件的上下文(GUI 层注册)
 static GYCTX s_inject_ctx = NULL;
 

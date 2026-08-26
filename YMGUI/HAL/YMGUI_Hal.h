@@ -32,6 +32,12 @@ typedef GYdisp* GYDISP;
 //  同步 flush_cb 在函数体末尾调(此后立即可复用);异步 DMA 在传输完成中断里调。
 void YMGUI_Disp_FlushReady(GYDISP d);
 
+//一轮 Refresh 的所有脏区/band 都 flush 完成后通知显示端口。
+//桌面端可在这里整帧 present；真实 LCD 通常无需注册。
+typedef void (*GYframe_done_cb)(GYDISP d);
+void YMGUI_Disp_SetFrameDoneCb(GYDISP d, GYframe_done_cb cb);
+void YMGUI_Disp_FrameDone(GYDISP d);
+
 //===========================================================================
 // 输入注入(拉取式,裸机无 OS 消息泵)
 //   SDL_LCD/ 把 SDL_Event 翻译成这些调用;裸机把触摸/按键读数翻译成这些调用

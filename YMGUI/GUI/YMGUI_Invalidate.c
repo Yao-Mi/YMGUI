@@ -271,5 +271,7 @@ void YMGUI_Refresh(GYCTX ctx)
 	if (disp->buf2 != NULL)
 		waitFlushIdle(disp);
 
+	YMGUI_Disp_FrameDone(disp);
+
 	ctx->inv_cnt = 0;//本帧脏区已处理
 }
