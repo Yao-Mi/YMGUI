@@ -67,6 +67,7 @@ cmake_install.cmake
 CTestTestfile.cmake
 Makefile
 Testing/
+tst/
 
 # 本机个人配置(权限/会话设置,不该进仓库)
 .claude/

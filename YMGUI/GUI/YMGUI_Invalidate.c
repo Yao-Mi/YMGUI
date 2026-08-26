@@ -76,6 +76,8 @@ void YMGUI_Ctx_InvalidateArea(GYCTX ctx, const GYrect* area)
 {
 	gy_assert(ctx && area);
 	gy_log_explain((ctx == NULL) || (area == NULL), GY_LOG_PtrI, "上下文或区域不存在");
+	if (ctx == NULL || area == NULL || ctx->destroying)
+		return;
 	if (area->w <= 0 || area->h <= 0)
 		return;
 
@@ -121,7 +123,7 @@ void YMGUI_Ctx_InvalidateArea(GYCTX ctx, const GYrect* area)
 void YMGUI_Obj_Invalidate(GYOBJ obj)
 {
 	GYrect abs;
-	if (obj == NULL || obj->ctx == NULL)
+	if (obj == NULL || obj->ctx == NULL || obj->ctx->destroying)
 		return;
 	if (obj->state & GY_STATE_Hidden)
 		return;

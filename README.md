@@ -6,7 +6,7 @@
 
 ## 状态
 
-26 控件 · 5 类图元 · 32 单测全过 · 24 个交互 demo · 9 个完整应用 · clean build 0 错 0 警。
+26 控件 · 5 类图元 · 33 单测全过 · 25 个交互 demo · 10 个完整应用 · clean build 0 错 0 警。
 （Button/Label/Checkbox/Switch/Slider/Bar/Image/Arc/Spinner/Meter/TextInput/TextView/EditView/List/Chart/Dropdown/Table/Tabview/TreeView/Grid/Canvas/ColorPicker/Roller/BarChart/MsgBox + base 容器）
 
 抗锯齿(4bpp 灰度字体 + Wu 斜线 + 距离场圆弧，`YMGUI_ANTIALIAS` 可裁)、中文/CJK(UTF-8 回退链 + 稀疏字模 + 外部 flash 回调，`YMGUI_FONT_CJK` 可裁)、状态/数据绑定地基均已落地。
@@ -25,7 +25,7 @@
 | **电子表格** Grid + 公式引擎(SUM/AVG，定点)<br><img src="docs/shots/excel_edit.png" width="420"> | **文件管理器** TreeView 懒加载 + 预览 + 沙箱增删改<br><img src="docs/shots/files_manager.png" width="420"> |
 | **图层画板** Canvas + ColorPicker + 图层融合/工具<br><img src="docs/shots/image_edit.png" width="420"> | **音乐播放器** BarChart 频谱 + Roller 歌词 + ffmpeg 解码<br><img src="docs/shots/music_player.png" width="420"> |
 | **多行编辑器** EditView 选区/剪贴板/撤销/查找替换 + 菜单栏<br><img src="docs/shots/txt_edit.png" width="420"> | **视频播放器** Image 缩放模式 + 流式解码 + A/V 同步<br><img src="docs/shots/video_player.png" width="420"> |
-| **上下文手势实验室** 右键/触摸长按菜单 + 捕获式卡片拖动<br><img src="docs/shots/context_gesture.png" width="420"> | |
+| **上下文手势实验室** 右键/触摸长按菜单 + 捕获式卡片拖动<br><img src="docs/shots/context_gesture.png" width="420"> | **插件管理器** 动态加载/卸载 + 插件自建 UI + 生命周期日志<br><img src="docs/shots/plugin_host.png" width="420"> |
 
 ### 控件演示（`Demo/`）
 
@@ -76,10 +76,23 @@ cmake -B build -S . && cmake --build build
 cd build && ctest --output-on-failure # 跑全部单测
 ./build/demo_dashboard                # 看效果(需显示器)
 ./build/demo_font_gb2312              # 中文字体(GB2312 全集走外部 flash 回调)
+SDL_VIDEODRIVER=dummy ./build/demo_plugin 120 # 插件系统宿主 demo（无头跑 120 帧）
 
-./build_all.sh                        # 一键建库 + 全部 Demo + 9 个 project_Demo 应用
+./build_all.sh                        # 一键建库 + 全部 Demo + 10 个 project_Demo 项目
 ./capture_shots.sh -b                 # 先构建再批量截图到 docs/shots/(无头,需 ffmpeg)
 ```
+
+### 插件系统 Demo
+
+`YMGUI/PLUGIN/` 提供一个面向嵌入式约束的轻量插件注册表：插件通过版本化的
+`YMGUI_PluginHost` 获取上下文、创建控件和日志能力，支持 `init/tick/deinit` 生命周期。
+固件可直接调用 `YMGUI_PluginRegistry_Add` 静态注册；有操作系统的平台还可用
+`YMGUI_Plugin_LoadDynamic` 加载导出 `YMGUI_Plugin_Get` 的动态插件（Linux/Android
+为 `.so`，Windows 为 `.dll`，macOS 为 `.dylib`），并用
+`YMGUI_Plugin_InspectDynamic` 在管理器中筛除 ABI 不兼容或并非插件的动态库。
+示例 `demo_plugin` 中的 `system-info` 插件会创建标签并显示运行时间。
+完整应用见 `project_Demo/plugin_host/`：宿主提供插件管理界面，动态插件通过宿主
+函数表创建自己的指标页和交互按钮，并支持运行时安全卸载、重载。
 
 ## 文档导航（按需读）
 
@@ -99,7 +112,7 @@ cd build && ctest --output-on-failure # 跑全部单测
 - **保留模式 + 脏矩形**：控件树持久存在，只重绘变化区域，空闲不耗 —— LCD 的 blit 是最贵操作，这样降到最低。
 - **无 FPU 友好**：几何用 int16，三角/渐变查表(Q15 定点)，不走 float 必经路径。
 - **中文三轴可裁**：CJK 开关是编译期宏(轴1)，字集范围(精简/GB2312)是字模生成期参数(轴2)，字模存放(内部/外部 flash)是运行期 `glyph_read` 回调(轴3)——各归其位，方案切换不改控件代码。
-- **目录对齐前作 YMCV**：可移植的 9 层全收在 `YMGUI/` 库根下（对齐 YMCV 的 `OpenSrc-YMCV/YMCV/`，拷一个文件夹即移植）；CONFIG/DEBUG/COMMON/OPOBJ/CORE 与 YMCV 同名，GUI/HAL/WIDGET/STATE 为 GUI 新增。
+- **目录对齐前作 YMCV**：可移植的 10 层全收在 `YMGUI/` 库根下（对齐 YMCV 的 `OpenSrc-YMCV/YMCV/`，拷一个文件夹即移植）；CONFIG/DEBUG/COMMON/OPOBJ/CORE 与 YMCV 同名，GUI/HAL/WIDGET/STATE/PLUGIN 为 GUI 新增。
 
 ## 维护约定（重要）
 
@@ -108,4 +121,4 @@ cd build && ctest --output-on-failure # 跑全部单测
 - `DEVLOG.md` — 这轮做了啥 + 踩的坑
 - `PROJECT.md` — 控件计数 / 进度快照
 
-`Demo/test_*.c` 里的断言即行为规格 —— 改机制先看对应测试，改完让它继续过。
+`tests/test_*.c` 里的断言即行为规格 —— 改机制先看对应测试，改完让它继续过。

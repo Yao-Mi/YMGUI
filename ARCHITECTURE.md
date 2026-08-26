@@ -47,7 +47,7 @@ typedef struct GYdisp
 }GYdisp;
 ```
 
-- **硬件只需实现 `flush_cb`**：把 buf 里 area 大小的连续像素推到面板。SDL 实现是 `SDL_UpdateTexture + RenderCopy`；真机是 SPI/并口 DMA。
+- **硬件只需实现 `flush_cb`**：把 buf 里 area 大小的连续像素推到面板。SDL 实现用 `SDL_UpdateTexture` 上传 band，并通过可选的 `YMGUI_Disp_SetFrameDoneCb` 在整帧完成后 `RenderPresent`；真机是 SPI/并口 DMA，通常无需整帧回调。
 - **画点不作必选**：它只是 flush 一个 1×1 area 的退化情况，绝大多数面板支持窗口 blit。
 - **输入走注入**（拉取式，裸机无消息泵）：`YMGUI_Inject_Pointer(x,y,pressed)` / `YMGUI_Inject_Key(key,pressed)`。port 把自己的事件源翻译成注入调用，库核心对"事件哪来的"一无所知。
 

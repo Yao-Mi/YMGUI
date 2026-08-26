@@ -72,6 +72,10 @@ void YMGUI_Refresh(GYCTX ctx);                           // 刷新一帧(无脏�
 
 改控件属性的 Set 函数都会自动标脏，通常不用手动 Invalidate。
 
+显示端口的 `flush_cb` 可能在一次 Refresh 中被调用多次，每次只传一个 band。需要整帧
+提交的桌面后端使用 `YMGUI_Disp_SetFrameDoneCb()` 注册回调，在所有脏区和 band 完成后
+统一 Present；无脏区的 Refresh 不触发该回调。真实 LCD 不需要整帧动作时可以不注册。
+
 ## 事件 / 焦点 / 输入注入（GUI + HAL）
 
 ```c
@@ -441,6 +445,35 @@ app 自造 GYfont(`bitmap=NULL`,填 `glyph_read` 回调)引用固件内的码点
 生成的 `YMGUI_GB2312_cps[]`),`YMGUI_Font_SetFallback(&it)` 一句即让所有控件遇任意 GB2312
 汉字自动走外部 flash。代价仅 `.bss` 一个指针,字体数据本身全 const。见 `demo_font_gb2312.c`。
 
+## 插件系统（PLUGIN）
+
+插件描述符包含 `id/name/api_version` 和 `init/tick/deinit` 生命周期回调。宿主填充
+`YMGUI_PluginHost` 后静态注册并加载：
+
+```c
+YMGUI_PluginRegistry_Add(YMGUI_Plugin_Get());
+YMGUI_PluginRegistry_LoadAll(&host);
+YMGUI_PluginRegistry_Tick(elapsed_ms);
+YMGUI_PluginRegistry_UnloadAll();
+```
+
+重复 `LoadAll` 不会再次初始化已激活或失败的插件。`UnloadAll` 逆序释放活跃插件，
+静态插件保留注册信息并可再次加载；动态插件关闭共享库后从注册表移除。
+`Reset` 会先安全卸载再清空全部注册。插件 `init` 失败时宿主立即调用其 `deinit`
+作为部分初始化资源的回滚钩子。
+
+动态 UI 插件不应直接引用宿主可执行文件中的 YMGUI 符号，而应使用
+`YMGUI_PluginHost` 尾部的对象、Label、Button 函数表。插件卸载前必须先销毁自己创建
+的对象树，尤其是回调函数位于动态库中的 Button；否则关闭动态库后会留下失效回调。
+`YMGUI_PLUGIN_HOST_UI_SIZE` 可用于检查宿主是否提供完整 UI 能力。
+
+有操作系统的平台可用 `YMGUI_Plugin_LoadDynamic(path, &host)` 加载导出
+`YMGUI_Plugin_Get` 的动态库：Linux/Android 为 `.so`，Windows 为 `.dll`，macOS
+为 `.dylib`；裸机直接使用静态注册路径。插件管理器可先调用
+`YMGUI_Plugin_InspectDynamic(path, &info)` 读取复制后的 `id/name/api_version`，只有入口、
+结构大小、API 版本、ID/名称和必需生命周期回调均合法时才展示候选。探测需要临时打开
+动态库，属于兼容性过滤而不是不可信本机代码的安全沙箱。
+
 ## 颜色 / 常用宏（CONFIG）
 
 ```c
@@ -473,4 +506,4 @@ int16 GY_Sin(int32 deg);   int16 GY_Cos(int32 deg);      // Q15(值=实际*32768
 | 通用柱状图(频谱/直方图/统计) | Demo/demo_barchart.c |
 | 类 PS 图层画板(图层/融合/工具全 app 侧) | project_Demo/image_edit/ |
 | 音乐播放器(ffmpeg 解码/SDL2 声卡/歌词/频谱全 app 侧) | project_Demo/music_player/ |
-| 任意机制的精确行为 | 对应 Demo/test_*.c（断言即规格） |
+| 任意机制的精确行为 | 对应 tests/test_*.c（断言即规格） |

@@ -86,6 +86,7 @@ GYCTX YMGUI_Creat_Ctx_Creat(void* disp, GYcoord w, GYcoord h)
 	ctx->point_pressed = 0;
 	ctx->last_key = 0;
 	ctx->inv_cnt = 0;
+	ctx->destroying = 0;
 
 	//根对象
 	GYOBJ root = (GYOBJ)GY_malloc0(sizeof(GYobj));
@@ -222,6 +223,8 @@ void YMGUI_Free_CtxFree(GYCTX ctx)
 {
 	if (ctx == NULL)
 		return;
+	ctx->destroying = 1;
+	ctx->inv_cnt = 0;
 	//释放顺序关键:先释放根子树,再释放顶层子树。
 	//  弹出层(Dropdown 菜单/遮罩等)挂在 top_layer,但其"所有者"控件在根子树里,
 	//  控件的 free_cb(如 ddFreeCb→teardownPopup)负责释放并从 top_layer 摘除自己的弹出层。

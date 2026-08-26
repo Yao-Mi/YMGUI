@@ -103,6 +103,7 @@ typedef struct GYctx
 	//失效/脏区:非重叠矩形列表(GUI 层维护,见 YMGUI_Invalidate)
 	GYrect inv_areas[GY_INV_MAX]; //脏矩形列表(屏幕坐标,互不重叠)
 	uint8  inv_cnt;               //当前脏矩形数量
+	uint8  destroying;            //上下文销毁中:不再累计无下一帧可消费的脏区
 }GYctx;
 
 //---- 生命周期(Creat/Free 成对,Free 树级联) ----

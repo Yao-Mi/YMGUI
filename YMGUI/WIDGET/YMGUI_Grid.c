@@ -460,7 +460,7 @@ static void gridDrawCb(GYOBJ obj, GYSURFACE s, const GYrect* abs)
 }
 //---- 命中/事件 ----
 /**
-  * @brief 屏幕点 (px,py) 落在哪个单元格 → 写 *row/*col 并返回 1;不在单元格区返回 0
+  * @brief 屏幕点 (px,py) 落在哪个单元格 → 写 row/col 输出并返回 1;不在单元格区返回 0
   */
 static uint8 cellAtPointer(GYOBJ g, GYgrid_data* d, GYcoord px, GYcoord py, uint16* row, uint16* col)
 {

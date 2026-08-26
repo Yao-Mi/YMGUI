@@ -10,7 +10,7 @@ if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-# 库本体根目录:9 个可移植层全收在 YMGUI/ 下(对齐 YMCV 的 OpenSrc-YMCV/YMCV/)。
+# 库本体根目录:10 个可移植层全收在 YMGUI/ 下(对齐 YMCV 的 OpenSrc-YMCV/YMCV/)。
 #   移植 = 把 YMGUI/ 整个拷进你的工程 + 改 CONFIG/ + 照 SDL_LCD/ 写真实 LCD 的 flush。
 #   SDL_LCD/、Demo/ 是 PC 演示外壳,留在顶层,移植时不带走。
 set(YMGUI_ROOT ${CMAKE_SOURCE_DIR}/YMGUI)
@@ -26,6 +26,7 @@ include_directories(
 	${YMGUI_ROOT}/GUI
 	${YMGUI_ROOT}/WIDGET
 	${YMGUI_ROOT}/STATE
+	${YMGUI_ROOT}/PLUGIN
 	${YMGUI_ROOT}/HAL
 	${CMAKE_SOURCE_DIR}/SDL_LCD
 )
@@ -41,9 +42,18 @@ file(GLOB YMGUI_SRC
 	${YMGUI_ROOT}/GUI/*.c
 	${YMGUI_ROOT}/WIDGET/*.c
 	${YMGUI_ROOT}/STATE/*.c
+	${YMGUI_ROOT}/PLUGIN/*.c
 	${YMGUI_ROOT}/HAL/*.c
 )
 add_library(ymgui STATIC ${YMGUI_SRC})
+
+# 插件系统宿主 demo（静态注册路径；Linux 同时编译 dlopen 支持）
+add_executable(demo_plugin
+	${CMAKE_SOURCE_DIR}/SDL_LCD/SDL_LCD.c
+	${CMAKE_SOURCE_DIR}/Demo/demo_plugin.c
+)
+target_include_directories(demo_plugin PRIVATE ${SDL2_INCLUDE_DIRS})
+target_link_libraries(demo_plugin ymgui ${SDL2_LIBRARIES} m ${CMAKE_DL_LIBS})
 
 # SDL_LCD port + demo(Linux 假 LCD)
 find_package(PkgConfig REQUIRED)
@@ -57,130 +67,134 @@ target_include_directories(demo_flush_band PRIVATE ${SDL2_INCLUDE_DIRS})
 target_link_libraries(demo_flush_band ymgui ${SDL2_LIBRARIES} m)
 
 # 无 SDL 的像素正确性单测
-add_executable(test_fill ${CMAKE_SOURCE_DIR}/Demo/test_fill.c)
+add_executable(test_fill ${CMAKE_SOURCE_DIR}/tests/test_fill.c)
 target_link_libraries(test_fill ymgui m)
 
 # 无 SDL 的交互闭环单测
-add_executable(test_event ${CMAKE_SOURCE_DIR}/Demo/test_event.c)
+add_executable(test_event ${CMAKE_SOURCE_DIR}/tests/test_event.c)
 target_link_libraries(test_event ymgui m)
 
 # SDL 输入映射单测:右键短点击/拖动 + 触摸长按后拖动
 add_executable(test_sdl_context
 	${CMAKE_SOURCE_DIR}/SDL_LCD/SDL_LCD.c
-	${CMAKE_SOURCE_DIR}/Demo/test_sdl_context.c
+	${CMAKE_SOURCE_DIR}/tests/test_sdl_context.c
 )
 target_include_directories(test_sdl_context PRIVATE ${SDL2_INCLUDE_DIRS})
 target_link_libraries(test_sdl_context ymgui ${SDL2_LIBRARIES} m)
 
 # 无 SDL 的多矩形脏区单测
-add_executable(test_invalidate ${CMAKE_SOURCE_DIR}/Demo/test_invalidate.c)
+add_executable(test_invalidate ${CMAKE_SOURCE_DIR}/tests/test_invalidate.c)
 target_link_libraries(test_invalidate ymgui m)
 
 # 无 SDL 的位图字体单测
-add_executable(test_font ${CMAKE_SOURCE_DIR}/Demo/test_font.c)
+add_executable(test_font ${CMAKE_SOURCE_DIR}/tests/test_font.c)
 target_link_libraries(test_font ymgui m)
 
 # 无 SDL 的控件文字单测
-add_executable(test_widget ${CMAKE_SOURCE_DIR}/Demo/test_widget.c)
+add_executable(test_widget ${CMAKE_SOURCE_DIR}/tests/test_widget.c)
 target_link_libraries(test_widget ymgui m)
 
 # 无 SDL 的表单四件套单测
-add_executable(test_form ${CMAKE_SOURCE_DIR}/Demo/test_form.c)
+add_executable(test_form ${CMAKE_SOURCE_DIR}/tests/test_form.c)
 target_link_libraries(test_form ymgui m)
 
 # 无 SDL 的图元单测
-add_executable(test_draw ${CMAKE_SOURCE_DIR}/Demo/test_draw.c)
+add_executable(test_draw ${CMAKE_SOURCE_DIR}/tests/test_draw.c)
 target_link_libraries(test_draw ymgui m)
 
 # 无 SDL 的显示控件单测
-add_executable(test_display ${CMAKE_SOURCE_DIR}/Demo/test_display.c)
+add_executable(test_display ${CMAKE_SOURCE_DIR}/tests/test_display.c)
 target_link_libraries(test_display ymgui m)
 
 # 无 SDL 的粗弧无缝隙单测
-add_executable(test_arc ${CMAKE_SOURCE_DIR}/Demo/test_arc.c)
+add_executable(test_arc ${CMAKE_SOURCE_DIR}/tests/test_arc.c)
 target_link_libraries(test_arc ymgui m)
 
 # 无 SDL 的文本输入单测
-add_executable(test_textinput ${CMAKE_SOURCE_DIR}/Demo/test_textinput.c)
+add_executable(test_textinput ${CMAKE_SOURCE_DIR}/tests/test_textinput.c)
 target_link_libraries(test_textinput ymgui m)
 
 # 无 SDL 的 Tab 焦点轮转单测
-add_executable(test_focus ${CMAKE_SOURCE_DIR}/Demo/test_focus.c)
+add_executable(test_focus ${CMAKE_SOURCE_DIR}/tests/test_focus.c)
 target_link_libraries(test_focus ymgui m)
 
 # 无 SDL 的分块刷新回归单测
-add_executable(test_band ${CMAKE_SOURCE_DIR}/Demo/test_band.c)
+add_executable(test_band ${CMAKE_SOURCE_DIR}/tests/test_band.c)
 target_link_libraries(test_band ymgui m)
 
 # 无 SDL 的滚动+子裁剪机制单测
-add_executable(test_scroll ${CMAKE_SOURCE_DIR}/Demo/test_scroll.c)
+add_executable(test_scroll ${CMAKE_SOURCE_DIR}/tests/test_scroll.c)
 target_link_libraries(test_scroll ymgui m)
 
 # 无 SDL 的可滚动列表单测
-add_executable(test_list ${CMAKE_SOURCE_DIR}/Demo/test_list.c)
+add_executable(test_list ${CMAKE_SOURCE_DIR}/tests/test_list.c)
 target_link_libraries(test_list ymgui m)
 
 # 无 SDL 的折线图单测
-add_executable(test_chart ${CMAKE_SOURCE_DIR}/Demo/test_chart.c)
+add_executable(test_chart ${CMAKE_SOURCE_DIR}/tests/test_chart.c)
 target_link_libraries(test_chart ymgui m)
 
 # 无 SDL 的下拉框 + top_layer 弹出层单测
-add_executable(test_dropdown ${CMAKE_SOURCE_DIR}/Demo/test_dropdown.c)
+add_executable(test_dropdown ${CMAKE_SOURCE_DIR}/tests/test_dropdown.c)
 target_link_libraries(test_dropdown ymgui m)
 
 # 无 SDL 的表格单测
-add_executable(test_table ${CMAKE_SOURCE_DIR}/Demo/test_table.c)
+add_executable(test_table ${CMAKE_SOURCE_DIR}/tests/test_table.c)
 target_link_libraries(test_table ymgui m)
 
 # 无 SDL 的标签页单测
-add_executable(test_tabview ${CMAKE_SOURCE_DIR}/Demo/test_tabview.c)
+add_executable(test_tabview ${CMAKE_SOURCE_DIR}/tests/test_tabview.c)
 target_link_libraries(test_tabview ymgui m)
 
 # 无 SDL 的状态/数据绑定单测
-add_executable(test_bind ${CMAKE_SOURCE_DIR}/Demo/test_bind.c)
+add_executable(test_bind ${CMAKE_SOURCE_DIR}/tests/test_bind.c)
 target_link_libraries(test_bind ymgui m)
 
-add_executable(test_aa ${CMAKE_SOURCE_DIR}/Demo/test_aa.c)
+add_executable(test_aa ${CMAKE_SOURCE_DIR}/tests/test_aa.c)
 target_link_libraries(test_aa ymgui m)
 
 # 无 SDL 的异步双缓冲时序单测(mock DMA:ping-pong 交替 + 在途<=1 + 单缓冲退化)
-add_executable(test_async ${CMAKE_SOURCE_DIR}/Demo/test_async.c)
+add_executable(test_async ${CMAKE_SOURCE_DIR}/tests/test_async.c)
 target_link_libraries(test_async ymgui m)
 
-add_executable(test_layout ${CMAKE_SOURCE_DIR}/Demo/test_layout.c)
+add_executable(test_layout ${CMAKE_SOURCE_DIR}/tests/test_layout.c)
 target_link_libraries(test_layout ymgui m)
 
 # 无 SDL 的多行文本视图单测(断行/折行/滚动钳制/宽度重排)
-add_executable(test_textview ${CMAKE_SOURCE_DIR}/Demo/test_textview.c)
+add_executable(test_textview ${CMAKE_SOURCE_DIR}/tests/test_textview.c)
 target_link_libraries(test_textview ymgui m)
 
 # 无 SDL 的可编辑多行文本框单测(UTF-8 插入/换行/跨行退格/方向键/折行/滚动钳制)
-add_executable(test_editview ${CMAKE_SOURCE_DIR}/Demo/test_editview.c)
+add_executable(test_editview ${CMAKE_SOURCE_DIR}/tests/test_editview.c)
 target_link_libraries(test_editview ymgui m)
 
 # 无 SDL 的树形视图单测(节点增删/展开重建/懒加载/点击选中/双击激活/滚动钳制/ClearChildren)
-add_executable(test_treeview ${CMAKE_SOURCE_DIR}/Demo/test_treeview.c)
+add_executable(test_treeview ${CMAKE_SOURCE_DIR}/tests/test_treeview.c)
 target_link_libraries(test_treeview ymgui m)
 
 # 无 SDL 的网格单测(单元格存取/单击选中/双击编辑/SetSelected/二维滚动钳位/EnsureVisible/方向键/析构)
-add_executable(test_grid ${CMAKE_SOURCE_DIR}/Demo/test_grid.c)
+add_executable(test_grid ${CMAKE_SOURCE_DIR}/tests/test_grid.c)
 target_link_libraries(test_grid ymgui m)
 
-add_executable(test_canvas ${CMAKE_SOURCE_DIR}/Demo/test_canvas.c)
+add_executable(test_canvas ${CMAKE_SOURCE_DIR}/tests/test_canvas.c)
 target_link_libraries(test_canvas ymgui m)
 
-add_executable(test_colorpicker ${CMAKE_SOURCE_DIR}/Demo/test_colorpicker.c)
+add_executable(test_colorpicker ${CMAKE_SOURCE_DIR}/tests/test_colorpicker.c)
 target_link_libraries(test_colorpicker ymgui m)
 
-add_executable(test_roller ${CMAKE_SOURCE_DIR}/Demo/test_roller.c)
+add_executable(test_roller ${CMAKE_SOURCE_DIR}/tests/test_roller.c)
 target_link_libraries(test_roller ymgui m)
 
-add_executable(test_barchart ${CMAKE_SOURCE_DIR}/Demo/test_barchart.c)
+add_executable(test_barchart ${CMAKE_SOURCE_DIR}/tests/test_barchart.c)
 target_link_libraries(test_barchart ymgui m)
 
 # 无 SDL 的模态对话框单测(输入模态锁死/吞底层点击/按钮回调+隐藏/解锁后可点/多按钮 index/CtxFree 兜底不崩)
-add_executable(test_msgbox ${CMAKE_SOURCE_DIR}/Demo/test_msgbox.c)
+add_executable(test_msgbox ${CMAKE_SOURCE_DIR}/tests/test_msgbox.c)
 target_link_libraries(test_msgbox ymgui m)
+
+# 插件注册表生命周期单测（注册/失败回滚/卸载重载/容量边界）
+add_executable(test_plugin ${CMAKE_SOURCE_DIR}/tests/test_plugin.c)
+target_link_libraries(test_plugin ymgui m ${CMAKE_DL_LIBS})
 
 # 表单四件套交互 demo
 add_executable(demo_form
@@ -404,3 +418,4 @@ add_test(NAME test_colorpicker COMMAND test_colorpicker)
 add_test(NAME test_roller COMMAND test_roller)
 add_test(NAME test_barchart COMMAND test_barchart)
 add_test(NAME test_msgbox COMMAND test_msgbox)
+add_test(NAME test_plugin COMMAND test_plugin)

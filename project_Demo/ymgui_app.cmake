@@ -27,7 +27,7 @@ get_filename_component(YMGUI_REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
 set(YMGUI_ROOT   ${YMGUI_REPO_ROOT}/YMGUI)
 set(YMGUI_SDLDIR ${YMGUI_REPO_ROOT}/SDL_LCD)
 
-# 裸头式 include:9 个可移植层 + SDL_LCD 外壳(全库头文件无重名)
+# 裸头式 include:10 个可移植层 + SDL_LCD 外壳(全库头文件无重名)
 include_directories(
 	${YMGUI_ROOT}/CONFIG
 	${YMGUI_ROOT}/DEBUG
@@ -38,6 +38,7 @@ include_directories(
 	${YMGUI_ROOT}/GUI
 	${YMGUI_ROOT}/WIDGET
 	${YMGUI_ROOT}/STATE
+	${YMGUI_ROOT}/PLUGIN
 	${YMGUI_ROOT}/HAL
 	${YMGUI_SDLDIR}
 )
@@ -53,6 +54,7 @@ file(GLOB YMGUI_SRC
 	${YMGUI_ROOT}/GUI/*.c
 	${YMGUI_ROOT}/WIDGET/*.c
 	${YMGUI_ROOT}/STATE/*.c
+	${YMGUI_ROOT}/PLUGIN/*.c
 	${YMGUI_ROOT}/HAL/*.c
 )
 

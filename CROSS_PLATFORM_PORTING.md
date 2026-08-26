@@ -84,7 +84,30 @@ cmake --build build/project_Demo/alarm_clock -j
 
 Windows/Android 交叉构建时应通过 `SDL2_DIR` 指向 SDL2 导出的 CMake package，并提供对应工具链文件。
 
-## 6. 验证清单
+## 6. 动态插件
+
+平台无关的注册表位于 `YMGUI/PLUGIN/YMGUI_Plugin.c`；操作系统加载器单独位于
+`YMGUI_PluginDynamic.c`。默认策略如下：
+
+| 平台 | 动态产物 | 加载 API |
+|---|---|---|
+| Linux / Android | `.so` | `dlopen / dlsym / dlclose` |
+| Windows | `.dll` | `LoadLibrary / GetProcAddress / FreeLibrary` |
+| macOS | `.dylib` 或 bundle | `dlopen / dlsym / dlclose` |
+| 裸机 | 固件内静态插件 | `YMGUI_PluginRegistry_Add` |
+
+插件必须导出 `YMGUI_Plugin_Get`，并使用 `YMGUI_PLUGIN_EXPORT` 保证入口在隐藏符号
+构建和 Windows DLL 中仍然可见。插件描述符与宿主函数表均带 `struct_size` 和
+`api_version`；动态插件只通过宿主函数表调用 YMGUI，不能假设宿主程序导出了库符号。
+目录型管理器应先用 `YMGUI_Plugin_InspectDynamic` 校验并复制描述信息，再决定是否展示；
+该 API 会临时加载候选库，不能作为恶意本机代码的隔离机制。
+
+裸机默认 `YMGUI_PLUGIN_DYNAMIC=0`，不包含任何 OS 头文件；有操作系统的平台默认开启，
+也可显式设为 `0`。Android 插件应随 APK/AAB 按 ABI 打包，并从应用允许的 native
+library 或私有目录加载，不应照搬桌面的任意插件目录模型。完整构建例见
+`project_Demo/plugin_host/README.md`。
+
+## 7. 验证清单
 
 每个平台至少验证：
 
@@ -98,7 +121,7 @@ Windows/Android 交叉构建时应通过 `SDL2_DIR` 指向 SDL2 导出的 CMake 
 
 Linux 可以使用 `SDL_VIDEODRIVER=dummy` 做无头启动和截图自检，但无头模式不能替代真实窗口、Windows 和 Android 真机输入测试。
 
-## 7. 常见错误
+## 8. 常见错误
 
 - 在控件中直接处理平台事件，导致桌面和移动端行为分叉；
 - 忘记过滤 `SDL_TOUCH_MOUSEID`，一次触摸触发两次点击；
