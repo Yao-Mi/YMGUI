@@ -4,21 +4,6 @@
 
 ---
 
-## 2026-08-27：回收 YMGRE 场景编辑器所需通用能力
-
-- Button 增加默认关闭的按住连发配置。应用只需显式设置首次延迟和间隔；Button 收到上下文统一 Tick 后自行检查开关并累计时间，不创建线程或系统定时器。SDL 事件泵自动推进 Tick，裸机主循环全局注入一次即可。
-- TreeView 增加节点改名、子树删除和上下文回调。节点记录所属树，修改型 API 拒绝跨树句柄；删除仅在选中项属于被删子树时清空选择。
-- 输入层增加通用 `Wheel` 事件，分别保留横纵有符号增量并派给指针位置命中的对象；SDL 归一化 flipped 方向，不再把滚轮硬编码为字符 `+/-`。
-- 新增可裁减 `Joystick` 控件：整数 `-100..100` 二维输出、圆形限位、死区、默认回中/可选保持、changed/released 回调；基础外观开箱可用，也可用控件级 DrawCb 完全替换皮肤。虚拟摇杆 Demo 演示自定义皮肤和 AUTO/HOLD 运行时切换。
-- 修复 Joystick 首次运行时摇杆球可能缺失：`GY_malloc0` 的 `0` 表示高速内存区而非清零分配，私有数据未完整初始化会让初始坐标成为堆垃圾值。Joystick 构造时现先清零整个私有结构；内存接口同步明确“malloc0/1 均返回未初始化内存”的调用约定。
-- TextInput 取消固定 64 字节数组，改为创建时传入最大文本字节数并动态申请 `capacity+1`；不同字段可按用途独立控制 RAM，释放控件时同步释放文本缓冲。
-- TextInput 增加自动水平视口、Shift/鼠标选区、Home/End、全选及剪切板操作；长文本移动光标时文字随之平移，文字、选区和光标统一裁在输入框内部。粘贴过滤换行，并按完整 UTF-8 码点钳到容量。
-- 新增可裁减 `FileDialog` 复合模态控件，提供 `OPEN_FILE`、`SAVE_FILE`、`SELECT_DIRECTORY` 三种基础模式及可编辑路径、TreeView 懒加载浏览、上级目录、进入选中目录、刷新、新建目录、确认/取消。宽高、路径、文件名和条目容量均在创建时指定；三种模式通过同一结果回调返回完整路径。目录枚举、状态查询和建目录全部由回调注入，库本体不依赖 POSIX。删除/复制/粘贴/重命名继续由项目层按需组合。
-- TextInput 增加可选 `submitted` 回调：编辑态按 Enter 时先退出编辑，再提交；未设置时保持原有焦点轮转。FileDialog 路径栏据此支持回车跳转。SDL 将主键盘 `RETURN` 与数字小键盘 `KP_ENTER` 统一映射为 `GY_KEY_ENTER`。
-- 修复首帧整屏刷新时自绘内容可能越出控件的问题：Button 的标题/图片、List 条目统一显式收窄到自身矩形，List 容器再通过 `ClipChildren` 收窄到视口；不再依赖局部脏区碰巧充当裁剪。`demo_list` 精确把底部行裁到半个字形用于人工检查。
-
----
-
 ## 第 0 轮：架构讨论
 
 在写代码前先敲定了地基决策（渲染模型/UI 范式/目标平台/依赖策略）。关键转折点是用户指出**裸机 LCD 只有画点和 blit 两个原语**，这直接倒转了分层——软件光栅化器成为核心而非"可选后端"，GPU 后端反而降级为可选。确立了"SDL 假装成一块 LCD"的开发模式。
@@ -610,7 +595,20 @@ txt_edit 实用化时用户报的两条 + 提的四需求推动的一轮库级�
 
 新增 `YMGUI/PLUGIN` 轻量插件层与单文件 `Demo/demo_plugin.c`。插件支持版本校验、静态注册、`init/tick/deinit` 生命周期；Unix 桌面另提供可选 `dlopen` 入口。注册表内部补齐 Registered/Active/Failed 状态：重复 `LoadAll` 不会二次初始化，失败初始化立即走 `deinit` 回滚且不隐式重试，`UnloadAll` 后静态插件可重新加载，动态插件 `dlclose` 后从表中移除以避免悬空描述符，`Reset` 会先安全卸载再清表。新增 `test_plugin` 覆盖无效描述符、重复 ID、版本不匹配、容量上限、失败回滚、tick 隔离、卸载重载和活跃态 Reset。 随后拆分平台无关注册表与 OS 动态加载器，新增 `struct_size` ABI 校验、`YMGUI_PLUGIN_EXPORT` 和 `YMGUI_PLUGIN_DYNAMIC` 裁剪开关；`project_Demo/plugin_host` 实际验证 Linux `.so` 两轮加载/卸载/重载，并用 LLVM-MinGW 生成 Windows x64 `.dll/.exe`、用 NDK 生成 Android arm64 两个 `.so`，导出符号均已检查。 用户指出原 `plugin_host` 只有命令行验证、不算项目后，将其升级为 800x480 插件管理器：左侧插件清单/状态，顶部 Load/Unload，底部生命周期日志；动态 `system_info` 插件通过扩展后的宿主函数表自行创建指标卡、运行时间和 Refresh 按钮。CTest 用指针注入真实执行 Unload→Load→插件按钮，正式截图落 `docs/shots/plugin_host.png`。Windows UI EXE+DLL 与 Android arm64 SDL UI 宿主+插件 SO 均交叉构建通过。
 
-当前：26 控件（含 base）、5 类图元、33 单测全过、25 个 demo（+10 个 project_Demo 完整应用：txt_edit、files_manager、excel_edit、image_edit、music_player、video_player、dashboard、alarm_clock、context_gesture、plugin_host），clean build 0 错 0 警。EditView 容量创建期按需申报(text 堆分配,索引全 size_t,undo 默认开可关省 RAM),剪贴板 GY_CLIP_MAX 32KB,可设底色/边框;Dropdown 弹出框按最长选项自适应宽并夹屏内。Tab 焦点轮转(前序遍历、跳过 Hidden、末尾回卷,`YMGUI_FocusNext`)已落地。抗锯齿(AA)已落地:混合基石 GY_MixPx/GY_BlendPx(DrawPx.h 共享)+ Wu 斜线 + 圆/弧/实心圆 coverage(填充/粗描边走**距离场**)+ 4bpp 灰度字体,`YMGUI_ANTIALIAS` 一键可裁(默认开,单色屏强制关)。中文字体(UTF-8 回退链 + 稀疏字模 + 外部 flash 回调 + 字模来源可选)已落地,`YMGUI_FONT_CJK` 一键可裁。异步双缓冲(buf2 ping-pong,运行期字段可选)已落地。数据绑定覆盖 8 控件(标量双向 + app 订阅)。轻量布局助手(Stack/Align 一次性,`YMGUI_LAYOUT` 可裁)已落地。多行文本视图 TextView(只读可滚,Multiline/Wrap 两可选属性,仿 Table 自绘)已落地,附带 CORE 层按字节长文本图元 Draw_TextN/TextWidthN。树形视图 TreeView(节点树+展平可见数组,展开/收起+懒加载+缩进标记,仿 Table 自绘,`YMGUI_TREEVIEW` 一键可裁)已落地,由第二个 project_Demo 验证项目 files_manager(沙箱文件管理器)催生。网格控件 Grid(自绘,二维滚动+单元格/矩形选区+合并区+每格对齐+每行独立行高+插入删除行列,`YMGUI_GRID` 一键可裁)已落地,由第三个 project_Demo 验证项目 excel_edit(电子表格:纯 app 侧递归下降公式引擎+定点+全表重算)催生。可绘制位图视口 Canvas(自持 GYpx 显示缓冲直写+整数倍缩放+平移+屏↔画布映射+绘制回调+IsDrawing 喷枪逐帧,`YMGUI_CANVAS` 一键可裁)与 HSV 取色器 ColorPicker(SV 方块+色相条,整数 HSV↔RGB 无 FPU,`YMGUI_COLORPICKER` 一键可裁)已落地,由第四个 project_Demo 验证项目 image_edit(类 PS 图层画板:图层栈/融合/合成+硬/柔和/喷枪笔刷+橡皮+直线/矩形/三角/圆/折线/多边形[拖动实时预览,形状栅格化解耦 PlotFn]/填充桶/吸管+右侧图层缩略图列表[app 侧自绘,点选切层/眼睛显隐/增删层]全在 app 侧)催生。居中高亮平滑滚动列表 Roller(选中行居中高亮[按离正中线距离在普通↔高亮色间跨行渐变,滚动时高亮随内容平滑跟随不迟滞]+其余行上下排开越界裁+16.16 定点位置每帧缓动逼近目标行,程序态[SetSelected 驱动,歌词/时间/日历用]+交互态[拖动滚动抬起吸附]两用,`YMGUI_ROLLER` 一键可裁)与通用柱状图 BarChart(N 柱按值映射高度,配色 BY_HEIGHT[柱身底 lo→顶 hi 逐行竖直渐变]/PER_BAR[每柱独立调色板] × 顶标 BAR[峰值保持每帧回落]/NONE[纯柱],SetDecay(0,0)+NONE 即静态普通柱图,频谱/直方图/电平表/统计柱图通用,值由 app 喂,文字顶标交 app 叠 Label 库不引 Font,`YMGUI_BARCHART` 一键可裁)已落地,由第五个 project_Demo 验证项目 music_player(音乐播放器:ffmpeg popen 整曲解码+SDL2 声卡 SDL_QueueAudio+静音兜底+合成旋律兜底+.lrc 解析+整数 Goertzel 频段分析全在 app 侧,SDL2 音频只在 mp_audio 一个文件不进库;第 33 轮起默认加载工程自带真曲目)催生。原名 Spectrum 于第 33 轮泛化重命名为 BarChart。**独立工程验证坑**:project_Demo 各 app 有独立构建目录 `build/project_Demo/<name>/`,顶层 build 不含它们,改 app 必须单独重编再验证(第 29 轮踩过误报)。
+### 第 41 轮：输入交互、Joystick 与 FileDialog
+
+- Button 增加默认关闭的按住连发配置。应用只需显式设置首次延迟和间隔；Button 收到上下文统一 Tick 后自行检查开关并累计时间，不创建线程或系统定时器。SDL 事件泵自动推进 Tick，裸机主循环全局注入一次即可。
+- TreeView 增加节点改名、子树删除和上下文回调。节点记录所属树，修改型 API 拒绝跨树句柄；删除仅在选中项属于被删子树时清空选择。
+- 输入层增加通用 `Wheel` 事件，分别保留横纵有符号增量并派给指针位置命中的对象；SDL 归一化 flipped 方向，不再把滚轮硬编码为字符 `+/-`。
+- 新增可裁减 `Joystick` 控件：整数 `-100..100` 二维输出、圆形限位、死区、默认回中/可选保持、changed/released 回调；基础外观开箱可用，也可用控件级 DrawCb 完全替换皮肤。虚拟摇杆 Demo 演示自定义皮肤和 AUTO/HOLD 运行时切换。
+- 修复 Joystick 首次运行时摇杆球可能缺失：`GY_malloc0` 的 `0` 表示高速内存区而非清零分配，私有数据未完整初始化会让初始坐标成为堆垃圾值。Joystick 构造时现先清零整个私有结构；内存接口同步明确“malloc0/1 均返回未初始化内存”的调用约定。
+- TextInput 取消固定 64 字节数组，改为创建时传入最大文本字节数并动态申请 `capacity+1`；不同字段可按用途独立控制 RAM，释放控件时同步释放文本缓冲。
+- TextInput 增加自动水平视口、Shift/鼠标选区、Home/End、全选及剪切板操作；长文本移动光标时文字随之平移，文字、选区和光标统一裁在输入框内部。粘贴过滤换行，并按完整 UTF-8 码点钳到容量。
+- 新增可裁减 `FileDialog` 复合模态控件，提供 `OPEN_FILE`、`SAVE_FILE`、`SELECT_DIRECTORY` 三种基础模式及可编辑路径、TreeView 懒加载浏览、上级目录、进入选中目录、刷新、新建目录、确认/取消。宽高、路径、文件名和条目容量均在创建时指定；三种模式通过同一结果回调返回完整路径。目录枚举、状态查询和建目录全部由回调注入，库本体不依赖 POSIX。删除/复制/粘贴/重命名继续由项目层按需组合。
+- TextInput 增加可选 `submitted` 回调：编辑态按 Enter 时先退出编辑，再提交；未设置时保持原有焦点轮转。FileDialog 路径栏据此支持回车跳转。SDL 将主键盘 `RETURN` 与数字小键盘 `KP_ENTER` 统一映射为 `GY_KEY_ENTER`。
+- 修复首帧整屏刷新时自绘内容可能越出控件的问题：Button 的标题/图片、List 条目统一显式收窄到自身矩形，List 容器再通过 `ClipChildren` 收窄到视口；不再依赖局部脏区碰巧充当裁剪。`demo_list` 精确把底部行裁到半个字形用于人工检查。
+
+当前：28 控件（含 base）、5 类图元、35 单测全过、27 个 demo（+10 个 project_Demo 完整应用：txt_edit、files_manager、excel_edit、image_edit、music_player、video_player、dashboard、alarm_clock、context_gesture、plugin_host），clean build 0 错 0 警。EditView 容量创建期按需申报(text 堆分配,索引全 size_t,undo 默认开可关省 RAM),剪贴板 GY_CLIP_MAX 32KB,可设底色/边框;Dropdown 弹出框按最长选项自适应宽并夹屏内。Tab 焦点轮转(前序遍历、跳过 Hidden、末尾回卷,`YMGUI_FocusNext`)已落地。抗锯齿(AA)已落地:混合基石 GY_MixPx/GY_BlendPx(DrawPx.h 共享)+ Wu 斜线 + 圆/弧/实心圆 coverage(填充/粗描边走**距离场**)+ 4bpp 灰度字体,`YMGUI_ANTIALIAS` 一键可裁(默认开,单色屏强制关)。中文字体(UTF-8 回退链 + 稀疏字形 + 外部 flash 回调 + 字形来源可选)已落地,`YMGUI_FONT_CJK` 一键可裁。异步双缓冲(buf2 ping-pong,运行期字段可选)已落地。数据绑定覆盖 8 控件(标量双向 + app 订阅)。轻量布局助手(Stack/Align 一次性,`YMGUI_LAYOUT` 可裁)已落地。多行文本视图 TextView(只读可滚,Multiline/Wrap 两可选属性,仿 Table 自绘)已落地,附带 CORE 层按字节长文本图元 Draw_TextN/TextWidthN。树形视图 TreeView(节点树+展平可见数组,展开/收起+懒加载+缩进标记,仿 Table 自绘,`YMGUI_TREEVIEW` 一键可裁)已落地,由第二个 project_Demo 验证项目 files_manager(沙箱文件管理器)催生。网格控件 Grid(自绘,二维滚动+单元格/矩形选区+合并区+每格对齐+每行独立行高+插入删除行列,`YMGUI_GRID` 一键可裁)已落地,由第三个 project_Demo 验证项目 excel_edit(电子表格:纯 app 侧递归下降公式引擎+定点+全表重算)催生。可绘制位图视口 Canvas(自持 GYpx 显示缓冲直写+整数倍缩放+平移+屏↔画布映射+绘制回调+IsDrawing 喷枪逐帧,`YMGUI_CANVAS` 一键可裁)与 HSV 取色器 ColorPicker(SV 方块+色相条,整数 HSV↔RGB 无 FPU,`YMGUI_COLORPICKER` 一键可裁)已落地,由第四个 project_Demo 验证项目 image_edit(类 PS 图层画板:图层栈/融合/合成+硬/柔和/喷枪笔刷+橡皮+直线/矩形/三角/圆/折线/多边形[拖动实时预览,形状栅格化解耦 PlotFn]/填充桶/吸管+右侧图层缩略图列表[app 侧自绘,点选切层/眼睛显隐/增删层]全在 app 侧)催生。居中高亮平滑滚动列表 Roller(选中行居中高亮[按离正中线距离在普通↔高亮色间跨行渐变,滚动时高亮随内容平滑跟随不迟滞]+其余行上下排开越界裁+16.16 定点位置每帧缓动逼近目标行,程序态[SetSelected 驱动,歌词/时间/日历用]+交互态[拖动滚动抬起吸附]两用,`YMGUI_ROLLER` 一键可裁)与通用柱状图 BarChart(N 柱按值映射高度,配色 BY_HEIGHT[柱身底 lo→顶 hi 逐行竖直渐变]/PER_BAR[每柱独立调色板] × 顶标 BAR[峰值保持每帧回落]/NONE[纯柱],SetDecay(0,0)+NONE 即静态普通柱图,频谱/直方图/电平表/统计柱图通用,值由 app 喂,文字顶标交 app 叠 Label 库不引 Font,`YMGUI_BARCHART` 一键可裁)已落地,由第五个 project_Demo 验证项目 music_player(音乐播放器:ffmpeg popen 整曲解码+SDL2 声卡 SDL_QueueAudio+静音兜底+合成旋律兜底+.lrc 解析+整数 Goertzel 频段分析全在 app 侧,SDL2 音频只在 mp_audio 一个文件不进库;第 33 轮起默认加载工程自带真曲目)催生。原名 Spectrum 于第 33 轮泛化重命名为 BarChart。**独立工程验证坑**:project_Demo 各 app 有独立构建目录 `build/project_Demo/<name>/`,顶层 build 不含它们,改 app 必须单独重编再验证(第 29 轮踩过误报)。
 
 ## 待办
 
@@ -619,6 +617,6 @@ txt_edit 实用化时用户报的两条 + 提的四需求推动的一轮库级�
 - 机制：Tab 键焦点轮转;~~异步双缓冲(buf2 + FlushReady DMA 重叠)~~ **已完成(第 18 轮)**;~~布局(自动排布,免手写坐标)~~ **已完成(第 20 轮:Stack+Align 一次性助手)**。剩余可选:Grid 等分网格、cross-axis stretch(改子 w/h,当前只定位)
 - ~~字体：中文(UTF-8 解码 + 稀疏字形 + 按需子集)~~ **已完成(第 17 轮)**;灰度屏抗锯齿已随第 15 轮 AA 落地
 - 文档：`CROSS_PLATFORM_PORTING.md` 已覆盖桌面/Android SDL 桥接；仍可按具体 MCU 型号补 SPI/DMA/触摸控制器分步实战
-- 低优先修复（第 8 轮记录，暂不动）：Slider 竖直方向假设、TextInput 无横向滚动、1bpp packed 语义统一
+- 低优先修复（第 8 轮记录，暂不动）：Slider 竖直方向假设、1bpp packed 语义统一
 - 第 11 轮记录待观察：Dropdown 收起用"隐藏不释放"，弹出层对象在 top_layer 常驻至下次展开/析构；backdrop 展开会全屏标脏(正确但非最小重绘)
 - 第 12 轮记录待观察：Table 是自绘型(非子对象),行选中/滚动都在单 draw_cb 内画;大表(数千行)rowAt 是 O(n) 链表遍历,当前只画可见行故实际开销可控,若需海量行可换数组/跳表
