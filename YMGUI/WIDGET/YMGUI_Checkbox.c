@@ -97,6 +97,7 @@ GYOBJ YMGUI_Creat_Checkbox_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, 
 	gy_assert(d);
 	gy_log_explain(d == NULL, GY_LOG_Mem0, "复选框数据内存申请失败");
 	if (d == NULL) { YMGUI_Free_ObjFree(cb); return NULL; }
+	GY_memset(d, 0, sizeof(GYcb_data));
 	d->checked = 0;
 	d->text[0] = '\0';
 	d->changed = NULL;

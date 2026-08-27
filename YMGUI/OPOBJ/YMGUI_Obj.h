@@ -37,6 +37,8 @@ typedef enum
 	GY_EVENT_ContextDragging, //上下文手势拖动中(派给起点捕获对象)
 	GY_EVENT_ContextReleased, //上下文手势正常结束
 	GY_EVENT_ContextCancelled,//上下文手势被后台/失焦等取消
+	GY_EVENT_Wheel,       //滚轮输入(鼠标所在对象收,增量在 ctx->wheel_x/y)
+	GY_EVENT_Tick,        //周期时钟(当前按下对象收,经过时间在 ctx->tick_elapsed)
 }GYEvent;
 
 //对象状态位(可组合)
@@ -104,6 +106,8 @@ typedef struct GYctx
 	GYrect inv_areas[GY_INV_MAX]; //脏矩形列表(屏幕坐标,互不重叠)
 	uint8  inv_cnt;               //当前脏矩形数量
 	uint8  destroying;            //上下文销毁中:不再累计无下一帧可消费的脏区
+	int32  wheel_x, wheel_y;       //最近一次滚轮横/纵增量(对象在 GY_EVENT_Wheel 里读)
+	uint32 tick_elapsed;           //最近一次 Tick 的经过毫秒数
 }GYctx;
 
 //---- 生命周期(Creat/Free 成对,Free 树级联) ----

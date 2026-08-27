@@ -287,7 +287,7 @@ static void buildMenuBar(GYOBJ root)
 		GYOBJ lbl = YMGUI_Creat_Label_Creat(root, 396, 8, 44, 16);
 		YMGUI_Label_SetText(lbl, "Path:");
 		YMGUI_Label_SetTextColor(lbl, GY_ARGB(0xFF, 0xC0, 0xC0, 0xC8));
-		g_path_in = YMGUI_Creat_TextInput_Creat(root, 440, 4, SCR_W - 440 - 8, 24);
+		g_path_in = YMGUI_Creat_TextInput_Creat(root, 440, 4, SCR_W - 440 - 8, 24, 512);
 		YMGUI_TextInput_SetText(g_path_in, "out.txt");
 	}
 }
@@ -298,7 +298,7 @@ static void buildFindBar(GYOBJ root)
 	GYOBJ b;
 	GYcoord y1 = SCR_H - 78, y2 = SCR_H - 56;
 	//第 1 行:查找
-	g_find_in = YMGUI_Creat_TextInput_Creat(root, 8, y1, 360, 20);
+	g_find_in = YMGUI_Creat_TextInput_Creat(root, 8, y1, 360, 20, 256);
 	YMGUI_TextInput_SetChanged(g_find_in, onFindChanged);
 	g_bar[g_bar_cnt++] = g_find_in;
 	b = YMGUI_Creat_Button_Creat(root, 376, y1, 80, 20);
@@ -306,7 +306,7 @@ static void buildFindBar(GYOBJ root)
 	b = YMGUI_Creat_Button_Creat(root, 462, y1, 80, 20);
 	YMGUI_Button_SetText(b, "Next"); YMGUI_Button_SetClicked(b, onNext); g_bar[g_bar_cnt++] = b;
 	//第 2 行:替换
-	g_repl_in = YMGUI_Creat_TextInput_Creat(root, 8, y2, 360, 20);
+	g_repl_in = YMGUI_Creat_TextInput_Creat(root, 8, y2, 360, 20, 256);
 	g_bar[g_bar_cnt++] = g_repl_in;
 	b = YMGUI_Creat_Button_Creat(root, 376, y2, 80, 20);
 	YMGUI_Button_SetText(b, "Repl"); YMGUI_Button_SetClicked(b, onRepl); g_bar[g_bar_cnt++] = b;

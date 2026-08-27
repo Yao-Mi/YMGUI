@@ -110,6 +110,18 @@ void YMGUI_Inject_Key(uint32 key, uint8 pressed)
 		YMGUI_Event_Key(s_inject_ctx, key);
 }
 
+void YMGUI_Inject_Wheel(GYcoord x, GYcoord y, int32 delta_x, int32 delta_y)
+{
+	if (s_inject_ctx != NULL)
+		YMGUI_Event_Wheel(s_inject_ctx, x, y, delta_x, delta_y);
+}
+
+void YMGUI_Inject_Tick(uint32 elapsed_ms)
+{
+	if (s_inject_ctx != NULL)
+		YMGUI_Event_Tick(s_inject_ctx, elapsed_ms);
+}
+
 /**
   * @brief 双击注入入口:转调事件分发(派 GY_EVENT_DoubleClicked 给命中对象)
   */

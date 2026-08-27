@@ -40,9 +40,9 @@ int main(void)
 	YMGUI_Inject_SetCtx(ctx);
 
 	//三个可聚焦输入框(前序序 = 添加序 a→b→c)
-	GYOBJ a = YMGUI_Creat_TextInput_Creat(ctx->root, 10, 10, 120, 24);
-	GYOBJ b = YMGUI_Creat_TextInput_Creat(ctx->root, 10, 40, 120, 24);
-	GYOBJ c = YMGUI_Creat_TextInput_Creat(ctx->root, 10, 70, 120, 24);
+	GYOBJ a = YMGUI_Creat_TextInput_Creat(ctx->root, 10, 10, 120, 24, 64);
+	GYOBJ b = YMGUI_Creat_TextInput_Creat(ctx->root, 10, 40, 120, 24, 64);
+	GYOBJ c = YMGUI_Creat_TextInput_Creat(ctx->root, 10, 70, 120, 24, 64);
 
 	//1) 无焦点起步:Tab 聚焦第一个
 	CHECK(ctx->focus_obj == NULL, "初始应无焦点");

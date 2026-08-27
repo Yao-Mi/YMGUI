@@ -6,6 +6,8 @@
 //内存双档制(对标 YMCV CV_malloc0/1),移植时只改本文件 .c 的函数体,签名不动
 //  malloc0 = 小/快(高速内存 CCM/TCM):对象头、样式、事件、脏矩形表、字形表、渐变LUT
 //  malloc1 = 大/慢(低速大内存 SDRAM/PSRAM):draw buffer、framebuffer、解码图、字形位图
+//重要:后缀 0/1 表示内存区域,不表示是否清零。两种申请都返回未初始化内存,
+//     调用方必须显式初始化全部字段(结构体通常先 GY_memset(ptr, 0, sizeof(*ptr)))。
 void* GY_malloc0(size_t size);            //小数据缓冲区申请(高速区)
 void* GY_realloc0(void* ptr, size_t size);//重置长度
 void  GY_free0(void* ptr);                //释放

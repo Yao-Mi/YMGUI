@@ -67,6 +67,7 @@ GYOBJ YMGUI_Creat_Spinner_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, G
 	gy_assert(d);
 	gy_log_explain(d == NULL, GY_LOG_Mem0, "转圈控件数据内存申请失败");
 	if (d == NULL) { YMGUI_Free_ObjFree(sp); return NULL; }
+	GY_memset(d, 0, sizeof(GYsp_data));
 	d->angle = 0;
 	d->span = 90;
 	d->step = 30;

@@ -241,6 +241,7 @@ static void openMenu(GYOBJ dd)
 		gy_assert(rd);
 		gy_log_explain(rd == NULL, GY_LOG_Mem0, "选项行数据内存申请失败");
 		if (rd == NULL) { YMGUI_Free_ObjFree(row); continue; }
+		GY_memset(rd, 0, sizeof(GYopt_data));
 		rd->dd = dd;
 		rd->idx = i;
 		row->user_data = rd;
@@ -334,6 +335,7 @@ GYOBJ YMGUI_Creat_Dropdown_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, 
 	gy_assert(d);
 	gy_log_explain(d == NULL, GY_LOG_Mem0, "下拉框数据内存申请失败");
 	if (d == NULL) { YMGUI_Free_ObjFree(dd); return NULL; }
+	GY_memset(d, 0, sizeof(GYdd_data));
 	d->opt_count = 0;
 	d->selected = 0;
 	d->sel_cb = NULL;

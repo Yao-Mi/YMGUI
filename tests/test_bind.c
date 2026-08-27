@@ -195,7 +195,7 @@ int main(void)
 	//---- TextInput 双向 str:绑同步、键入写回、扇出到 label ----
 	GYsubject tv;
 	YMGUI_State_InitStr(&tv, "ab");
-	GYOBJ ti = YMGUI_Creat_TextInput_Creat(ctx->root, 10, 160, 120, 24);
+	GYOBJ ti = YMGUI_Creat_TextInput_Creat(ctx->root, 10, 160, 120, 24, 64);
 	GYOBJ lbT = YMGUI_Creat_Label_Creat(ctx->root, 10, 190, 120, 20);
 	YMGUI_TextInput_Bind(ti, &tv);
 	YMGUI_Label_Bind(lbT, &tv);      //label 绑同一 str subject

@@ -40,6 +40,7 @@ static GYcoord       s_right_start_x = 0, s_right_start_y = 0;
 //退出时若设了环境变量 YMGUI_SHOT=<path.bmp> 就存图(所有 demo 零改动即可截屏)。
 static GYpx*         s_frame = NULL;
 static GYDISP        s_disp = NULL;
+static Uint32        s_last_tick = 0;
 
 #define SDL_LCD_LONG_PRESS_MS   600u
 #define SDL_LCD_LONG_PRESS_SLOP 10
@@ -200,6 +201,7 @@ int SDL_LCD_Init(GYDISP disp, int scale)
 
 	if (SDL_Init(SDL_INIT_VIDEO) != 0)
 		return -1;
+	s_last_tick = SDL_GetTicks();
 	s_win = SDL_CreateWindow("YMGUI SDL_LCD",
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 		s_w * scale, s_h * scale, SDL_WINDOW_SHOWN);
@@ -285,6 +287,7 @@ void SDL_LCD_Destroy(void)
 	sdlRightReset();
 	s_w = 0;
 	s_h = 0;
+	s_last_tick = 0;
 	SDL_Quit();
 }
 
@@ -294,6 +297,9 @@ void SDL_LCD_Destroy(void)
   */
 int SDL_LCD_PumpEvents(void)
 {
+	Uint32 now = SDL_GetTicks();
+	YMGUI_Inject_Tick((uint32)(now - s_last_tick));
+	s_last_tick = now;
 	SDL_Event e;
 	while (SDL_PollEvent(&e))
 	{
@@ -417,6 +423,20 @@ int SDL_LCD_PumpEvents(void)
 		else if (e.type == SDL_MOUSEMOTION && e.motion.which != SDL_TOUCH_MOUSEID &&
 		         (e.motion.state & SDL_BUTTON_LMASK))
 			YMGUI_Inject_Pointer((GYcoord)(e.motion.x / s_scale), (GYcoord)(e.motion.y / s_scale), 1);//按住拖动
+		else if (e.type == SDL_MOUSEWHEEL)
+		{
+			int mouse_x = 0, mouse_y = 0;
+			int32 wheel_x = e.wheel.x;
+			int32 wheel_y = e.wheel.y;
+			if (e.wheel.direction == SDL_MOUSEWHEEL_FLIPPED)
+			{
+				wheel_x = -wheel_x;
+				wheel_y = -wheel_y;
+			}
+			SDL_GetMouseState(&mouse_x, &mouse_y);
+			YMGUI_Inject_Wheel((GYcoord)(mouse_x / s_scale), (GYcoord)(mouse_y / s_scale),
+			                   wheel_x, wheel_y);
+		}
 		//文本输入(可打印字符,已处理布局/大小写)→ 按字符注入
 		else if (e.type == SDL_TEXTINPUT)
 		{
@@ -456,7 +476,8 @@ int SDL_LCD_PumpEvents(void)
 				}
 			}
 			else if (k == SDLK_BACKSPACE) YMGUI_Inject_Key(GY_KEY_BACKSPACE, 1);
-			else if (k == SDLK_RETURN)    YMGUI_Inject_Key(GY_KEY_ENTER, 1);
+			else if (k == SDLK_RETURN || k == SDLK_KP_ENTER)
+				YMGUI_Inject_Key(GY_KEY_ENTER, 1);
 			else if (k == SDLK_DELETE)    YMGUI_Inject_Key(GY_KEY_DEL, 1);
 			else if (k == SDLK_LEFT)      YMGUI_Inject_Key(shft ? GY_KEY_SHIFT_LEFT  : GY_KEY_LEFT, 1);
 			else if (k == SDLK_RIGHT)     YMGUI_Inject_Key(shft ? GY_KEY_SHIFT_RIGHT : GY_KEY_RIGHT, 1);

@@ -23,11 +23,22 @@ static int fails = 0;
 #define CHECK(cond, msg) do { if (!(cond)) { printf("  FAIL: %s\n", msg); fails++; } } while (0)
 
 static long g_flush_set;//本帧 flush 出的非零像素累计
+static int g_check_btn_clip;
+static int g_btn_clip_leak;
 static void countFlushCb(GYdisp* d, const GYrect* area, const GYpx* buf)
 {
 	(void)d;
 	long n = (long)area->w * area->h;
-	for (long i = 0; i < n; i++) if (buf[i]) g_flush_set++;
+	for (long i = 0; i < n; i++)
+	{
+		if (buf[i]) g_flush_set++;
+		if (g_check_btn_clip && buf[i])
+		{
+			GYcoord x = area->x + (GYcoord)(i % area->w);
+			GYcoord y = area->y + (GYcoord)(i / area->w);
+			if (y >= 180 && y < 204 && (x < 100 || x >= 112)) g_btn_clip_leak = 1;
+		}
+	}
 }
 
 int main(void)
@@ -68,8 +79,18 @@ int main(void)
 	YMGUI_Refresh(ctx);
 	CHECK(g_flush_set > 100, "button body+text rendered");
 
+	//过长标题在首帧/整屏重绘时也不能画出按钮矩形。
+	GYOBJ narrow = YMGUI_Creat_Button_Creat(ctx->root, 100, 180, 12, 24);
+	YMGUI_Button_SetText(narrow, "LONG");
+	g_check_btn_clip = 1; g_btn_clip_leak = 0;
+	YMGUI_Obj_Invalidate(ctx->root);
+	YMGUI_Refresh(ctx);
+	g_check_btn_clip = 0;
+	CHECK(!g_btn_clip_leak, "long button title clipped to button bounds");
+
 	//---- 级联释放:释放 root 子树不崩,引用清理 ----
 	YMGUI_Free_ObjFree(btn);
+	YMGUI_Free_ObjFree(narrow);
 	YMGUI_Free_ObjFree(lb);
 	CHECK(ctx->root->child_head == NULL, "children detached after free");
 

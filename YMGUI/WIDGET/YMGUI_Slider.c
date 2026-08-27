@@ -134,6 +134,7 @@ GYOBJ YMGUI_Creat_Slider_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, GY
 	gy_assert(d);
 	gy_log_explain(d == NULL, GY_LOG_Mem0, "滑块数据内存申请失败");
 	if (d == NULL) { YMGUI_Free_ObjFree(sld); return NULL; }
+	GY_memset(d, 0, sizeof(GYsld_data));
 	d->min = 0;
 	d->max = 100;
 	d->value = 0;

@@ -170,6 +170,7 @@ GYOBJ YMGUI_Creat_BarChart_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, 
 	gy_assert(d);
 	gy_log_explain(d == NULL, GY_LOG_Mem0, "BarChart 数据内存申请失败");
 	if (d == NULL) { YMGUI_Free_ObjFree(bc); return NULL; }
+	GY_memset(d, 0, sizeof(GYbarchart_data));
 
 	d->n          = 16;
 	d->max        = 100;

@@ -21,7 +21,14 @@
 static int fails = 0;
 #define CHECK(cond, msg) do { if (!(cond)) { printf("  FAIL: %s\n", msg); fails++; } } while (0)
 
-static void dummyFlush(GYdisp* d, const GYrect* a, const GYpx* b) { (void)d; (void)a; (void)b; }
+static GYpx g_fb[SCR_W * SCR_H];
+static void dummyFlush(GYdisp* d, const GYrect* a, const GYpx* b)
+{
+	(void)d;
+	for (GYcoord y = 0; y < a->h; y++)
+		for (GYcoord x = 0; x < a->w; x++)
+			g_fb[(a->y + y) * SCR_W + a->x + x] = b[y * a->w + x];
+}
 
 int main(void)
 {
@@ -45,6 +52,14 @@ int main(void)
 		if (i == 0) first = it;
 	}
 	CHECK(first != NULL, "items created");
+
+	//首帧是整屏脏区:第 4 项文字跨过列表底边也必须被列表视口裁掉。
+	YMGUI_Refresh(ctx);
+	int leaked = 0;
+	for (int y = 120; y < 136; y++)
+		for (int x = 20; x < 180; x++)
+			if (g_fb[y * SCR_W + x] != 0) leaked = 1;
+	CHECK(!leaked, "first full-frame draw clips partial bottom row to list viewport");
 
 	//初始 scroll=0,第一条 abs.y == 视口 y(20)
 	GYrect abs;

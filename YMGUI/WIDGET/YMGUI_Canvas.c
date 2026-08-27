@@ -193,6 +193,7 @@ GYOBJ YMGUI_Creat_Canvas_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, GY
 	gy_assert(d);
 	gy_log_explain(d == NULL, GY_LOG_Mem0, "画布数据内存申请失败");
 	if (d == NULL) { YMGUI_Free_ObjFree(obj); return NULL; }
+	GY_memset(d, 0, sizeof(GYcanvas_data));
 
 	if (cw == 0) cw = 1;
 	if (ch == 0) ch = 1;

@@ -1,8 +1,10 @@
 #include "YMGUI_Button.h"
 #include "YMGUI_Invalidate.h"
+#include "YMGUI_Event.h"
 #include "YMGUI_DrawFill.h"
 #include "YMGUI_DrawImg.h"
 #include "YMGUI_Font.h"
+#include "YMGUI_Geom.h"
 #include "YMGUI_Mem.h"
 #include "YMGUI_Debug.h"
 #include "YMGUI_PubDefine.h"
@@ -28,7 +30,14 @@ typedef struct
 	char             text[GY_BTN_TEXT_MAX];//标题文字
 	GYIMG            src;     //图源(不拥有;非 NULL 则贴图不画文字)
 	uint8            draw_bg; //底色+边框是否画(默认 1)
+	uint32           repeat_delay;
+	uint32           repeat_interval;
+	uint32           repeat_elapsed;
+	uint8            repeat_active;
+	uint8            repeat_fired;
 }GYbtn_data;
+
+static uint8 btnRepeatTick(GYOBJ btn);
 
 /**
   * @brief 按钮绘制:按状态选色填充,画边框,再居中标题文字
@@ -52,6 +61,12 @@ static void btnDrawCb(GYOBJ obj, GYSURFACE s, const GYrect* abs)
 		YMGUI_Draw_Fill(s, &lft, border, GY_OPA_COVER);
 		YMGUI_Draw_Fill(s, &rgt, border, GY_OPA_COVER);
 	}
+	//内容必须裁在按钮内。首帧通常是整屏脏区，不能依赖脏区恰好等于按钮区域来兜底。
+	GYrect saved_clip = s->clip;
+	GYrect content_clip;
+	if (!GY_Rect_Intersect(&content_clip, abs, &saved_clip))
+		return;
+	s->clip = content_clip;
 	//图优先:设了图源就居中 blit,不画文字(播放/暂停等状态由 app 换图)
 	if (d->src != NULL && d->src->data != NULL)
 	{
@@ -69,6 +84,7 @@ static void btnDrawCb(GYOBJ obj, GYSURFACE s, const GYrect* abs)
 		GYcoord ty = abs->y + ((abs->h > th) ? (abs->h - th) / 2 : 0);
 		YMGUI_Draw_Text(s, font, tx, ty, d->text, GY_ARGB(0xFF, 0xFF, 0xFF, 0xFF));
 	}
+	s->clip = saved_clip;
 }
 
 /**
@@ -80,13 +96,29 @@ static void btnEventCb(GYOBJ obj, GYEvent e)
 	switch (e)
 	{
 	case GY_EVENT_Pressed:
+		d->repeat_elapsed = 0;
+		d->repeat_active = 0;
+		d->repeat_fired = 0;
+		YMGUI_Obj_Invalidate(obj);//状态变了,重绘
+		break;
 	case GY_EVENT_Released:
+		d->repeat_elapsed = 0;
+		d->repeat_active = 0;
+		YMGUI_Obj_Invalidate(obj);//状态变了,重绘
+		break;
 	case GY_EVENT_ReleasedOff:
+		d->repeat_elapsed = 0;
+		d->repeat_active = 0;
+		d->repeat_fired = 0;
 		YMGUI_Obj_Invalidate(obj);//状态变了,重绘
 		break;
 	case GY_EVENT_Clicked:
-		if (d->clicked != NULL)
+		if (!d->repeat_fired && d->clicked != NULL)
 			d->clicked(obj);
+		d->repeat_fired = 0;
+		break;
+	case GY_EVENT_Tick:
+		btnRepeatTick(obj);
 		break;
 	default:
 		break;
@@ -119,12 +151,18 @@ GYOBJ YMGUI_Creat_Button_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, GY
 	gy_assert(d);
 	gy_log_explain(d == NULL, GY_LOG_Mem0, "按钮数据内存申请失败");
 	if (d == NULL) { YMGUI_Free_ObjFree(btn); return NULL; }
+	GY_memset(d, 0, sizeof(GYbtn_data));
 	d->normal  = GY_ARGB(0xFF, 0x40, 0x80, 0xC0);
 	d->pressed = GY_ARGB(0xFF, 0x20, 0x50, 0x90);
 	d->clicked = NULL;
 	d->text[0] = '\0';
 	d->src     = NULL;
 	d->draw_bg = 1;
+	d->repeat_delay = 0;
+	d->repeat_interval = 0;
+	d->repeat_elapsed = 0;
+	d->repeat_active = 0;
+	d->repeat_fired = 0;
 
 	btn->type = GY_OBJ_Button;
 	btn->user_data = d;
@@ -156,6 +194,55 @@ void YMGUI_Button_SetClicked(GYOBJ btn, GYbtn_clicked_cb cb)
 	gy_assert(btn && btn->user_data);
 	gy_log_explain((btn == NULL) || (btn->user_data == NULL), GY_LOG_PtrI, "按钮或其数据不存在");
 	((GYbtn_data*)btn->user_data)->clicked = cb;
+}
+
+void YMGUI_Button_SetRepeat(GYOBJ btn, uint32 delay_ms, uint32 interval_ms)
+{
+	gy_assert(btn && btn->user_data);
+	gy_log_explain((btn == NULL) || (btn->user_data == NULL), GY_LOG_PtrI, "按钮或其数据不存在");
+	if (btn == NULL || btn->user_data == NULL)
+		return;
+	GYbtn_data* d = (GYbtn_data*)btn->user_data;
+	d->repeat_delay = delay_ms;
+	d->repeat_interval = interval_ms;
+	d->repeat_elapsed = 0;
+	d->repeat_active = 0;
+	if (!(btn->state & GY_STATE_Pressed))
+		d->repeat_fired = 0;
+}
+
+static uint8 btnRepeatTick(GYOBJ btn)
+{
+	GYbtn_data* d = (GYbtn_data*)btn->user_data;
+	if (d->repeat_delay == 0 || d->repeat_interval == 0)
+		return 0;
+
+	//拖出按钮后暂停并重置延迟；已发生过连发的标志保留，避免拖回抬起又补一次 Clicked。
+	GYOBJ hit = YMGUI_HitTest(btn->ctx, btn->ctx->point_x, btn->ctx->point_y);
+	while (hit != NULL && hit != btn)
+		hit = hit->parent;
+	if (hit != btn)
+	{
+		d->repeat_elapsed = 0;
+		d->repeat_active = 0;
+		return 0;
+	}
+
+	uint32 elapsed_ms = btn->ctx->tick_elapsed;
+	uint32 threshold = d->repeat_active ? d->repeat_interval : d->repeat_delay;
+	uint32 remaining = UINT32_MAX - d->repeat_elapsed;
+	uint32 total = elapsed_ms > remaining ? UINT32_MAX : d->repeat_elapsed + elapsed_ms;
+	if (total < threshold)
+	{
+		d->repeat_elapsed = total;
+		return 0;
+	}
+	d->repeat_elapsed = (total - threshold) % d->repeat_interval;
+	d->repeat_active = 1;
+	d->repeat_fired = 1;
+	if (d->clicked != NULL)
+		d->clicked(btn);
+	return 1;
 }
 
 /**

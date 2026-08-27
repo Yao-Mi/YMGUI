@@ -175,6 +175,7 @@ GYobserver* YMGUI_Bind_Attach(GYOBJ widget, GYSUBJECT s, GYobserver_apply_cb app
 	gy_log_explain(o == NULL, GY_LOG_Mem0, "观察者内存申请失败");
 	if (o == NULL)
 		return NULL;
+	GY_memset(o, 0, sizeof(GYobserver));
 	o->subject = s;
 	o->target = widget;
 	o->apply = apply;
@@ -232,6 +233,7 @@ GYobserver* YMGUI_State_AddObserver(GYSUBJECT s, GYsubject_observer_cb cb, void*
 	gy_log_explain(o == NULL, GY_LOG_Mem0, "观察者内存申请失败");
 	if (o == NULL)
 		return NULL;
+	GY_memset(o, 0, sizeof(GYobserver));
 	o->subject = s;
 	o->target = NULL;      //app 观察者标志
 	o->apply = NULL;

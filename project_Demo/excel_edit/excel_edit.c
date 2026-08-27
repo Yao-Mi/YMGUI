@@ -1114,7 +1114,7 @@ int main(int argc, char** argv)
 	GYOBJ fxlbl = YMGUI_Creat_Label_Creat(g_ctx->root, 64, 8, 24, 18);
 	YMGUI_Label_SetTextColor(fxlbl, GY_ARGB(0xFF, 0xC0, 0xC0, 0xC8));
 	YMGUI_Label_SetText(fxlbl, "fx:");
-	g_fx = YMGUI_Creat_TextInput_Creat(g_ctx->root, 92, 6, SCR_W - 100, 24);
+	g_fx = YMGUI_Creat_TextInput_Creat(g_ctx->root, 92, 6, SCR_W - 100, 24, 512);
 	YMGUI_TextInput_SetChanged(g_fx, onFxChanged);
 
 	//---- 第二排工具栏:插入/合并/对齐/尺寸按钮 ----
@@ -1145,7 +1145,7 @@ int main(int argc, char** argv)
 	YMGUI_Grid_SetEditCb(g_grid, onGridEdit);
 
 	//---- 就地编辑框(浮层,平时隐藏)----
-	g_editor = YMGUI_Creat_TextInput_Creat(g_ctx->root, 0, 0, 90, 22);
+	g_editor = YMGUI_Creat_TextInput_Creat(g_ctx->root, 0, 0, 90, 22, 512);
 	YMGUI_TextInput_SetChanged(g_editor, onEditorChanged);
 	YMGUI_Obj_SetHidden(g_editor, 1);
 

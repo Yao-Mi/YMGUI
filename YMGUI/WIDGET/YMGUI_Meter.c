@@ -147,6 +147,7 @@ GYOBJ YMGUI_Creat_Meter_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, GYc
 	gy_assert(d);
 	gy_log_explain(d == NULL, GY_LOG_Mem0, "仪表盘数据内存申请失败");
 	if (d == NULL) { YMGUI_Free_ObjFree(m); return NULL; }
+	GY_memset(d, 0, sizeof(GYmeter_data));
 	d->min = 0;
 	d->max = 100;
 	d->value = 0;

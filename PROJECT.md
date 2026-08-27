@@ -33,15 +33,15 @@ YMGUI 是一个**面向嵌入式/裸机优先**的跨平台 GUI 库，用 C99 + 
 
 ## 四、当前进度快照
 
-**代码规模**：约 8900 行库代码（不含 Demo/测试），39 个 `.c` 源文件（.c+.h 共 78）。测试源码集中在 `tests/`，独立于 `Demo/` 示例。
+**代码规模**：约 1.4 万行库代码（不含 Demo/测试），48 个 `.c` 源文件（.c+.h 共 96）。测试源码集中在 `tests/`，独立于 `Demo/` 示例。
 
-**已完成控件（26 个，含 base 容器）**：
+**已完成控件（27 个，含 base 容器）**：
 - 基础：base 容器、Button、Label
 - 表单：Checkbox、Switch、Slider、Bar(进度条)
 - 显示：Image、Arc(环形进度)、Spinner(加载转圈)、Meter(仪表盘)、Chart(折线图)
-- 输入：TextInput(单行文本输入框,支持中文 UTF-8)、EditView(可编辑多行文本框,光标/换行/中文/选区/撤销/查找替换,容量创建期按需申报,索引全 size_t,撤销可关省 RAM,可设底色/边框)
+- 输入：TextInput(单行文本输入框,UTF-8/自动水平视口/选区/剪贴板,容量创建期指定)、EditView(可编辑多行文本框,光标/换行/中文/选区/撤销/查找替换,容量创建期按需申报,索引全 size_t,撤销可关省 RAM,可设底色/边框)、Joystick(二维虚拟摇杆,-100..100 圆形输出/死区/可选回中/自定义绘制,`YMGUI_JOYSTICK` 可裁)
 - 文本：TextView(只读多行文本视图,可滚动,Multiline/Wrap 可选)
-- 容器：List(可滚动列表)、Table(表格)、Tabview(标签页)、Dropdown(下拉/弹出层)、TreeView(树形视图,展开/收起+缩进标记+懒加载,`YMGUI_TREEVIEW` 可裁)、Grid(可编辑单元格网格,二维滚动/选区/合并/插删行列,`YMGUI_GRID` 可裁)
+- 容器：List(可滚动列表)、Table(表格)、Tabview(标签页)、Dropdown(下拉/弹出层)、TreeView(树形视图,展开/收起+缩进标记+懒加载,`YMGUI_TREEVIEW` 可裁)、Grid(可编辑单元格网格,二维滚动/选区/合并/插删行列,`YMGUI_GRID` 可裁)、FileDialog(三模式文件对话框,文件系统回调注入,`YMGUI_FILEDIALOG` 可裁)
 - 绘图:Canvas(可绘制位图视口,自持 GYpx 缓冲直写/整数倍缩放/平移/绘制回调/喷枪逐帧驱动,`YMGUI_CANVAS` 可裁)、ColorPicker(HSV 取色器,SV 方块+色相条,整数 HSV↔RGB 无 FPU,`YMGUI_COLORPICKER` 可裁)
 - 动效/数据可视化:Roller(居中高亮平滑滚动列表,歌词/时间/日历通用,程序驱动+可选拖动交互,`YMGUI_ROLLER` 可裁)、BarChart(通用柱状图,频谱/直方图/电平表/统计柱图通用,配色 BY_HEIGHT/PER_BAR × 顶标 BAR/NONE,值由 app 喂,`YMGUI_BARCHART` 可裁)
 
@@ -53,7 +53,7 @@ YMGUI 是一个**面向嵌入式/裸机优先**的跨平台 GUI 库，用 C99 + 
 
 **中文字体三轴决策**：①CJK 开/关=编译期宏 `YMGUI_FONT_CJK`；②字集范围(方案1 精简 ~75字/9.6KB · 方案3 GB2312 6763字/~866KB)=字模**生成期** `gen_font.py` 参数(非宏)；③字模存放(内部 rodata / 外部 flash)=**运行期** `GYfont.glyph_read` 回调。方案切换不改任何控件代码，详见 `API.md` 表格。
 
-**测试**：33 个 CTest（32 个无 SDL + 1 个 SDL dummy 输入映射测试），全部通过；25 个 SDL 交互 demo；10 个 project_Demo 完整应用(txt_edit、files_manager、excel_edit、image_edit、music_player、video_player、dashboard、alarm_clock、context_gesture、plugin_host)。`plugin_host` 是 800×480 插件管理器，包含插件清单、状态、加载/卸载、活动日志和由动态插件自建的内容页；验证 Linux `.so` 实际交互，以及 Windows `.dll`、Android arm64 `.so` 交叉构建。
+**测试**：34 个 CTest（33 个无 SDL + 1 个 SDL dummy 输入映射测试），全部通过；26 个 SDL 交互 demo；10 个 project_Demo 完整应用(txt_edit、files_manager、excel_edit、image_edit、music_player、video_player、dashboard、alarm_clock、context_gesture、plugin_host)。`plugin_host` 是 800×480 插件管理器，包含插件清单、状态、加载/卸载、活动日志和由动态插件自建的内容页；验证 Linux `.so` 实际交互，以及 Windows `.dll`、Android arm64 `.so` 交叉构建。
 
 **验证环境**：Ubuntu 22.04 + gcc 11.4 + cmake 3.22 + SDL2 2.0.20。
 

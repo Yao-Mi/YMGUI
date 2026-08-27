@@ -170,6 +170,33 @@ void YMGUI_Event_Key(GYCTX ctx, uint32 key)
 }
 
 /**
+  * @brief 处理一次滚轮:记录位置和增量，派给指针所在对象
+  */
+void YMGUI_Event_Wheel(GYCTX ctx, GYcoord x, GYcoord y, int32 delta_x, int32 delta_y)
+{
+	gy_assert(ctx);
+	gy_log_explain(ctx == NULL, GY_LOG_PtrI, "上下文不存在");
+	if (ctx == NULL || (delta_x == 0 && delta_y == 0))
+		return;
+	ctx->point_x = x;
+	ctx->point_y = y;
+	ctx->wheel_x = delta_x;
+	ctx->wheel_y = delta_y;
+	sendEvent(YMGUI_HitTest(ctx, x, y), GY_EVENT_Wheel);
+}
+
+void YMGUI_Event_Tick(GYCTX ctx, uint32 elapsed_ms)
+{
+	gy_assert(ctx);
+	gy_log_explain(ctx == NULL, GY_LOG_PtrI, "上下文不存在");
+	if (ctx == NULL || elapsed_ms == 0)
+		return;
+	ctx->tick_elapsed = elapsed_ms;
+	if (ctx->point_pressed && ctx->pressed_obj != NULL)
+		sendEvent(ctx->pressed_obj, GY_EVENT_Tick);
+}
+
+/**
   * @brief 处理一次双击:命中对象派 GY_EVENT_DoubleClicked。
   *        双击前 SDL 已注入过一次 press+release(第一击),对象已聚焦/进编辑,
   *        故这里只在命中对象上补派双击事件(编辑器据此选词)。

@@ -49,6 +49,13 @@ void YMGUI_Event_Pointer(GYCTX ctx, GYcoord x, GYcoord y, uint8 pressed);
 //处理一次按键(由 HAL 的 YMGUI_Inject_Key 转调):派发 GY_EVENT_Key 给焦点对象
 void YMGUI_Event_Key(GYCTX ctx, uint32 key);
 
+//处理一次滚轮:x,y 为指针屏幕坐标,delta_x/y 为平台归一化后的滚动增量。
+//命中对象收到 GY_EVENT_Wheel,增量保存在 ctx->wheel_x/y。
+void YMGUI_Event_Wheel(GYCTX ctx, GYcoord x, GYcoord y, int32 delta_x, int32 delta_y);
+
+//推进上下文时钟:只向当前普通按下对象派 GY_EVENT_Tick。
+void YMGUI_Event_Tick(GYCTX ctx, uint32 elapsed_ms);
+
 //处理一次双击(由 HAL 的 YMGUI_Inject_DoubleClick 转调):命中测试后派 GY_EVENT_DoubleClicked。
 //  先按普通指针语义确保对象已聚焦/光标已定位(内部走一次 press+release),再派双击。
 void YMGUI_Event_DoubleClick(GYCTX ctx, GYcoord x, GYcoord y);

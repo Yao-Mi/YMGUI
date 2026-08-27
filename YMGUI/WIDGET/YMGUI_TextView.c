@@ -286,6 +286,7 @@ GYOBJ YMGUI_Creat_TextView_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, 
 	gy_assert(d);
 	gy_log_explain(d == NULL, GY_LOG_Mem0, "文本视图数据内存申请失败");
 	if (d == NULL) { YMGUI_Free_ObjFree(tv); return NULL; }
+	GY_memset(d, 0, sizeof(GYtv_data));
 	d->text = NULL;
 	d->text_len = 0;
 	d->lines = NULL;

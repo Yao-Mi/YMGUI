@@ -6,6 +6,7 @@
 #include "YMGUI_Invalidate.h"
 #include "YMGUI_Label.h"
 #include "YMGUI_List.h"
+#include "YMGUI_Font.h"
 #include "SDL_LCD.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -37,7 +38,7 @@ int main(int argc, char** argv)
 	disp.buf1 = (GYpx*)GY_malloc1(buf_px * sizeof(GYpx));
 	disp.buf2 = NULL; disp.user_data = NULL;
 
-	SDL_LCD_Init(&disp, 2);
+	SDL_LCD_Init(&disp, 1);
 	GYCTX ctx = YMGUI_Creat_Ctx_Creat(&disp, SCR_W, SCR_H);
 	YMGUI_Obj_SetBgColor(ctx->root, GY_ARGB(0xFF, 0x18, 0x18, 0x20));
 
@@ -45,7 +46,9 @@ int main(int argc, char** argv)
 	YMGUI_Label_SetText(title, "Drag to scroll");
 	YMGUI_Label_SetTextColor(title, GY_ARGB(0xFF, 0xF0, 0xC0, 0x40));
 
-	GYOBJ list = YMGUI_Creat_List_Creat(ctx->root, 40, 32, 240, 190);
+	//故意少一个默认字高:比上一版再少半个字,用于直观看列表视口裁剪是否可靠。
+	GYOBJ list = YMGUI_Creat_List_Creat(ctx->root, 40, 32, 240,
+		190 - YMGUI_Font_Default.cell_h);
 	for (int i = 0; i < 20; i++)
 	{
 		char buf[24];

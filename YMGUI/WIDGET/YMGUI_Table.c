@@ -297,6 +297,7 @@ GYOBJ YMGUI_Creat_Table_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, GYc
 	gy_assert(d);
 	gy_log_explain(d == NULL, GY_LOG_Mem0, "表格数据内存申请失败");
 	if (d == NULL) { YMGUI_Free_ObjFree(tbl); return NULL; }
+	GY_memset(d, 0, sizeof(GYtbl_data));
 	d->col_count = 0;
 	d->row_head = NULL;
 	d->row_tail = NULL;
@@ -355,6 +356,7 @@ int YMGUI_Table_AddRow(GYOBJ table)
 	gy_log_explain(r == NULL, GY_LOG_Mem0, "表格行内存申请失败");
 	if (r == NULL)
 		return -1;
+	GY_memset(r, 0, sizeof(GYtbl_row));
 	r->next = NULL;
 	for (uint16 c = 0; c < GY_TABLE_MAX_COLS; c++)
 		r->cells[c][0] = '\0';

@@ -49,6 +49,10 @@ void YMGUI_Inject_SetCtx(void* ctx);
 void YMGUI_Inject_Pointer(GYcoord x, GYcoord y, uint8 pressed);
 //按键:key 键码,pressed=1 按下/0 抬起
 void YMGUI_Inject_Key(uint32 key, uint8 pressed);
+//滚轮:x,y 为当前指针屏幕坐标,delta_x/y 为滚动增量
+void YMGUI_Inject_Wheel(GYcoord x, GYcoord y, int32 delta_x, int32 delta_y);
+//推进 GUI 时钟；SDL 端由事件泵自动调用，裸机主循环按实际经过毫秒数调用
+void YMGUI_Inject_Tick(uint32 elapsed_ms);
 //双击(触摸/鼠标 button.clicks==2):x,y 屏幕坐标。派 GY_EVENT_DoubleClicked 给命中对象
 void YMGUI_Inject_DoubleClick(GYcoord x, GYcoord y);
 //取消当前指针捕获:派 ReleasedOff 并清按下状态,不产生 Clicked

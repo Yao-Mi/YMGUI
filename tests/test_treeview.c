@@ -58,6 +58,10 @@ static int g_activate_calls = 0;
 static GYTREENODE g_activated = NULL;
 static void onActivate(GYOBJ tree, GYTREENODE node) { (void)tree; g_activate_calls++; g_activated = node; }
 
+static int g_context_calls = 0;
+static GYTREENODE g_context_node = NULL;
+static void onContext(GYOBJ tree, GYTREENODE node) { (void)tree; g_context_calls++; g_context_node = node; }
+
 int main(void)
 {
 	GYdisp disp;
@@ -76,6 +80,7 @@ int main(void)
 	YMGUI_TreeView_SetExpandCb(tree, onExpand);
 	YMGUI_TreeView_SetSelectCb(tree, onSelect);
 	YMGUI_TreeView_SetActivateCb(tree, onActivate);
+	YMGUI_TreeView_SetContextCb(tree, onContext);
 
 	//---- 节点增删 + 可见数组 ----
 	GYTREENODE root_dir = YMGUI_TreeView_AddNode(tree, NULL, "src", 1);
@@ -86,6 +91,9 @@ int main(void)
 	CHECK(YMGUI_TreeView_NodeIsDir(file1) == 0, "readme.txt 是文件");
 	CHECK(strcmp(YMGUI_TreeView_NodeName(root_dir), "src") == 0, "节点名 src");
 	CHECK(YMGUI_TreeView_NodeParent(root_dir) == NULL, "根层级 parent 为 NULL");
+	CHECK(YMGUI_TreeView_SetNodeName(tree, file1, "guide.txt") == 1, "节点改名成功");
+	CHECK(strcmp(YMGUI_TreeView_NodeName(file1), "guide.txt") == 0, "节点显示新名称");
+	CHECK(YMGUI_TreeView_SetNodeName(tree, file1, "readme.txt") == 1, "节点名称可改回");
 
 	//---- 手动加子节点(不经懒加载),深度递增 ----
 	GYTREENODE sub = YMGUI_TreeView_AddNode(tree, root_dir, "sub", 1);
@@ -124,6 +132,8 @@ int main(void)
 	YMGUI_Inject_Pointer(120, 20, 0);//抬起 → Clicked
 	CHECK(g_select_calls == 1, "点击触发选中回调一次");
 	CHECK(YMGUI_TreeView_GetSelectedNode(tree) == root_dir, "选中的是第 0 行 src");
+	YMGUI_Event_ContextRequest(ctx, 120, 20);
+	CHECK(g_context_calls == 1 && g_context_node == root_dir, "上下文请求命中节点");
 
 	//---- 点三角只切展开不选中:src 当前展开,点其三角(x≈14)应收起 ----
 	int sel_before = g_select_calls;
@@ -146,6 +156,27 @@ int main(void)
 	CHECK(g_activate_calls == act_before, "双击目录不触发激活");
 	CHECK(g_expand_calls == exp_before + 1, "双击目录首展开触发懒加载");
 	CHECK(YMGUI_TreeView_IsExpanded(sub) == 1, "双击展开了 sub");
+
+	//---- 删除节点:无关选择保持；删除选中节点的祖先才清选择 ----
+	GYTREENODE removable = YMGUI_TreeView_AddNode(tree, NULL, "remove_me", 0);
+	uint16 count_before_remove = YMGUI_TreeView_GetVisibleCount(tree);
+	YMGUI_TreeView_SetSelectedNode(tree, file1);
+	CHECK(YMGUI_TreeView_RemoveNode(tree, removable) == 1, "RemoveNode 删除节点成功");
+	CHECK(YMGUI_TreeView_GetVisibleCount(tree) == count_before_remove - 1, "删除后可见行减少");
+	CHECK(YMGUI_TreeView_GetSelectedNode(tree) == file1, "删除无关节点保留选择");
+	GYTREENODE delete_parent = YMGUI_TreeView_AddNode(tree, NULL, "delete_parent", 1);
+	GYTREENODE delete_child = YMGUI_TreeView_AddNode(tree, delete_parent, "delete_child", 0);
+	YMGUI_TreeView_SetSelectedNode(tree, delete_child);
+	CHECK(YMGUI_TreeView_RemoveNode(tree, delete_parent) == 1, "RemoveNode 删除子树成功");
+	CHECK(YMGUI_TreeView_GetSelectedNode(tree) == NULL, "删除选中节点所在子树清选择");
+
+	//另一棵树的节点不能被当前树修改或删除。
+	GYOBJ other_tree = YMGUI_Creat_TreeView_Creat(ctx->root, 0, 0, 5, 5);
+	GYTREENODE other_parent = YMGUI_TreeView_AddNode(other_tree, NULL, "other", 1);
+	GYTREENODE other_child = YMGUI_TreeView_AddNode(other_tree, other_parent, "child", 0);
+	CHECK(!YMGUI_TreeView_SetNodeName(tree, other_child, "bad"), "SetNodeName rejects foreign node");
+	CHECK(!YMGUI_TreeView_RemoveNode(tree, other_child), "RemoveNode rejects foreign node");
+	CHECK(strcmp(YMGUI_TreeView_NodeName(other_child), "child") == 0, "foreign tree remains intact");
 
 	//---- 滚动钳制:内容够高时 scroll 上下限 ----
 	//造更多节点撑高内容

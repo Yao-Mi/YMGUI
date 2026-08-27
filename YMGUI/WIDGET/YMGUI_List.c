@@ -2,6 +2,7 @@
 #include "YMGUI_Invalidate.h"
 #include "YMGUI_DrawFill.h"
 #include "YMGUI_Font.h"
+#include "YMGUI_Geom.h"
 #include "YMGUI_Mem.h"
 #include "YMGUI_Debug.h"
 #include "YMGUI_PubDefine.h"
@@ -98,6 +99,11 @@ static void listFreeCb(GYOBJ obj)
 static void itemDrawCb(GYOBJ obj, GYSURFACE s, const GYrect* abs)
 {
 	GYitem_data* d = (GYitem_data*)obj->user_data;
+	GYrect saved_clip = s->clip;
+	GYrect item_clip;
+	if (!GY_Rect_Intersect(&item_clip, abs, &saved_clip))
+		return;
+	s->clip = item_clip;
 	YMGUI_Draw_Fill(s, abs, obj->bg_color, GY_OPA_COVER);
 	GYFONT font = &YMGUI_Font_Default;
 	GYcoord ty = abs->y + ((abs->h > font->cell_h) ? (abs->h - font->cell_h) / 2 : 0);
@@ -105,6 +111,7 @@ static void itemDrawCb(GYOBJ obj, GYSURFACE s, const GYrect* abs)
 	//分隔线(底部 1px)
 	GYrect sep = {abs->x, abs->y + abs->h - 1, abs->w, 1};
 	YMGUI_Draw_Fill(s, &sep, GY_ARGB(0xFF, 0x40, 0x40, 0x48), GY_OPA_COVER);
+	s->clip = saved_clip;
 }
 
 /**
@@ -134,6 +141,7 @@ GYOBJ YMGUI_Creat_List_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, GYco
 	gy_assert(d);
 	gy_log_explain(d == NULL, GY_LOG_Mem0, "列表数据内存申请失败");
 	if (d == NULL) { YMGUI_Free_ObjFree(list); return NULL; }
+	GY_memset(d, 0, sizeof(GYlist_data));
 	d->content_h = 0;
 	d->drag_start_y = 0;
 	d->drag_start_scr = 0;
@@ -166,6 +174,7 @@ GYOBJ YMGUI_List_AddItem(GYOBJ list, const char* text, GYcoord item_h)
 	gy_assert(id);
 	gy_log_explain(id == NULL, GY_LOG_Mem0, "条目数据内存申请失败");
 	if (id == NULL) { YMGUI_Free_ObjFree(item); return NULL; }
+	GY_memset(id, 0, sizeof(GYitem_data));
 	uint16 i = 0;
 	while (text[i] != '\0' && i < 47) { id->text[i] = text[i]; i++; }
 	id->text[i] = '\0';

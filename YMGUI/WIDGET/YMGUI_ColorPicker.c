@@ -206,6 +206,7 @@ GYOBJ YMGUI_Creat_ColorPicker_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord 
 	gy_assert(d);
 	gy_log_explain(d == NULL, GY_LOG_Mem0, "取色器数据内存申请失败");
 	if (d == NULL) { YMGUI_Free_ObjFree(obj); return NULL; }
+	GY_memset(d, 0, sizeof(GYcp_data));
 
 	d->h = 0; d->s = 255; d->v = 255; d->cb = NULL;
 	//切区:右侧 HUE_BAR_W 给色相条,其余给 SV 方块(相对控件左上)

@@ -45,9 +45,9 @@ int main(int argc, char** argv)
 	YMGUI_Label_SetText(title, "Click a box, then type");
 	YMGUI_Label_SetTextColor(title, GY_ARGB(0xFF, 0xF0, 0xC0, 0x40));
 
-	GYOBJ ti1 = YMGUI_Creat_TextInput_Creat(ctx->root, 40, 60, 240, 28);
+	GYOBJ ti1 = YMGUI_Creat_TextInput_Creat(ctx->root, 40, 60, 240, 28, 64);
 	YMGUI_TextInput_SetText(ti1, "edit me");
-	GYOBJ ti2 = YMGUI_Creat_TextInput_Creat(ctx->root, 40, 110, 240, 28);
+	GYOBJ ti2 = YMGUI_Creat_TextInput_Creat(ctx->root, 40, 110, 240, 28, 64);
 	(void)ti2;
 
 	YMGUI_Inject_SetCtx(ctx);

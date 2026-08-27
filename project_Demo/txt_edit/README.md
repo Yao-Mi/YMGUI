@@ -49,7 +49,7 @@ SDL_VIDEODRIVER=dummy ./build/project_Demo/txt_edit/txt_edit 6  # 无头跑 6 �
 
 ## 仍存的缺口
 
-1. **TextInput 单行上限 64 字(`GY_TI_TEXT_MAX`)**,且无横向滚动——查找/替换框输入超长会顶到上限。
+1. **TextInput 无横向滚动**——容量已可在创建时按字段指定，但长文本会画出输入框可视区域。
 2. **EditView 文本定容 `GY_EV_TEXT_MAX=2048`**,不动态扩容(裸机优先取舍),超容量插入静默忽略。
 3. **撤销仅单级**:连按 Ctrl+Z 在"当前/上一态"间切换,不是多级历史栈。
 4. **查找不分大小写、无正则**:纯字节子串匹配。

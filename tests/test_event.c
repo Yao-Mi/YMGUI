@@ -34,7 +34,9 @@ static int     g_capture_during_request;
 static int     g_capture_during_finish;
 static int     g_released_off;
 static int     g_event_clicked;
+static int     g_wheel_count;
 static GYcoord g_context_x, g_context_y;
+static int32   g_wheel_x, g_wheel_y;
 
 static void testFlushCb(GYdisp* d, const GYrect* area, const GYpx* buf)
 {
@@ -75,6 +77,12 @@ static void onEvent(GYOBJ obj, GYEvent e)
 		g_released_off++;
 	else if (e == GY_EVENT_Clicked)
 		g_event_clicked++;
+	else if (e == GY_EVENT_Wheel)
+	{
+		g_wheel_count++;
+		g_wheel_x = obj->ctx->wheel_x;
+		g_wheel_y = obj->ctx->wheel_y;
+	}
 }
 
 static void resetFlush(void)
@@ -131,6 +139,34 @@ int main(void)
 	YMGUI_Inject_Pointer(110, 100, 1);//按下
 	YMGUI_Inject_Pointer(10, 10, 0);  //移出后抬起
 	CHECK(g_clicked == 1, "release off-button does NOT click");
+
+	//---- Button 连发默认关闭；显式开启后按延迟/间隔触发，松开不补 Click ----
+	YMGUI_Inject_Pointer(110, 100, 1);
+	YMGUI_Inject_Tick(1000);
+	CHECK(g_clicked == 1, "button repeat is disabled by default");
+	YMGUI_Inject_Pointer(110, 100, 0);
+	CHECK(g_clicked == 2, "disabled repeat keeps normal click");
+	YMGUI_Button_SetRepeat(btn, 400, 80);
+	YMGUI_Inject_Pointer(110, 100, 1);
+	YMGUI_Inject_Tick(399);
+	CHECK(g_clicked == 2, "button repeat waits for delay");
+	YMGUI_Inject_Tick(1);
+	CHECK(g_clicked == 3, "button repeat fires at delay");
+	YMGUI_Inject_Tick(240);
+	CHECK(g_clicked == 4, "one tick emits at most one repeat");
+	YMGUI_Inject_Pointer(110, 100, 0);
+	CHECK(g_clicked == 4, "release after repeat does not add click");
+	YMGUI_Button_SetRepeat(btn, 0, 0);
+
+	//---- Wheel:派给指针位置命中的对象，横纵增量彼此独立 ----
+	GYOBJ wheel_target = YMGUI_Creat_Obj_Creat(ctx->root, 230, 10, 60, 40);
+	wheel_target->event_cb = onEvent;
+	YMGUI_Inject_Wheel(240, 20, -2, 3);
+	CHECK(g_wheel_count == 1, "wheel dispatched once to hit object");
+	CHECK(g_wheel_x == -2 && g_wheel_y == 3, "wheel preserves x/y signed deltas");
+	CHECK(ctx->point_x == 240 && ctx->point_y == 20, "wheel stores pointer position");
+	YMGUI_Inject_Wheel(240, 20, 0, 0);
+	CHECK(g_wheel_count == 1, "zero wheel delta is ignored");
 
 	//---- 上下文请求:只命中派发,不改变焦点/按下状态 ----
 	GYOBJ target = YMGUI_Creat_Obj_Creat(ctx->root, 10, 10, 50, 40);

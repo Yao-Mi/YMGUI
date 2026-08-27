@@ -76,6 +76,7 @@ GYCTX YMGUI_Creat_Ctx_Creat(void* disp, GYcoord w, GYcoord h)
 	gy_log_explain(ctx == NULL, GY_LOG_Mem0, "上下文内存申请失败");
 	if (ctx == NULL)
 		return NULL;//gy_assert 不中止,须显式返回
+	GY_memset(ctx, 0, sizeof(GYctx));
 
 	ctx->disp = disp;
 	ctx->pressed_obj = NULL;
@@ -85,6 +86,9 @@ GYCTX YMGUI_Creat_Ctx_Creat(void* disp, GYcoord w, GYcoord h)
 	ctx->point_y = 0;
 	ctx->point_pressed = 0;
 	ctx->last_key = 0;
+	ctx->wheel_x = 0;
+	ctx->wheel_y = 0;
+	ctx->tick_elapsed = 0;
 	ctx->inv_cnt = 0;
 	ctx->destroying = 0;
 

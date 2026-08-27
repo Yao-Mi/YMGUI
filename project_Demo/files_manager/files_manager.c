@@ -381,7 +381,7 @@ static void buildToolbar(GYOBJ root)
 	YMGUI_Label_SetText(lbl, "Name:");
 	YMGUI_Label_SetTextColor(lbl, GY_ARGB(0xFF, 0xC0, 0xC0, 0xC8));
 	x += 46;
-	g_name_in = YMGUI_Creat_TextInput_Creat(root, x, y, 200, bh);
+	g_name_in = YMGUI_Creat_TextInput_Creat(root, x, y, 200, bh, 255);
 	YMGUI_TextInput_SetText(g_name_in, "new_folder");
 }
 

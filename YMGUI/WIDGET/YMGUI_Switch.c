@@ -76,6 +76,7 @@ GYOBJ YMGUI_Creat_Switch_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, GY
 	gy_assert(d);
 	gy_log_explain(d == NULL, GY_LOG_Mem0, "开关数据内存申请失败");
 	if (d == NULL) { YMGUI_Free_ObjFree(sw); return NULL; }
+	GY_memset(d, 0, sizeof(GYsw_data));
 	d->on = 0;
 	d->changed = NULL;
 

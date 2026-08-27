@@ -182,6 +182,9 @@ target_link_libraries(test_canvas ymgui m)
 add_executable(test_colorpicker ${CMAKE_SOURCE_DIR}/tests/test_colorpicker.c)
 target_link_libraries(test_colorpicker ymgui m)
 
+add_executable(test_joystick ${CMAKE_SOURCE_DIR}/tests/test_joystick.c)
+target_link_libraries(test_joystick ymgui m)
+
 add_executable(test_roller ${CMAKE_SOURCE_DIR}/tests/test_roller.c)
 target_link_libraries(test_roller ymgui m)
 
@@ -191,6 +194,10 @@ target_link_libraries(test_barchart ymgui m)
 # 无 SDL 的模态对话框单测(输入模态锁死/吞底层点击/按钮回调+隐藏/解锁后可点/多按钮 index/CtxFree 兜底不崩)
 add_executable(test_msgbox ${CMAKE_SOURCE_DIR}/tests/test_msgbox.c)
 target_link_libraries(test_msgbox ymgui m)
+
+# 无 SDL 的文件对话框单测(三模式/导航/容量/新建目录/覆盖确认,虚拟文件系统回调)
+add_executable(test_filedialog ${CMAKE_SOURCE_DIR}/tests/test_filedialog.c)
+target_link_libraries(test_filedialog ymgui m)
 
 # 插件注册表生命周期单测（注册/失败回滚/卸载重载/容量边界）
 add_executable(test_plugin ${CMAKE_SOURCE_DIR}/tests/test_plugin.c)
@@ -284,6 +291,14 @@ add_executable(demo_canvas
 target_include_directories(demo_canvas PRIVATE ${SDL2_INCLUDE_DIRS})
 target_link_libraries(demo_canvas ymgui ${SDL2_LIBRARIES} m)
 
+# 虚拟摇杆 demo(鼠标/触摸拖动 + 圆形限位 + 松手回中 + 标准化输出)
+add_executable(demo_joystick
+	${CMAKE_SOURCE_DIR}/SDL_LCD/SDL_LCD.c
+	${CMAKE_SOURCE_DIR}/Demo/demo_joystick.c
+)
+target_include_directories(demo_joystick PRIVATE ${SDL2_INCLUDE_DIRS})
+target_link_libraries(demo_joystick ymgui ${SDL2_LIBRARIES} m)
+
 # HSV 取色器 demo
 add_executable(demo_colorpicker
 	${CMAKE_SOURCE_DIR}/SDL_LCD/SDL_LCD.c
@@ -358,6 +373,14 @@ add_executable(demo_msgbox
 target_include_directories(demo_msgbox PRIVATE ${SDL2_INCLUDE_DIRS})
 target_link_libraries(demo_msgbox ymgui ${SDL2_LIBRARIES} m)
 
+# 文件对话框 demo(SDL + POSIX 文件系统适配层;库本体仍不依赖 POSIX)
+add_executable(demo_filedialog
+	${CMAKE_SOURCE_DIR}/SDL_LCD/SDL_LCD.c
+	${CMAKE_SOURCE_DIR}/Demo/demo_filedialog.c
+)
+target_include_directories(demo_filedialog PRIVATE ${SDL2_INCLUDE_DIRS})
+target_link_libraries(demo_filedialog ymgui ${SDL2_LIBRARIES} m)
+
 # 交互 demo(SDL 假 LCD,鼠标点击按钮)
 add_executable(demo_button
 	${CMAKE_SOURCE_DIR}/SDL_LCD/SDL_LCD.c
@@ -415,7 +438,9 @@ add_test(NAME test_treeview COMMAND test_treeview)
 add_test(NAME test_grid COMMAND test_grid)
 add_test(NAME test_canvas COMMAND test_canvas)
 add_test(NAME test_colorpicker COMMAND test_colorpicker)
+add_test(NAME test_joystick COMMAND test_joystick)
 add_test(NAME test_roller COMMAND test_roller)
 add_test(NAME test_barchart COMMAND test_barchart)
 add_test(NAME test_msgbox COMMAND test_msgbox)
+add_test(NAME test_filedialog COMMAND test_filedialog)
 add_test(NAME test_plugin COMMAND test_plugin)

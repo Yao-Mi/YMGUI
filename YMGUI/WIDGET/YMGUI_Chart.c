@@ -156,6 +156,7 @@ GYOBJ YMGUI_Creat_Chart_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, GYc
 	gy_assert(d);
 	gy_log_explain(d == NULL, GY_LOG_Mem0, "折线图数据内存申请失败");
 	if (d == NULL) { YMGUI_Free_ObjFree(chart); return NULL; }
+	GY_memset(d, 0, sizeof(GYchart_data));
 	d->min = 0;
 	d->max = 100;
 	d->point_cnt = 10;

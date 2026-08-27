@@ -286,6 +286,7 @@ GYOBJ YMGUI_Creat_Roller_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, GY
 	gy_assert(d);
 	gy_log_explain(d == NULL, GY_LOG_Mem0, "Roller 数据内存申请失败");
 	if (d == NULL) { YMGUI_Free_ObjFree(r); return NULL; }
+	GY_memset(d, 0, sizeof(GYroller_data));
 
 	d->lines    = NULL;
 	d->count    = 0;
@@ -478,4 +479,3 @@ uint8 YMGUI_Roller_Tick(GYOBJ roller)
 }
 
 #endif // YMGUI_ROLLER
-

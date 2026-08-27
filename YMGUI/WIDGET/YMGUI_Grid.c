@@ -673,6 +673,7 @@ GYOBJ YMGUI_Creat_Grid_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, GYco
 	gy_assert(d);
 	gy_log_explain(d == NULL, GY_LOG_Mem0, "网格数据内存申请失败");
 	if (d == NULL) { YMGUI_Free_ObjFree(g); return NULL; }
+	GY_memset(d, 0, sizeof(GYgrid_data));
 
 	if (rows == 0) rows = 1;
 	if (cols == 0) cols = 1;

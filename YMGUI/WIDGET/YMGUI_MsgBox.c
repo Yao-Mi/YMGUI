@@ -336,6 +336,7 @@ GYOBJ YMGUI_Creat_MsgBox_Creat(GYCTX ctx)
 	gy_assert(d);
 	gy_log_explain(d == NULL, GY_LOG_Mem0, "对话框数据内存申请失败");
 	if (d == NULL) { YMGUI_Free_ObjFree(mb); return NULL; }
+	GY_memset(d, 0, sizeof(GYmb_data));
 	d->title[0] = '\0';
 	d->text[0] = '\0';
 	d->btn_count = 0;
@@ -475,5 +476,4 @@ void YMGUI_MsgBox_SetColors(GYOBJ mb, GYcolor backdrop, GYcolor card,
 }
 
 #endif // YMGUI_MSGBOX
-
 

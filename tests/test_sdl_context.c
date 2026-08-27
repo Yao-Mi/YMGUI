@@ -12,6 +12,8 @@
 static int fails;
 static GYEvent events[32];
 static int event_count;
+static uint32 key_values[4];
+static int key_count;
 #define CHECK(cond, msg) do { if (!(cond)) { printf("  FAIL: %s\n", msg); fails++; } } while (0)
 
 static void flushCb(GYdisp* d, const GYrect* area, const GYpx* buf)
@@ -22,11 +24,22 @@ static void flushCb(GYdisp* d, const GYrect* area, const GYpx* buf)
 
 static void onEvent(GYOBJ obj, GYEvent e)
 {
-	(void)obj;
+	if (e == GY_EVENT_Key && key_count < (int)(sizeof(key_values) / sizeof(key_values[0])))
+		key_values[key_count++] = obj->ctx->last_key;
 	if ((e == GY_EVENT_ContextRequested || e == GY_EVENT_ContextDragging ||
 	     e == GY_EVENT_ContextReleased || e == GY_EVENT_ContextCancelled) &&
 	    event_count < (int)(sizeof(events) / sizeof(events[0])))
 		events[event_count++] = e;
+}
+
+static void pushKey(SDL_Keycode key)
+{
+	SDL_Event e;
+	SDL_zero(e);
+	e.type = SDL_KEYDOWN;
+	e.key.state = SDL_PRESSED;
+	e.key.keysym.sym = key;
+	SDL_PushEvent(&e);
 }
 
 static void resetEvents(void)
@@ -83,6 +96,15 @@ int main(void)
 	YMGUI_Inject_SetCtx(ctx);
 
 	CHECK(SDL_LCD_Init(&disp, 1) == 0, "SDL LCD initializes with dummy driver");
+
+	//主键盘 Enter 与数字小键盘 Enter 必须统一为同一个 YMGUI 虚拟键。
+	key_count = 0;
+	YMGUI_SetFocus(ctx, ctx->root);
+	pushKey(SDLK_RETURN);
+	pushKey(SDLK_KP_ENTER);
+	SDL_LCD_PumpEvents();
+	CHECK(key_count == 2 && key_values[0] == GY_KEY_ENTER && key_values[1] == GY_KEY_ENTER,
+	      "main and keypad Enter both map to GY_KEY_ENTER");
 
 	//右键短点击:只在抬起时派一次 Request。
 	resetEvents();

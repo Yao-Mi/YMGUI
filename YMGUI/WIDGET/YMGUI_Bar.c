@@ -66,6 +66,7 @@ GYOBJ YMGUI_Creat_Bar_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, GYcoo
 	gy_assert(d);
 	gy_log_explain(d == NULL, GY_LOG_Mem0, "进度条数据内存申请失败");
 	if (d == NULL) { YMGUI_Free_ObjFree(bar); return NULL; }
+	GY_memset(d, 0, sizeof(GYbar_data));
 	d->min = 0;
 	d->max = 100;
 	d->value = 0;

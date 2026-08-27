@@ -70,6 +70,7 @@ GYOBJ YMGUI_Creat_Label_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, GYc
 	gy_assert(d);
 	gy_log_explain(d == NULL, GY_LOG_Mem0, "标签数据内存申请失败");
 	if (d == NULL) { YMGUI_Free_ObjFree(lb); return NULL; }
+	GY_memset(d, 0, sizeof(GYlabel_data));
 	d->text[0] = '\0';
 	d->text_color = GY_ARGB(0xFF, 0xF0, 0xF0, 0xF0);
 	d->bg_enable = 0;

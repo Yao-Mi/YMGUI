@@ -45,7 +45,7 @@ int main(void)
 	GYCTX ctx = YMGUI_Creat_Ctx_Creat(&disp, SCR_W, SCR_H);
 	YMGUI_Inject_SetCtx(ctx);
 
-	GYOBJ ti = YMGUI_Creat_TextInput_Creat(ctx->root, 20, 40, 200, 26);//y=40..66
+	GYOBJ ti = YMGUI_Creat_TextInput_Creat(ctx->root, 20, 40, 200, 26, 12);//y=40..66
 
 	//---- 未聚焦时按键不应改变文本 ----
 	typeStr("no");
@@ -112,6 +112,45 @@ int main(void)
 	//Del 删光标处整码点('好')
 	YMGUI_Inject_Key(GY_KEY_DEL, 1);
 	CHECK(strcmp(YMGUI_TextInput_GetText(ti), "你们A") == 0, "DEL deletes whole CJK codepoint");
+
+	//---- 创建期容量:最多保存 capacity 字节,内部另留 '\0' ----
+	YMGUI_TextInput_SetText(ti, "123456789012345");
+	CHECK(strcmp(YMGUI_TextInput_GetText(ti), "123456789012") == 0, "SetText truncates to configured capacity");
+	typeStr("X");
+	CHECK(strcmp(YMGUI_TextInput_GetText(ti), "123456789012") == 0, "typing stops at configured capacity");
+
+	//---- 水平视口:长文本光标在尾部时自动前移文字 ----
+	GYOBJ narrow = YMGUI_Creat_TextInput_Creat(ctx->root, 130, 100, 48, 24, 32);
+	YMGUI_TextInput_SetText(narrow, "abcdefghijklmnop");
+	CHECK(YMGUI_TextInput_GetScrollX(narrow) > 0, "long single-line text scrolls to keep end cursor visible");
+
+	//---- Shift 选区 + 剪贴板动作 ----
+	YMGUI_TextInput_SetText(ti, "abcdef");
+	YMGUI_SetFocus(ctx, ti);
+	ti->state |= GY_STATE_Editing;
+	YMGUI_Inject_Key(GY_KEY_SHIFT_LEFT, 1);
+	YMGUI_Inject_Key(GY_KEY_SHIFT_LEFT, 1);
+	char selected[8];
+	CHECK(YMGUI_TextInput_HasSelection(ti), "Shift+Left creates selection");
+	CHECK(YMGUI_TextInput_GetSelectionText(ti, selected, sizeof(selected)) == 2 && strcmp(selected, "ef") == 0,
+	      "selection text is reported");
+	YMGUI_Inject_Key(GY_KEY_COPY, 1);
+	CHECK(strcmp(YMGUI_Clipboard_GetText(), "ef") == 0, "Ctrl+C copies textinput selection");
+	YMGUI_Inject_Key(GY_KEY_CUT, 1);
+	CHECK(strcmp(YMGUI_TextInput_GetText(ti), "abcd") == 0, "Ctrl+X removes selected text");
+	YMGUI_Clipboard_SetText("X\nY\rZ");
+	YMGUI_Inject_Key(GY_KEY_PASTE, 1);
+	CHECK(strcmp(YMGUI_TextInput_GetText(ti), "abcdXYZ") == 0, "single-line paste filters CR/LF");
+	YMGUI_Inject_Key(GY_KEY_SEL_ALL, 1);
+	typeStr("Q");
+	CHECK(strcmp(YMGUI_TextInput_GetText(ti), "Q") == 0, "typing replaces selected text");
+
+	//---- 鼠标拖动选择 ----
+	YMGUI_TextInput_SetText(ti, "abcdef");
+	YMGUI_Inject_Pointer(25, 52, 1);
+	YMGUI_Inject_Pointer(60, 52, 1);
+	YMGUI_Inject_Pointer(60, 52, 0);
+	CHECK(YMGUI_TextInput_HasSelection(ti), "mouse drag creates selection");
 
 	YMGUI_Free_CtxFree(ctx);
 	GY_free1(disp.buf1);

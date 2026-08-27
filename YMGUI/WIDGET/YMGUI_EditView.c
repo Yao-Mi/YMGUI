@@ -886,6 +886,7 @@ GYOBJ YMGUI_Creat_EditView_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, 
 	gy_assert(d);
 	gy_log_explain(d == NULL, GY_LOG_Mem0, "可编辑文本框数据内存申请失败");
 	if (d == NULL) { YMGUI_Free_ObjFree(ev); return NULL; }
+	GY_memset(d, 0, sizeof(GYev_data));
 	if (capacity == 0) capacity = 1;//至少放得下一个 '\0'
 	d->capacity = capacity;
 	//正文缓冲 + 撤销镜像(默认开)都按 capacity+1 从大数据区分配

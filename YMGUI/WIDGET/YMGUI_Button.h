@@ -23,6 +23,8 @@ GYOBJ YMGUI_Creat_Button_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, GY
 void  YMGUI_Button_SetColors(GYOBJ btn, GYcolor normal, GYcolor pressed);
 //设置点击回调
 void  YMGUI_Button_SetClicked(GYOBJ btn, GYbtn_clicked_cb cb);
+//启用按住连发；delay_ms 后首次触发，之后每 interval_ms 触发。任一参数为 0 表示关闭
+void  YMGUI_Button_SetRepeat(GYOBJ btn, uint32 delay_ms, uint32 interval_ms);
 //设置按钮标题文字(居中显示)
 void  YMGUI_Button_SetText(GYOBJ btn, const char* text);
 //设置按钮图源(居中 blit,不拥有像素,调用方保证存活;NULL=清图回退文字)。设了图则不画文字
