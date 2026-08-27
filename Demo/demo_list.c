@@ -26,6 +26,8 @@
 #define SCR_W 320
 #define SCR_H 240
 #define BAND_H 60
+#define ITEM_H 32
+#define FULL_ROWS 5
 
 int main(int argc, char** argv)
 {
@@ -46,14 +48,15 @@ int main(int argc, char** argv)
 	YMGUI_Label_SetText(title, "Drag to scroll");
 	YMGUI_Label_SetTextColor(title, GY_ARGB(0xFF, 0xF0, 0xC0, 0x40));
 
-	//故意少一个默认字高:比上一版再少半个字,用于直观看列表视口裁剪是否可靠。
-	GYOBJ list = YMGUI_Creat_List_Creat(ctx->root, 40, 32, 240,
-		190 - YMGUI_Font_Default.cell_h);
+	//第 6 行只显示上半个字形:5 个整行 + 行内上留白 + 半个字高。
+	GYcoord list_h = FULL_ROWS * ITEM_H +
+		(ITEM_H - YMGUI_Font_Default.cell_h) / 2 + YMGUI_Font_Default.cell_h / 2;
+	GYOBJ list = YMGUI_Creat_List_Creat(ctx->root, 40, 32, 240, list_h);
 	for (int i = 0; i < 20; i++)
 	{
 		char buf[24];
 		snprintf(buf, sizeof(buf), "List item #%d", i);
-		YMGUI_List_AddItem(list, buf, 32);
+		YMGUI_List_AddItem(list, buf, ITEM_H);
 	}
 
 	YMGUI_Inject_SetCtx(ctx);
