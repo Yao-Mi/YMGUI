@@ -252,6 +252,7 @@ GYOBJ YMGUI_Creat_FileDialog_Creat(GYCTX ctx, GYcoord width, GYcoord height,
 void  YMGUI_FileDialog_SetFS(GYOBJ fd, const GYfiledialog_fs* fs, void* fs_user);
 void  YMGUI_FileDialog_SetResultCb(GYOBJ fd, GYfiledialog_result_cb cb, void* user);
 void  YMGUI_FileDialog_SetOverwriteCb(GYOBJ fd, GYfiledialog_overwrite_cb cb);
+void  YMGUI_FileDialog_SetFilterCb(GYOBJ fd, GYfiledialog_filter_cb cb, void* user);
 uint8 YMGUI_FileDialog_Show(GYOBJ fd, GYfiledialog_mode mode,
         const char* initial_path, const char* initial_name);
 void  YMGUI_FileDialog_Close(GYOBJ fd);
@@ -267,6 +268,8 @@ uint8 YMGUI_FileDialog_NewDirectory(GYOBJ fd, const char* name);
 `GY_FILEDIALOG_MAX_ENTRIES=1024`，可在配置中调小。`GYfiledialog_fs`
 注入 `open_dir/read_dir/close_dir/stat_path/make_dir`，因此库本体不包含 `dirent/stat` 依赖；
 SDL/POSIX 适配示例见 `Demo/demo_filedialog.c`。`read_dir` 返回 `1=读到条目、0=结束、-1=错误`。
+可选过滤回调对当前目录和 TreeView 懒加载目录同时生效，返回 `1` 显示、`0` 隐藏；
+它只控制显示，不限制手动输入的路径、文件名或最终确认结果，传 `NULL` 可关闭过滤。
 `OPEN_FILE` 只返回已有普通文件，`SAVE_FILE` 只返回目标路径且不写文件，已有目标需可选覆盖回调确认，
 `SELECT_DIRECTORY` 返回当前或选中目录。删除、复制、粘贴、重命名不属于基础控件，按项目需求在应用层组合。
 目录树按需展开下一级；`Go` 与 `Up` 对称，优先进入树中选中的目录，没有选中目录时则提交

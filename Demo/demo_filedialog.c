@@ -44,6 +44,12 @@ static uint8 posixStat(void* u, const char* path, uint8* exists, uint8* is_dir)
 static uint8 posixMkdir(void* u, const char* path) { (void)u; return mkdir(path, 0755) == 0; }
 static uint8 allowOverwrite(GYOBJ fd, const char* path, void* u)
 { (void)fd; (void)u; printf("overwrite confirmed by demo: %s\n", path); return 1; }
+static uint8 visibleEntry(GYOBJ fd, GYfiledialog_mode mode, const char* parent,
+		const GYfiledialog_entry* entry, void* u)
+{
+	(void)fd; (void)mode; (void)parent; (void)u;
+	return entry->name[0] != '.'; // Demo 隐藏点文件，目录枚举回调仍保持通用。
+}
 static void result(GYOBJ fd, uint8 accepted, const char* path, void* u)
 {
 	(void)u; char text[64];
@@ -88,6 +94,7 @@ int main(int argc, char** argv)
 	GYfiledialog_fs fs = {posixOpen, posixRead, posixClose, posixStat, posixMkdir};
 	YMGUI_FileDialog_SetFS(dialog, &fs, NULL); YMGUI_FileDialog_SetResultCb(dialog, result, NULL);
 	YMGUI_FileDialog_SetOverwriteCb(dialog, allowOverwrite);
+	YMGUI_FileDialog_SetFilterCb(dialog, visibleEntry, NULL);
 	while (SDL_LCD_PumpEvents())
 	{
 		YMGUI_Refresh(ctx); SDL_LCD_Delay(16);

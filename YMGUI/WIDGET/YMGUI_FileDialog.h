@@ -41,6 +41,9 @@ typedef void  (*GYfiledialog_result_cb)(GYOBJ dialog, uint8 accepted,
 		const char* path, void* user);
 typedef uint8 (*GYfiledialog_overwrite_cb)(GYOBJ dialog, const char* path,
 		void* user);
+// 仅控制条目是否显示，不参与手动输入路径或最终确认校验。返回 1=显示，0=隐藏。
+typedef uint8 (*GYfiledialog_filter_cb)(GYOBJ dialog, GYfiledialog_mode mode,
+		const char* parent_path, const GYfiledialog_entry* entry, void* user);
 
 // 三个容量均不含结尾 '\0';创建时一次性分配,运行中不随目录内容扩容。
 GYOBJ YMGUI_Creat_FileDialog_Creat(GYCTX ctx, GYcoord width, GYcoord height,
@@ -48,6 +51,7 @@ GYOBJ YMGUI_Creat_FileDialog_Creat(GYCTX ctx, GYcoord width, GYcoord height,
 void YMGUI_FileDialog_SetFS(GYOBJ dialog, const GYfiledialog_fs* fs, void* fs_user);
 void YMGUI_FileDialog_SetResultCb(GYOBJ dialog, GYfiledialog_result_cb cb, void* user);
 void YMGUI_FileDialog_SetOverwriteCb(GYOBJ dialog, GYfiledialog_overwrite_cb cb);
+void YMGUI_FileDialog_SetFilterCb(GYOBJ dialog, GYfiledialog_filter_cb cb, void* user);
 
 uint8 YMGUI_FileDialog_Show(GYOBJ dialog, GYfiledialog_mode mode,
 		const char* initial_path, const char* initial_name);

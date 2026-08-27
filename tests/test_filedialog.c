@@ -54,6 +54,15 @@ static void resultCb(GYOBJ fd, uint8 ok, const char* path, void* u)
 { (void)fd; (void)u; result_count++; accepted = ok; snprintf(result_path, sizeof(result_path), "%s", path ? path : ""); }
 static uint8 overwrite_no(GYOBJ fd, const char* p, void* u) { (void)fd; (void)p; (void)u; return 0; }
 static uint8 overwrite_yes(GYOBJ fd, const char* p, void* u) { (void)fd; (void)p; (void)u; return 1; }
+typedef struct { int calls, child_calls; GYfiledialog_mode mode; } FilterState;
+static uint8 directoriesOnly(GYOBJ fd, GYfiledialog_mode mode, const char* parent,
+		const GYfiledialog_entry* entry, void* u)
+{
+	(void)fd; FilterState* state = (FilterState*)u;
+	state->calls++; state->mode = mode;
+	if (strcmp(parent, "/docs") == 0) state->child_calls++;
+	return entry->is_dir;
+}
 static void click(GYCTX ctx, GYcoord x, GYcoord y)
 { YMGUI_Event_Pointer(ctx, x, y, 1); YMGUI_Event_Pointer(ctx, x, y, 0); }
 
@@ -131,6 +140,18 @@ int main(void)
 	CHECK(ctx->focus_obj && !(ctx->focus_obj->state & GY_STATE_Editing), "Enter exits path edit mode");
 	CHECK(YMGUI_FileDialog_GetEntryCount(fd) == 1, "Enter refreshes destination tree");
 	YMGUI_FileDialog_Close(fd);
+
+	//显示过滤独立于文件系统枚举；当前目录和 TreeView 懒加载使用同一规则。
+	FilterState filter_state = {0};
+	YMGUI_FileDialog_SetFilterCb(fd, directoriesOnly, &filter_state);
+	CHECK(YMGUI_FileDialog_Show(fd, GY_FILE_DIALOG_SAVE_FILE, "/", "manual.txt"), "show with filter");
+	CHECK(YMGUI_FileDialog_GetEntryCount(fd) == 1, "filter hides root files");
+	CHECK(filter_state.mode == GY_FILE_DIALOG_SAVE_FILE, "filter receives current mode");
+	click(ctx, 32, 98); //展开 docs，guide.md 也应经过过滤回调
+	CHECK(filter_state.child_calls == 1, "filter runs for lazy tree entries");
+	CHECK(strcmp(YMGUI_FileDialog_GetName(fd), "manual.txt") == 0, "display filter does not alter manual name");
+	YMGUI_FileDialog_Close(fd);
+	YMGUI_FileDialog_SetFilterCb(fd, NULL, NULL);
 
 	CHECK(YMGUI_FileDialog_Show(fd, GY_FILE_DIALOG_SAVE_FILE, "/", ""), "show for mkdir");
 	CHECK(ctx->focus_obj != NULL, "show takes keyboard focus");

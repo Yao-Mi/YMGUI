@@ -28,7 +28,9 @@ typedef struct
 	void* fs_user;
 	GYfiledialog_result_cb result_cb;
 	GYfiledialog_overwrite_cb overwrite_cb;
+	GYfiledialog_filter_cb filter_cb;
 	void* cb_user;
+	void* filter_user;
 	GYfiledialog_mode mode;
 	size_t path_cap, name_cap;
 	uint16 entry_cap, entry_count, node_count;
@@ -82,6 +84,14 @@ static uint8 joinPath(GYfd_data* d, const char* base, const char* name)
 {
 	copyText(d->joined, d->path_cap + 1, base);
 	return appendName(d->joined, d->path_cap + 1, name);
+}
+
+static uint8 entryVisible(GYOBJ fd, const char* parent_path,
+		const GYfiledialog_entry* entry)
+{
+	GYfd_data* d = (GYfd_data*)fd->user_data;
+	return !d->filter_cb || d->filter_cb(fd, d->mode, parent_path, entry,
+		d->filter_user);
 }
 
 static void parentPath(char* path)
@@ -156,6 +166,7 @@ static void treeExpand(GYOBJ tree, GYTREENODE node)
 		if (rc <= 0) break;
 		d->scratch_name[d->name_cap] = '\0';
 		if (!d->scratch_name[0] || strcmp(d->scratch_name, ".") == 0 || strcmp(d->scratch_name, "..") == 0) continue;
+		if (!entryVisible(fd, d->joined, &e)) continue;
 		if (!addTreeNode(d, node, d->scratch_name, e.is_dir)) { rc = -1; break; }
 	}
 	d->fs.close_dir(d->fs_user, dir);
@@ -220,6 +231,7 @@ uint8 YMGUI_FileDialog_Refresh(GYOBJ fd)
 		if (rc <= 0) break;
 		e->name[d->name_cap] = '\0';
 		if (!e->name[0] || strcmp(e->name, ".") == 0 || strcmp(e->name, "..") == 0) continue;
+		if (!entryVisible(fd, d->path, e)) continue;
 		d->entry_count++;
 	}
 	d->fs.close_dir(d->fs_user, dir);
@@ -440,15 +452,18 @@ void YMGUI_FileDialog_SetResultCb(GYOBJ fd, GYfiledialog_result_cb cb, void* use
 { if (fd && fd->user_data) { GYfd_data* d = fd->user_data; d->result_cb = cb; d->cb_user = user; } }
 void YMGUI_FileDialog_SetOverwriteCb(GYOBJ fd, GYfiledialog_overwrite_cb cb)
 { if (fd && fd->user_data) ((GYfd_data*)fd->user_data)->overwrite_cb = cb; }
+void YMGUI_FileDialog_SetFilterCb(GYOBJ fd, GYfiledialog_filter_cb cb, void* user)
+{ if (fd && fd->user_data) { GYfd_data* d = fd->user_data; d->filter_cb = cb; d->filter_user = user; } }
 
 uint8 YMGUI_FileDialog_Show(GYOBJ fd, GYfiledialog_mode mode, const char* path, const char* name)
 {
 	if (!fd || !fd->user_data || mode > GY_FILE_DIALOG_SELECT_DIRECTORY || !path) return 0;
 	GYfd_data* d = fd->user_data;
 	if (strlen(path) > d->path_cap || (name && strlen(name) > d->name_cap)) return 0;
+	d->mode = mode;
 	copyText(d->old_path, d->path_cap + 1, d->path); copyText(d->path, d->path_cap + 1, path);
 	if (!YMGUI_FileDialog_Refresh(fd)) { copyText(d->path, d->path_cap + 1, d->old_path); return 0; }
-	d->mode = mode; YMGUI_TextInput_SetText(d->path_input, d->path); YMGUI_TextInput_SetText(d->name_input, name ? name : "");
+	YMGUI_TextInput_SetText(d->path_input, d->path); YMGUI_TextInput_SetText(d->name_input, name ? name : "");
 	YMGUI_Button_SetText(d->btn_ok, mode == GY_FILE_DIALOG_OPEN_FILE ? "Open" : mode == GY_FILE_DIALOG_SAVE_FILE ? "Save" : "Select");
 	setStatus(fd, ""); YMGUI_Obj_SetHidden(fd, 0); YMGUI_SetFocus(fd->ctx, d->path_input); return 1;
 }
