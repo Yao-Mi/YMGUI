@@ -4,7 +4,7 @@
 
 ---
 
-## 第 17 轮：RGB888 framebuffer 与双格式构建
+## 第 42 轮：RGB888 framebuffer 与双格式构建
 
 - 新增 `YMGUI_COLOR_DEPTH=24`：`GYpx` 为 packed 的 3 字节 RGB888（内存顺序 R、G、B），补齐颜色转换、alpha 混合、图片 colorkey、SDL `RGB24` 输出。
 - 保留并验证 `YMGUI_COLOR_DEPTH=16` 的 RGB565 路径；像素比较统一使用 `GY_PxEqual`，清零使用 `GY_PX_ZERO`，避免把 RGB888 结构体当整数访问。
