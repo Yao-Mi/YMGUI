@@ -41,6 +41,8 @@ static GYcoord       s_right_start_x = 0, s_right_start_y = 0;
 static GYpx*         s_frame = NULL;
 static GYDISP        s_disp = NULL;
 static Uint32        s_last_tick = 0;
+static SDL_LCD_CloseRequestCb s_close_request_cb = NULL;
+static void*                  s_close_request_user = NULL;
 
 #define SDL_LCD_LONG_PRESS_MS   600u
 #define SDL_LCD_LONG_PRESS_SLOP 10
@@ -241,6 +243,12 @@ fail:
 	return -1;
 }
 
+void SDL_LCD_SetCloseRequestCb(SDL_LCD_CloseRequestCb cb, void* user)
+{
+	s_close_request_cb = cb;
+	s_close_request_user = user;
+}
+
 /**
   * @brief 销毁
   */
@@ -290,6 +298,8 @@ void SDL_LCD_Destroy(void)
 	s_w = 0;
 	s_h = 0;
 	s_last_tick = 0;
+	s_close_request_cb = NULL;
+	s_close_request_user = NULL;
 	SDL_Quit();
 }
 
@@ -310,7 +320,9 @@ int SDL_LCD_PumpEvents(void)
 			sdlTouchCancel();
 			sdlRightCancel();
 			YMGUI_Inject_PointerCancel();
-			return 0;
+			if (s_close_request_cb == NULL || s_close_request_cb(s_close_request_user))
+				return 0;
+			continue;
 		}
 		if (e.type == SDL_APP_WILLENTERBACKGROUND ||
 		    e.type == SDL_APP_DIDENTERBACKGROUND ||

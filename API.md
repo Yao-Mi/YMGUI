@@ -47,6 +47,10 @@ int main(void)
 }
 ```
 
+桌面端需要在标题栏关闭时检查未保存内容，可注册
+`SDL_LCD_SetCloseRequestCb(cb, user)`。回调返回非 0 允许主循环退出，返回 0
+取消本次关闭；未注册时保持默认直接退出。回调内不应销毁 SDL 资源。
+
 裸机上：去掉 SDL_LCD，主循环里自己轮询触摸/按键调 `YMGUI_Inject_Pointer/Key`，用定时器/vsync 节奏调 `YMGUI_Refresh`。
 
 ## 上下文 / 对象 / 生命周期（OPOBJ）

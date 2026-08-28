@@ -14,6 +14,7 @@ static GYEvent events[32];
 static int event_count;
 static uint32 key_values[4];
 static int key_count;
+static int close_calls;
 #define CHECK(cond, msg) do { if (!(cond)) { printf("  FAIL: %s\n", msg); fails++; } } while (0)
 
 static void flushCb(GYdisp* d, const GYrect* area, const GYpx* buf)
@@ -80,6 +81,20 @@ static void pushFinger(Uint32 type, float x, float y)
 	e.tfinger.fingerId = 7;
 	e.tfinger.x = x;
 	e.tfinger.y = y;
+	SDL_PushEvent(&e);
+}
+
+static int onCloseRequest(void* user)
+{
+	close_calls++;
+	return *(int*)user;
+}
+
+static void pushQuit(void)
+{
+	SDL_Event e;
+	SDL_zero(e);
+	e.type = SDL_QUIT;
 	SDL_PushEvent(&e);
 }
 
@@ -166,6 +181,18 @@ int main(void)
 	      events[1] == GY_EVENT_ContextDragging &&
 	      events[2] == GY_EVENT_ContextReleased,
 	      "long press continues as context drag and release");
+
+	//标题栏关闭请求可由应用取消或允许。
+	int allow_close = 0;
+	close_calls = 0;
+	SDL_LCD_SetCloseRequestCb(onCloseRequest, &allow_close);
+	pushQuit();
+	CHECK(SDL_LCD_PumpEvents() == 1 && close_calls == 1,
+	      "close callback can cancel window close");
+	allow_close = 1;
+	pushQuit();
+	CHECK(SDL_LCD_PumpEvents() == 0 && close_calls == 2,
+	      "close callback can allow window close");
 
 	SDL_LCD_Destroy();
 	YMGUI_Inject_SetCtx(NULL);

@@ -105,6 +105,7 @@ cd build && ctest --output-on-failure
 ./build/demo_font_gb2312   # 中文字体(方案3 GB2312 全集,走外部 flash 回调)
 ./build/demo_draw          # 图元展示
 ./build/demo_button        # 按钮
+./build/demo_close_request # 标题栏关闭请求(首次取消,再次退出)
 ./build/project_Demo/context_gesture/context_gesture # 右键/长按菜单 + 上下文拖动 + 实时事件流
 ```
 

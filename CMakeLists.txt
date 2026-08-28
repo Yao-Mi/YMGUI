@@ -74,6 +74,14 @@ add_executable(demo_flush_band
 target_include_directories(demo_flush_band PRIVATE ${SDL2_INCLUDE_DIRS})
 target_link_libraries(demo_flush_band ymgui ${SDL2_LIBRARIES} m)
 
+# SDL 标题栏关闭请求回调 demo（首次取消，再次允许）
+add_executable(demo_close_request
+	${CMAKE_SOURCE_DIR}/SDL_LCD/SDL_LCD.c
+	${CMAKE_SOURCE_DIR}/Demo/demo_close_request.c
+)
+target_include_directories(demo_close_request PRIVATE ${SDL2_INCLUDE_DIRS})
+target_link_libraries(demo_close_request ymgui ${SDL2_LIBRARIES} m)
+
 # 无 SDL 的像素正确性单测
 add_executable(test_fill ${CMAKE_SOURCE_DIR}/tests/test_fill.c)
 target_link_libraries(test_fill ymgui m)
@@ -82,7 +90,7 @@ target_link_libraries(test_fill ymgui m)
 add_executable(test_event ${CMAKE_SOURCE_DIR}/tests/test_event.c)
 target_link_libraries(test_event ymgui m)
 
-# SDL 输入映射单测:右键短点击/拖动 + 触摸长按后拖动
+# SDL 输入映射与窗口关闭请求单测
 add_executable(test_sdl_context
 	${CMAKE_SOURCE_DIR}/SDL_LCD/SDL_LCD.c
 	${CMAKE_SOURCE_DIR}/tests/test_sdl_context.c

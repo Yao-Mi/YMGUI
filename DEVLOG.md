@@ -11,6 +11,7 @@
 - 顶层工程和 `project_Demo` 共用格式选项，构建目录按格式归档：`build/rgb565/...`、`build/rgb888/...`。
 - `video_player` 按格式选择 FFmpeg `rgb565le` 或 `rgb24` 原始帧输入。
 - 验证结果：顶层 RGB565/RGB888 各 35 项测试全部通过；10 个 `project_Demo` 在两种格式下均构建通过。
+- **本轮补充：窗口关闭请求回调**。`SDL_LCD_SetCloseRequestCb(cb, user)` 仅属于桌面 SDL port；收到 `SDL_QUIT` 时，回调返回 0 取消本次关闭，返回非 0 才使 `SDL_LCD_PumpEvents()` 返回 0。未注册时保持旧行为，`Esc` 快捷退出不经过该回调。新增 `demo_close_request`（第一次关闭取消，第二次允许）和 `test_sdl_context` 允许/取消回归覆盖。
 
 ---
 
