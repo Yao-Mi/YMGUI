@@ -31,8 +31,8 @@ static void countFlushCb(GYdisp* d, const GYrect* area, const GYpx* buf)
 	long n = (long)area->w * area->h;
 	for (long i = 0; i < n; i++)
 	{
-		if (buf[i]) g_flush_set++;
-		if (g_check_btn_clip && buf[i])
+		if (!GY_PxIsZero(buf[i])) g_flush_set++;
+		if (g_check_btn_clip && !GY_PxIsZero(buf[i]))
 		{
 			GYcoord x = area->x + (GYcoord)(i % area->w);
 			GYcoord y = area->y + (GYcoord)(i / area->w);

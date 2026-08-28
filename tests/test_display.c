@@ -34,8 +34,8 @@ static void countFlush(GYdisp* d, const GYrect* a, const GYpx* b)
 	long n = (long)a->w * a->h;
 	for (long i = 0; i < n; i++)
 	{
-		if (b[i]) g_set++;
-		if (g_match != 0 && b[i] == g_match) g_match_cnt++;
+		if (!GY_PxIsZero(b[i])) g_set++;
+		if (!GY_PxIsZero(g_match) && GY_PxEqual(b[i], g_match)) g_match_cnt++;
 	}
 }
 
@@ -57,7 +57,7 @@ int main(void)
 	//---- Image:设图源后渲染出像素 ----
 	static GYpx idata[4 * 4];
 	for (int i = 0; i < 16; i++) idata[i] = GY_ColorToPx(GY_ARGB(0xFF, 0xFF, 0xFF, 0xFF));
-	GYimg img = {idata, 4, 4, 0, 0};
+	GYimg img = {idata, 4, 4, 0, GY_PX_ZERO};
 	GYOBJ imw = YMGUI_Creat_Image_Creat(ctx->root, 10, 10, 40, 40);
 	YMGUI_Image_SetSrc(imw, &img);
 	g_set = 0;
@@ -70,7 +70,7 @@ int main(void)
 		GYcolor icol = GY_ARGB(0xFF, 0x20, 0xC0, 0x40);
 		static GYpx cdata[4 * 4];
 		for (int i = 0; i < 16; i++) cdata[i] = GY_ColorToPx(icol);
-		GYimg cimg = {cdata, 4, 4, 0, 0};
+		GYimg cimg = {cdata, 4, 4, 0, GY_PX_ZERO};
 		GYOBJ sw = YMGUI_Creat_Image_Creat(ctx->root, 100, 100, 40, 40);
 		YMGUI_Image_SetSrc(sw, &cimg);
 		g_match = GY_ColorToPx(icol);
@@ -97,7 +97,7 @@ int main(void)
 		GYcolor wcol = GY_ARGB(0xFF, 0xE0, 0x40, 0x80);
 		static GYpx wdata[8 * 2];
 		for (int i = 0; i < 16; i++) wdata[i] = GY_ColorToPx(wcol);
-		GYimg wimg = {wdata, 8, 2, 0, 0};
+		GYimg wimg = {wdata, 8, 2, 0, GY_PX_ZERO};
 		YMGUI_Image_SetSrc(sw, &wimg);
 		g_match = GY_ColorToPx(wcol);
 
@@ -109,7 +109,7 @@ int main(void)
 		g_match_cnt = 0; YMGUI_Refresh(ctx);
 		CHECK(g_match_cnt > 0 && g_match_cnt < wfill, "image FIT wide-in-square leaves bars (< FILL)");
 
-		g_match = 0;//复位,后续 arc 统计不受干扰
+		g_match = GY_PX_ZERO;//复位,后续 arc 统计不受干扰
 	}
 
 	//---- Arc:前景色像素数应随值增大(用独立前景色计数,避免被同位置背景干扰) ----
@@ -127,7 +127,7 @@ int main(void)
 	g_match_cnt = 0; YMGUI_Refresh(ctx);
 	long arc_hi = g_match_cnt;
 	CHECK(arc_hi > arc_lo, "arc value=100 draws more fg pixels than value=0");
-	g_match = 0;//关闭匹配统计
+	g_match = GY_PX_ZERO;//关闭匹配统计
 	//超范围钳制
 	YMGUI_Arc_SetValue(arc, 500);
 	CHECK(YMGUI_Arc_GetValue(arc) == 100, "arc value clamped");
@@ -165,7 +165,7 @@ int main(void)
 		GYcolor red = GY_ARGB(0xFF, 0xE0, 0x20, 0x20);
 		GYpx redpx = GY_ColorToPx(red);
 		for (int i = 0; i < 64; i++) bimg[i] = redpx;
-		GYimg img = {bimg, 8, 8, 0, 0};
+		GYimg img = {bimg, 8, 8, 0, GY_PX_ZERO};
 		GYOBJ btn = YMGUI_Creat_Button_Creat(ctx->root, 10, 180, 40, 40);
 
 		//设图后应 blit 出红色像素(图居中,底色仍在但红色只来自图)
@@ -188,7 +188,7 @@ int main(void)
 		YMGUI_Refresh(ctx);
 		CHECK(g_set > 0, "button renders after image cleared");
 		CHECK(g_match_cnt == 0, "no red px after image cleared (fell back to text)");
-		g_match = 0;
+		g_match = GY_PX_ZERO;
 	}
 
 	//---- 级联释放 ----

@@ -21,7 +21,7 @@ static GYsurface s;
 int main(void)
 {
 	GYcolor white = GY_ARGB(0xFF, 0xFF, 0xFF, 0xFF);
-	for (int i = 0; i < N * N; i++) buf[i] = 0;
+	for (int i = 0; i < N * N; i++) buf[i] = GY_PX_ZERO;
 	s.buf = buf; s.stride = N;
 	s.buf_area = (GYrect){0, 0, N, N};
 	s.clip = s.buf_area;
@@ -43,7 +43,7 @@ int main(void)
 			if (d2 >= lo2 && d2 <= hi2)
 			{
 				checked++;
-				if (buf[y * N + x] == 0)
+				if (GY_PxIsZero(buf[y * N + x]))
 					holes++;
 			}
 		}
@@ -54,7 +54,7 @@ int main(void)
 		printf("  (holes=%d of checked=%d)\n", holes, checked);
 
 	//半弧(0..180)也不应有洞:检查下半环带
-	for (int i = 0; i < N * N; i++) buf[i] = 0;
+	for (int i = 0; i < N * N; i++) buf[i] = GY_PX_ZERO;
 	YMGUI_Draw_ArcThick(&s, cx, cy, r_in, r_out, 0, 180, white);
 	int holes2 = 0;
 	for (int y = cy + 2; y < N; y++)//严格下半(y>cy),避开端点
@@ -64,7 +64,7 @@ int main(void)
 			int32 dx = x - cx, dy = y - cy;
 			int32 d2 = dx * dx + dy * dy;
 			if (d2 >= lo2 && d2 <= hi2)
-				if (buf[y * N + x] == 0)
+				if (GY_PxIsZero(buf[y * N + x]))
 					holes2++;
 		}
 	}

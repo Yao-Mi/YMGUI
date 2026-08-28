@@ -74,9 +74,11 @@ int main(void)
 	//---- 显示缓冲直写 ----
 	GYpx* buf = YMGUI_Canvas_GetBuffer(cv);
 	CHECK(buf != NULL, "GetBuffer 非空");
-	buf[0] = 0x1234;
-	buf[64 * 48 - 1] = 0x5678;
-	CHECK(buf[0] == 0x1234 && buf[64 * 48 - 1] == 0x5678, "缓冲可写");
+	GYpx mark1 = GY_ColorToPx(GY_ARGB(0xFF, 0x12, 0x34, 0x56));
+	GYpx mark2 = GY_ColorToPx(GY_ARGB(0xFF, 0x56, 0x78, 0x9A));
+	buf[0] = mark1;
+	buf[64 * 48 - 1] = mark2;
+	CHECK(GY_PxEqual(buf[0], mark1) && GY_PxEqual(buf[64 * 48 - 1], mark2), "缓冲可写");
 
 	//---- 屏->画布映射 zoom=1 pan=0 ----
 	int32 cx, cy;

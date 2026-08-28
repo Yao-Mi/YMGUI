@@ -87,7 +87,7 @@ int main(void)
 	CHECK(YMGUI_Tabview_GetActive(tv) == 0, "initial active 0");
 	YMGUI_Refresh(ctx);
 	//内容区中心 (100, 90) 应为红(第 0 页)
-	CHECK(px_at(100, 90) == RED, "page0 (red) visible initially");
+	CHECK(GY_PxEqual(px_at(100, 90), RED), "page0 (red) visible initially");
 
 	//隐藏页被 hit-test 跳过:内容区点击应命中第 0 页的子,不是别页
 	GYOBJ hit = YMGUI_HitTest(ctx, 100, 90);
@@ -99,7 +99,7 @@ int main(void)
 	CHECK(YMGUI_Tabview_GetActive(tv) == 1, "click tab1 → active 1");
 	CHECK(g_cb_fired == 1 && g_cb_active == 1, "changed_cb fired with idx 1");
 	YMGUI_Refresh(ctx);
-	CHECK(px_at(100, 90) == GREEN, "page1 (green) now visible");
+	CHECK(GY_PxEqual(px_at(100, 90), GREEN), "page1 (green) now visible");
 	CHECK(YMGUI_HitTest(ctx, 100, 90) == c1, "hit now lands on page1 child (page0 hidden, skipped)");
 
 	//---- 点第 2 个 tab(第 2 段中心 x≈166)----
@@ -107,7 +107,7 @@ int main(void)
 	click(ctx, 166, 12);
 	CHECK(YMGUI_Tabview_GetActive(tv) == 2, "click tab2 → active 2");
 	YMGUI_Refresh(ctx);
-	CHECK(px_at(100, 90) == BLUE, "page2 (blue) visible");
+	CHECK(GY_PxEqual(px_at(100, 90), BLUE), "page2 (blue) visible");
 
 	//---- 点当前页 tab:无切换、不触发回调 ----
 	g_cb_fired = 0;
@@ -124,7 +124,7 @@ int main(void)
 	YMGUI_Tabview_SetActive(tv, 0);
 	CHECK(YMGUI_Tabview_GetActive(tv) == 0, "SetActive 0");
 	YMGUI_Refresh(ctx);
-	CHECK(px_at(100, 90) == RED, "SetActive back to page0 (red)");
+	CHECK(GY_PxEqual(px_at(100, 90), RED), "SetActive back to page0 (red)");
 	YMGUI_Tabview_SetActive(tv, 99);
 	CHECK(YMGUI_Tabview_GetActive(tv) == 0, "SetActive out-of-range ignored");
 

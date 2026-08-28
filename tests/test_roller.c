@@ -110,7 +110,7 @@ int main(void)
 	//控件中线 y≈10+80=90,采样中带
 	for (int yy = 80; yy < 100; yy++)
 		for (int xx = 20; xx < 180; xx++)
-			if (g_fb[yy * SCR_W + xx] != g_fb[0]) { lit++; }
+			if (!GY_PxEqual(g_fb[yy * SCR_W + xx], g_fb[0])) { lit++; }
 	CHECK(lit > 0, "中间高亮行渲染出非背景像素");
 
 	//---- 交互态拖动吸附 ----

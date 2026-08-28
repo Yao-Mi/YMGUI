@@ -6,6 +6,14 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 # C99 + GNU 扩展
 set(CMAKE_C_EXTENSIONS ON)
 
+set(YMGUI_COLOR_DEPTH "16" CACHE STRING "Framebuffer color depth: 1, 8, 16 or 24 (RGB888)")
+set_property(CACHE YMGUI_COLOR_DEPTH PROPERTY STRINGS 1 8 16 24)
+if(NOT YMGUI_COLOR_DEPTH MATCHES "^(1|8|16|24)$")
+	message(FATAL_ERROR "YMGUI_COLOR_DEPTH must be 1, 8, 16 or 24")
+endif()
+# GYpx is part of the public ABI, so every library and executable must use the same depth.
+add_compile_definitions(YMGUI_COLOR_DEPTH=${YMGUI_COLOR_DEPTH})
+
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Debug)
 endif()
@@ -47,6 +55,10 @@ file(GLOB YMGUI_SRC
 )
 add_library(ymgui STATIC ${YMGUI_SRC})
 
+# SDL_LCD port + demo(Linux 假 LCD)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(SDL2 REQUIRED sdl2)
+
 # 插件系统宿主 demo（静态注册路径；Linux 同时编译 dlopen 支持）
 add_executable(demo_plugin
 	${CMAKE_SOURCE_DIR}/SDL_LCD/SDL_LCD.c
@@ -54,10 +66,6 @@ add_executable(demo_plugin
 )
 target_include_directories(demo_plugin PRIVATE ${SDL2_INCLUDE_DIRS})
 target_link_libraries(demo_plugin ymgui ${SDL2_LIBRARIES} m ${CMAKE_DL_LIBS})
-
-# SDL_LCD port + demo(Linux 假 LCD)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(SDL2 REQUIRED sdl2)
 
 add_executable(demo_flush_band
 	${CMAKE_SOURCE_DIR}/SDL_LCD/SDL_LCD.c

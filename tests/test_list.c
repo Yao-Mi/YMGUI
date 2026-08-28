@@ -58,7 +58,7 @@ int main(void)
 	int leaked = 0;
 	for (int y = 120; y < 136; y++)
 		for (int x = 20; x < 180; x++)
-			if (g_fb[y * SCR_W + x] != 0) leaked = 1;
+			if (!GY_PxIsZero(g_fb[y * SCR_W + x])) leaked = 1;
 	CHECK(!leaked, "first full-frame draw clips partial bottom row to list viewport");
 
 	//初始 scroll=0,第一条 abs.y == 视口 y(20)

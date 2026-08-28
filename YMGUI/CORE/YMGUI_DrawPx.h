@@ -12,13 +12,20 @@
 
 //---------------------------------------------------------------------------
 // 纯像素混合:把 src 色以覆盖度 opa 混到已有 dst 像素上,返回结果 GYpx
-//   RGB565 解包到 8bit 分量线性混合再打包;灰度/1bpp 转亮度混合
+//   RGB888/RGB565 解包到 8bit 分量线性混合再打包;灰度/1bpp 转亮度混合
 //   framebuffer 无 alpha,alpha 只在这一瞬间存在(见 PubType GYopa 说明)
 //   抗锯齿(coverage 当 opa)与半透明填充共用此内核
 //---------------------------------------------------------------------------
 static inline GYpx GY_MixPx(GYpx dst, GYcolor src, GYopa opa)
 {
-#if YMGUI_COLOR_DEPTH == 16
+#if YMGUI_COLOR_DEPTH == 24
+	uint32 inv = 255u - opa;
+	GYpx out;
+	out.r = (uint8)((GY_COLOR_R(src) * opa + (uint32)dst.r * inv) / 255u);
+	out.g = (uint8)((GY_COLOR_G(src) * opa + (uint32)dst.g * inv) / 255u);
+	out.b = (uint8)((GY_COLOR_B(src) * opa + (uint32)dst.b * inv) / 255u);
+	return out;
+#elif YMGUI_COLOR_DEPTH == 16
 	uint32 dr = (((uint32)dst >> 11) & 0x1F) << 3;
 	uint32 dg = (((uint32)dst >> 5) & 0x3F) << 2;
 	uint32 db = ((uint32)dst & 0x1F) << 3;

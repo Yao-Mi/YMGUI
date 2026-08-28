@@ -194,7 +194,20 @@
 #define GY_COLOR_A(c) (((c) >> 24) & 0xFF)
 #define GY_ARGB(a, r, g, b) (((GYcolor)(a) << 24) | ((GYcolor)(r) << 16) | ((GYcolor)(g) << 8) | (GYcolor)(b))
 
-#if YMGUI_COLOR_DEPTH == 16
+#if YMGUI_COLOR_DEPTH == 24
+//ARGB8888 <-> RGB888: framebuffer 字节顺序固定为 R,G,B
+#define GY_ColorToPx(c) ((GYpx){(uint8)GY_COLOR_R(c), (uint8)GY_COLOR_G(c), (uint8)GY_COLOR_B(c)})
+#define GY_PxToColor(p) GY_ARGB(0xFF, (p).r, (p).g, (p).b)
+#define GY_PX_ZERO ((GYpx){0, 0, 0})
+static inline uint8 GY_PxEqual(GYpx a, GYpx b)
+{
+	return (uint8)(a.r == b.r && a.g == b.g && a.b == b.b);
+}
+static inline uint8 GY_PxIsZero(GYpx p)
+{
+	return (uint8)((p.r | p.g | p.b) == 0);
+}
+#elif YMGUI_COLOR_DEPTH == 16
 //ARGB8888 → RGB565: R5 G6 B5
 #define GY_ColorToPx(c) ((GYpx)(((GY_COLOR_R(c) & 0xF8) << 8) | ((GY_COLOR_G(c) & 0xFC) << 3) | (GY_COLOR_B(c) >> 3)))
 //RGB565 → ARGB8888(补低位,alpha 固定不透明)
@@ -209,6 +222,12 @@
 #else //1bpp:非0即白
 #define GY_ColorToPx(c) ((GYpx)(((GY_COLOR_R(c) | GY_COLOR_G(c) | GY_COLOR_B(c)) != 0) ? 1 : 0))
 #define GY_PxToColor(p) ((p) ? 0xFFFFFFFFu : 0xFF000000u)
+#endif
+
+#if YMGUI_COLOR_DEPTH != 24
+#define GY_PX_ZERO ((GYpx)0)
+static inline uint8 GY_PxEqual(GYpx a, GYpx b) { return (uint8)(a == b); }
+static inline uint8 GY_PxIsZero(GYpx p) { return (uint8)(p == 0); }
 #endif
 
 //===========================================================================

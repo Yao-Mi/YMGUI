@@ -56,7 +56,7 @@ static void canvasDraw(GYOBJ obj, GYSURFACE s, const GYrect* abs)
 	//下方进度弧(0..270 度)
 	YMGUI_Draw_Arc(s, abs->x + 140, abs->y + 175, 45, 135, 45, GY_ARGB(0xFF, 0xE0, 0x80, 0x30));
 	//图片 blit(原尺寸,直接贴几个)
-	GYimg img = {s_icon, 8, 8, 0, 0};
+	GYimg img = {s_icon, 8, 8, 0, GY_PX_ZERO};
 	for (int i = 0; i < 4; i++)
 		YMGUI_Draw_Img(s, &img, abs->x + 10 + i * 12, abs->y + 150);
 	//缩放 blit:同一张 8x8 图逐级放大(2x/4x/6x),展示 Draw_ImgScaled

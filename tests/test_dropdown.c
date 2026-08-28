@@ -93,7 +93,7 @@ int main(void)
 
 	//先渲染一帧:此刻红块可见(菜单未展开)。采样红块中心
 	YMGUI_Refresh(ctx);
-	CHECK(px_at(40, 80) == RED, "before open: red block visible under future menu");
+	CHECK(GY_PxEqual(px_at(40, 80), RED), "before open: red block visible under future menu");
 
 	//---- 点击本体展开 ----
 	click(ctx, 40, 32);//dropdown 本体内
@@ -103,7 +103,7 @@ int main(void)
 	//展开后渲染:菜单应盖过红块(菜单区 (20,44)..(60,110) 内不再是纯红)
 	//菜单背景 0x282830,option 行文字/分隔线等;至少中心不应是红色
 	YMGUI_Refresh(ctx);
-	CHECK(px_at(40, 80) != RED, "z-order: menu covers red block (top_layer over root)");
+	CHECK(!GY_PxEqual(px_at(40, 80), RED), "z-order: menu covers red block (top_layer over root)");
 
 	//菜单第 1 行(idx0 "Red")屏幕 y≈44..66;点它 → 选中 0 并收起,回调 sel=0
 	g_cb_fired = 0; g_cb_sel = 0xFFFF;
@@ -115,7 +115,7 @@ int main(void)
 
 	//收起后渲染:红块重新露出
 	YMGUI_Refresh(ctx);
-	CHECK(px_at(40, 80) == RED, "after close: red block visible again");
+	CHECK(GY_PxEqual(px_at(40, 80), RED), "after close: red block visible again");
 
 	//---- 再展开,点菜单外(backdrop)收起 ----
 	click(ctx, 40, 32);

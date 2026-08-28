@@ -28,7 +28,7 @@ static void flushCb(GYdisp* d, const GYrect* a, const GYpx* b)
 	(void)d;
 	for (GYcoord yy = 0; yy < a->h; yy++)
 		for (GYcoord xx = 0; xx < a->w; xx++)
-			if (b[yy * a->w + xx])
+			if (!GY_PxIsZero(b[yy * a->w + xx]))
 			{
 				GYcoord sx = a->x + xx, sy = a->y + yy;
 				if (sx < g_minx) g_minx = sx;

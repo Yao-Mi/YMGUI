@@ -116,7 +116,9 @@ static void sdlCheckLongPress(Uint32 now)
 		YMGUI_Inject_ContextMove(s_touch_x, s_touch_y);
 }
 
-#if YMGUI_COLOR_DEPTH == 16
+#if YMGUI_COLOR_DEPTH == 24
+#define SDL_LCD_PIXFMT SDL_PIXELFORMAT_RGB24
+#elif YMGUI_COLOR_DEPTH == 16
 #define SDL_LCD_PIXFMT SDL_PIXELFORMAT_RGB565
 #else
 #define SDL_LCD_PIXFMT SDL_PIXELFORMAT_RGB332

@@ -24,7 +24,7 @@ YMGUI 是一个**面向嵌入式/裸机优先**的跨平台 GUI 库，用 C99 + 
 | 渲染 | 全自绘软件光栅化（不包原生控件、不依赖 GPU） |
 | UI 范式 | 保留模式（对象树持久存在）+ 即时逃生口 |
 | 刷新 | 分块(band)刷新，draw buffer 可 < 整屏 |
-| 像素格式 | RGB565 / 单色灰度（编译期 `YMGUI_COLOR_DEPTH` 切换，无 ARGB8888） |
+| 像素格式 | RGB888 / RGB565 / 8bit 灰度 / 1bpp（编译期 `YMGUI_COLOR_DEPTH` 切换） |
 | 数值 | 定点/整数为主，`GYcoord=int16`，`GYvalue=16.16定点` |
 | 最窄腰部 | 显示驱动回调 `flush(area, buf)` + 输入注入 |
 | 参考 | LVGL 架构路线 |

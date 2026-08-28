@@ -182,7 +182,10 @@ static void selftest(void)
 
 	//1) 缩放 blit 图元:2x2(四象限 1/2/3/4)放大到 4x4,角落应映射到对应象限色
 	{
-		GYpx src[4] = { 10, 20, 30, 40 }; //TL,TR,BL,BR
+		GYpx src[4] = {
+			GY_ColorToPx(GY_ARGB(0xFF, 0x40, 0, 0)), GY_ColorToPx(GY_ARGB(0xFF, 0x80, 0, 0)),
+			GY_ColorToPx(GY_ARGB(0xFF, 0xC0, 0, 0)), GY_ColorToPx(GY_ARGB(0xFF, 0xFF, 0, 0))
+		}; //TL,TR,BL,BR
 		GYimg img = { src, 2, 2, 0, 0 };
 		GYpx dstpx[16];
 		memset(dstpx, 0, sizeof(dstpx));
@@ -191,10 +194,10 @@ static void selftest(void)
 		s.buf_area = (GYrect){ 0, 0, 4, 4 };
 		s.clip     = (GYrect){ 0, 0, 4, 4 };
 		YMGUI_Draw_ImgScaled(&s, &img, (GYrect){ 0, 0, 4, 4 });
-		if (dstpx[0] != 10)  { gy_log_print("selftest FAIL: scale TL=%d want 10\n", dstpx[0]); fails++; }
-		if (dstpx[3] != 20)  { gy_log_print("selftest FAIL: scale TR=%d want 20\n", dstpx[3]); fails++; }
-		if (dstpx[12] != 30) { gy_log_print("selftest FAIL: scale BL=%d want 30\n", dstpx[12]); fails++; }
-		if (dstpx[15] != 40) { gy_log_print("selftest FAIL: scale BR=%d want 40\n", dstpx[15]); fails++; }
+		if (!GY_PxEqual(dstpx[0], src[0]))  { gy_log_print("selftest FAIL: scale TL\n"); fails++; }
+		if (!GY_PxEqual(dstpx[3], src[1]))  { gy_log_print("selftest FAIL: scale TR\n"); fails++; }
+		if (!GY_PxEqual(dstpx[12], src[2])) { gy_log_print("selftest FAIL: scale BL\n"); fails++; }
+		if (!GY_PxEqual(dstpx[15], src[3])) { gy_log_print("selftest FAIL: scale BR\n"); fails++; }
 	}
 
 	//2) 视频引擎:兜底/真解码都应给出正尺寸缓冲 + update 出帧
@@ -214,7 +217,7 @@ static void selftest(void)
 			GYpx a = vp_video_pixels(v)[100];
 			vp_video_update(v, 500);
 			GYpx b = vp_video_pixels(v)[100];
-			if (a == b) { gy_log_print("selftest WARN: synth frame not advancing (a=b=%d)\n", a); }
+			if (GY_PxEqual(a, b)) { gy_log_print("selftest WARN: synth frame not advancing\n"); }
 			//seek 越界钳制到时长
 			vp_video_seek_ms(v, 999999);
 			//同一时钟不应重复出帧(免重绘)
@@ -316,7 +319,7 @@ int main(int argc, char** argv)
 	g_frame_img.data = vp_video_pixels(g_video);
 	g_frame_img.w    = vp_video_width(g_video);
 	g_frame_img.h    = vp_video_height(g_video);
-	g_frame_img.use_key = 0; g_frame_img.key = 0;
+	g_frame_img.use_key = 0; g_frame_img.key = GY_PX_ZERO;
 	YMGUI_Image_SetSrc(g_video_pane, &g_frame_img);
 
 	g_audio = mp_audio_create();

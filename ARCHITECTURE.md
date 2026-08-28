@@ -55,12 +55,12 @@ typedef struct GYdisp
 
 ### 3.1 三层颜色分离（重要，别混用）
 
-framebuffer 存 RGB565/灰度/1bpp（无 alpha，省 RAM），但抗锯齿/半透明仍需 alpha。所以三个概念严格分开：
+framebuffer 存 RGB888/RGB565/灰度/1bpp（无 alpha；RGB888 每像素 3 字节），但抗锯齿/半透明仍需 alpha。所以三个概念严格分开：
 
 | 概念 | 类型 | 用途 | 存在于 |
 |------|------|------|--------|
 | API 颜色 | `GYcolor`(32位 ARGB) | 用户描述颜色 `0xFF3080C0` | 公开 API |
-| 表面像素 | `GYpx`(编译期=RGB565/灰度/1bpp) | framebuffer 实际存储 | CORE + HAL |
+| 表面像素 | `GYpx`(编译期=RGB888/RGB565/灰度/1bpp) | framebuffer 实际存储 | CORE + HAL |
 | 覆盖度 | `GYopa`(8位) | 混合那一瞬间 | CORE 混合内部 |
 
 编译期由 `YMGUI_COLOR_DEPTH` 宏切换 `GYpx`。混合流程：读目标 `GYpx` → 升 8bit → 用 `GYcolor`+`GYopa` 混合 → 打包回 `GYpx`。**副作用**：1bpp 无法抗锯齿（只能阈值化），灰度/565 可以。

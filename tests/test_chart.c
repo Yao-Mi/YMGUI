@@ -28,7 +28,7 @@ static void countFlush(GYdisp* d, const GYrect* a, const GYpx* b)
 	(void)d;
 	long n = (long)a->w * a->h;
 	for (long i = 0; i < n; i++)
-		if (g_match != 0 && b[i] == g_match) g_match_cnt++;
+		if (!GY_PxIsZero(g_match) && GY_PxEqual(b[i], g_match)) g_match_cnt++;
 }
 
 int main(void)
@@ -101,7 +101,7 @@ int main(void)
 	g_match_cnt = 0;
 	YMGUI_Refresh(ctx);
 	CHECK(g_match_cnt > 0, "flat polyline still draws pixels");
-	g_match = 0;
+	g_match = GY_PX_ZERO;
 
 	YMGUI_Free_CtxFree(ctx);
 	GY_free1(disp.buf1);

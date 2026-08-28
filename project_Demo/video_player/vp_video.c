@@ -28,8 +28,11 @@
 
 #define VP_RING 12 //帧环形缓冲槽数(预缓冲深度 & 背压阈值)
 
-//本引擎假定 RGB565(GYpx=uint16),与 ffmpeg rgb565le 逐字节一致(小端零转换)。
-//若将来 COLOR_DEPTH!=16,需在此加像素格式转换;当前工程恒为 16 位。
+#if YMGUI_COLOR_DEPTH == 24
+#define VP_FFMPEG_PIXFMT "rgb24"
+#else
+#define VP_FFMPEG_PIXFMT "rgb565le"
+#endif
 
 typedef struct
 {
@@ -175,12 +178,12 @@ static uint8 startPipe(VPvideo* v, int32 start_ms)
 	if (start_ms > 0)
 		snprintf(cmd, sizeof(cmd),
 		         "ffmpeg -nostdin -v error -ss %d.%03d -i '%s' -an -vf scale=%d:%d "
-		         "-f rawvideo -pix_fmt rgb565le - 2>/dev/null",
+		         "-f rawvideo -pix_fmt " VP_FFMPEG_PIXFMT " - 2>/dev/null",
 		         start_ms / 1000, start_ms % 1000, esc, v->out_w, v->out_h);
 	else
 		snprintf(cmd, sizeof(cmd),
 		         "ffmpeg -nostdin -v error -i '%s' -an -vf scale=%d:%d "
-		         "-f rawvideo -pix_fmt rgb565le - 2>/dev/null",
+		         "-f rawvideo -pix_fmt " VP_FFMPEG_PIXFMT " - 2>/dev/null",
 		         esc, v->out_w, v->out_h);
 	v->pipe = popen(cmd, "r");
 	if (v->pipe == NULL) return 0;
@@ -434,4 +437,3 @@ uint8 vp_video_is_eof(const VPvideo* v)
 	if (v->is_synth) return v->last_ms >= v->dur_ms;
 	return v->eof && v->ring_count == 0 && v->fill_bytes == 0;
 }
-

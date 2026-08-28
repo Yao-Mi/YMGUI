@@ -43,7 +43,7 @@ static const GYfont s_extfont =
 static int countSet(const GYpx* buf, int n)
 {
 	int c = 0;
-	for (int i = 0; i < n; i++) if (buf[i]) c++;
+	for (int i = 0; i < n; i++) if (!GY_PxIsZero(buf[i])) c++;
 	return c;
 }
 
@@ -59,7 +59,7 @@ int main(void)
 	s.buf = buf; s.stride = 32;
 	s.buf_area = (GYrect){0, 0, 32, 16};
 	s.clip = s.buf_area;
-	for (int i = 0; i < 32 * 16; i++) buf[i] = 0;
+	for (int i = 0; i < 32 * 16; i++) buf[i] = GY_PX_ZERO;
 
 	//画 'A':应有若干像素置位,且推进 8
 	GYcoord adv = YMGUI_Draw_Char(&s, f, 0, 0, 'A', GY_ARGB(0xFF, 0xFF, 0xFF, 0xFF));
@@ -68,7 +68,7 @@ int main(void)
 	CHECK(naA > 8, "'A' produced pixels");
 
 	//空格应几乎不置位
-	for (int i = 0; i < 32 * 16; i++) buf[i] = 0;
+	for (int i = 0; i < 32 * 16; i++) buf[i] = GY_PX_ZERO;
 	YMGUI_Draw_Char(&s, f, 0, 0, ' ', GY_ARGB(0xFF, 0xFF, 0xFF, 0xFF));
 	CHECK(countSet(buf, 32 * 16) == 0, "space has no pixels");
 
@@ -76,17 +76,17 @@ int main(void)
 	CHECK(YMGUI_Font_TextWidth(f, "Hello") == 5 * 8, "text width = len*cell_w");
 
 	//---- 裁剪:clip 只留左 4 列,'A' 右半不应写出界 ----
-	for (int i = 0; i < 32 * 16; i++) buf[i] = 0;
+	for (int i = 0; i < 32 * 16; i++) buf[i] = GY_PX_ZERO;
 	s.clip = (GYrect){0, 0, 4, 16};
 	YMGUI_Draw_Char(&s, f, 0, 0, 'A', GY_ARGB(0xFF, 0xFF, 0xFF, 0xFF));
 	int clipped_ok = 1;
 	for (int y = 0; y < 16; y++)
 		for (int x = 4; x < 32; x++)
-			if (buf[y * 32 + x]) clipped_ok = 0;
+			if (!GY_PxIsZero(buf[y * 32 + x])) clipped_ok = 0;
 	CHECK(clipped_ok, "clip: no pixels beyond clip.x=4");
 
 	//---- band 偏移:字符画在屏幕 y=20,band 覆盖 y=16..32 ----
-	for (int i = 0; i < 32 * 16; i++) buf[i] = 0;
+	for (int i = 0; i < 32 * 16; i++) buf[i] = GY_PX_ZERO;
 	s.buf_area = (GYrect){0, 16, 32, 16};
 	s.clip = s.buf_area;
 	YMGUI_Draw_Char(&s, f, 0, 20, 'H', GY_ARGB(0xFF, 0xFF, 0xFF, 0xFF));
@@ -95,13 +95,13 @@ int main(void)
 	int has_lower = 0;
 	for (int y = 4; y < 16; y++)
 		for (int x = 0; x < 8; x++)
-			if (buf[y * 32 + x]) has_lower = 1;
+			if (!GY_PxIsZero(buf[y * 32 + x])) has_lower = 1;
 	CHECK(has_lower, "band offset: 'H' pixels land at buffer row>=4");
 	//行 0..3 (屏幕 16..19,在字符 y=20 之上) 应为空
 	int upper_empty = 1;
 	for (int y = 0; y < 4; y++)
 		for (int x = 0; x < 8; x++)
-			if (buf[y * 32 + x]) upper_empty = 0;
+			if (!GY_PxIsZero(buf[y * 32 + x])) upper_empty = 0;
 	CHECK(upper_empty, "band offset: rows above char are empty");
 
 	//---- 范围外字符安全(不崩,推进正常) ----
@@ -122,7 +122,7 @@ int main(void)
 	CHECK(YMGUI_Font_TextWidth(f, "中文") == 16 + 16, "two CJK = 32");
 
 	//---- CJK 码点经 fallback 链命中并落像素(16x16,画在 x=0) ----
-	for (int i = 0; i < 32 * 16; i++) buf[i] = 0;
+	for (int i = 0; i < 32 * 16; i++) buf[i] = GY_PX_ZERO;
 	GYcoord cadv = YMGUI_Draw_Glyph(&s, f, 0, 0, 0x4E2D, GY_ARGB(0xFF, 0xFF, 0xFF, 0xFF));//'中'
 	CHECK(cadv == 16, "CJK glyph advance = 16");
 	CHECK(countSet(buf, 32 * 16) > 16, "'中' produced pixels via fallback");
@@ -132,13 +132,13 @@ int main(void)
 	CHECK(YMGUI_Draw_Glyph(&s, f, 0, 0, 0x4E00, GY_ARGB(0xFF,0xFF,0xFF,0xFF)) == 16, "U+4E00 hit");
 
 	//---- 缺字(表外码点)安全:仍推进(用回退起点 ASCII cell_w=8) ----
-	for (int i = 0; i < 32 * 16; i++) buf[i] = 0;
+	for (int i = 0; i < 32 * 16; i++) buf[i] = GY_PX_ZERO;
 	GYcoord madv = YMGUI_Draw_Glyph(&s, f, 0, 0, 0x9FA5, GY_ARGB(0xFF,0xFF,0xFF,0xFF));//'龥' 不在预置集
 	CHECK(madv == 8, "missing CJK advances safely (ascii cell_w)");
 	CHECK(countSet(buf, 32 * 16) == 0, "missing CJK draws nothing");
 
 	//---- UTF-8 解码正确性:Draw_Text 画 "中文" 推进 32 且有像素 ----
-	for (int i = 0; i < 32 * 16; i++) buf[i] = 0;
+	for (int i = 0; i < 32 * 16; i++) buf[i] = GY_PX_ZERO;
 	GYcoord tadv = YMGUI_Draw_Text(&s, f, 0, 0, "中文", GY_ARGB(0xFF,0xFF,0xFF,0xFF));
 	CHECK(tadv == 32, "Draw_Text '中文' advances 32");
 	CHECK(countSet(buf, 32 * 16) > 16, "Draw_Text '中文' produced pixels");
@@ -150,7 +150,7 @@ int main(void)
 	//======================================================================
 	s.buf_area = (GYrect){0, 0, 32, 16};
 	s.clip = s.buf_area;
-	for (int i = 0; i < 32 * 16; i++) buf[i] = 0;
+	for (int i = 0; i < 32 * 16; i++) buf[i] = GY_PX_ZERO;
 	s_read_calls = 0;
 	GYcoord eadv = YMGUI_Draw_Glyph(&s, &s_extfont, 0, 0, 'X', GY_ARGB(0xFF,0xFF,0xFF,0xFF));
 	CHECK(eadv == 8, "extflash glyph advance = 8");

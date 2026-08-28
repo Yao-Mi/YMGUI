@@ -19,6 +19,7 @@ typedef double   float64;
 
 //===========================================================================
 // 颜色深度选择(编译期):决定 framebuffer 里 GYpx 的实际存储格式
+//   24 → RGB888(连续 R,G,B 三字节)
 //   16 → RGB565(默认,绝大多数中小 LCD)
 //    8 → 灰度 8bit
 //    1 → 单色 1bpp(位打包,无法抗锯齿)
@@ -36,14 +37,23 @@ typedef double   float64;
 typedef uint32 GYcolor;  //0xAARRGGBB
 typedef uint8  GYopa;    //0=全透明 255=不透明(覆盖度常量 GY_OPA_* 见 PubDefine.h)
 
-#if   YMGUI_COLOR_DEPTH == 16
+#if   YMGUI_COLOR_DEPTH == 24
+#if defined(_MSC_VER)
+#pragma pack(push, 1)
+typedef struct { uint8 r, g, b; } GYpx; //RGB888,内存顺序 R,G,B
+#pragma pack(pop)
+#else
+typedef struct __attribute__((packed)) { uint8 r, g, b; } GYpx;
+#endif
+typedef char GYpx_rgb888_must_be_3_bytes[(sizeof(GYpx) == 3) ? 1 : -1];
+#elif YMGUI_COLOR_DEPTH == 16
 typedef uint16 GYpx;     //RGB565
 #elif YMGUI_COLOR_DEPTH == 8
 typedef uint8  GYpx;     //灰度
 #elif YMGUI_COLOR_DEPTH == 1
 typedef uint8  GYpx;     //单色,位打包时按字节访问
 #else
-#error "YMGUI_COLOR_DEPTH must be 1, 8 or 16"
+#error "YMGUI_COLOR_DEPTH must be 1, 8, 16 or 24"
 #endif
 
 //===========================================================================

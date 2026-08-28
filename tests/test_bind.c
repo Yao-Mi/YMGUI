@@ -54,7 +54,7 @@ static int anyNonBg(GYcoord x, GYcoord y, GYcoord w, GYcoord h, GYpx bg)
 {
 	for (GYcoord j = 0; j < h; j++)
 		for (GYcoord i = 0; i < w; i++)
-			if (g_fb[(y + j) * SCR_W + (x + i)] != bg)
+			if (!GY_PxEqual(g_fb[(y + j) * SCR_W + (x + i)], bg))
 				return 1;
 	return 0;
 }

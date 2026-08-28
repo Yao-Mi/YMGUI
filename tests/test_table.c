@@ -94,24 +94,24 @@ int main(void)
 	YMGUI_Table_SetScroll(tbl, 0);
 	YMGUI_Refresh(ctx);
 	//表头区中心(避开文字/列线):x=50, y=10+11=21
-	CHECK(px_at(50, 21) == HEAD, "header bg present at top (no scroll)");
+	CHECK(GY_PxEqual(px_at(50, 21), HEAD), "header bg present at top (no scroll)");
 	//滚到底再看表头:仍应是表头色(sticky)
 	YMGUI_Table_SetScroll(tbl, 132);
 	YMGUI_Refresh(ctx);
-	CHECK(px_at(50, 21) == HEAD, "sticky header still at top after scroll to bottom");
+	CHECK(GY_PxEqual(px_at(50, 21), HEAD), "sticky header still at top after scroll to bottom");
 
 	//---- 行体裁剪 + 选中高亮不越界到表头 ----
 	GYpx SEL = GY_ColorToPx(GY_ARGB(0xFF, 0x35, 0x5A, 0x8A));
 	YMGUI_Table_SetScroll(tbl, 0);
 	YMGUI_Table_SetSelectedRow(tbl, 0);//选第 0 行(在表体顶部)
 	YMGUI_Refresh(ctx);
-	CHECK(px_at(50, 21) == HEAD, "selected row0 highlight does NOT bleed into header");
+	CHECK(GY_PxEqual(px_at(50, 21), HEAD), "selected row0 highlight does NOT bleed into header");
 	//第 0 行在表体内 (y≈32..54),中心 y≈43 应为选中色
-	CHECK(px_at(50, 43) == SEL, "row0 highlight visible in body");
+	CHECK(GY_PxEqual(px_at(50, 43), SEL), "row0 highlight visible in body");
 	//把选中行滚出视口上方:表头区不应出现选中色
 	YMGUI_Table_SetScroll(tbl, 100);//row0 顶到 body_top-100,远在上方
 	YMGUI_Refresh(ctx);
-	CHECK(px_at(50, 21) == HEAD, "scrolled-out selected row clipped (header intact)");
+	CHECK(GY_PxEqual(px_at(50, 21), HEAD), "scrolled-out selected row clipped (header intact)");
 
 	//---- 行点击选中 + 回调 ----
 	YMGUI_Table_SetScroll(tbl, 0);

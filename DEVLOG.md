@@ -4,6 +4,16 @@
 
 ---
 
+## 第 17 轮：RGB888 framebuffer 与双格式构建
+
+- 新增 `YMGUI_COLOR_DEPTH=24`：`GYpx` 为 packed 的 3 字节 RGB888（内存顺序 R、G、B），补齐颜色转换、alpha 混合、图片 colorkey、SDL `RGB24` 输出。
+- 保留并验证 `YMGUI_COLOR_DEPTH=16` 的 RGB565 路径；像素比较统一使用 `GY_PxEqual`，清零使用 `GY_PX_ZERO`，避免把 RGB888 结构体当整数访问。
+- 顶层工程和 `project_Demo` 共用格式选项，构建目录按格式归档：`build/rgb565/...`、`build/rgb888/...`。
+- `video_player` 按格式选择 FFmpeg `rgb565le` 或 `rgb24` 原始帧输入。
+- 验证结果：顶层 RGB565/RGB888 各 35 项测试全部通过；10 个 `project_Demo` 在两种格式下均构建通过。
+
+---
+
 ## 第 0 轮：架构讨论
 
 在写代码前先敲定了地基决策（渲染模型/UI 范式/目标平台/依赖策略）。关键转折点是用户指出**裸机 LCD 只有画点和 blit 两个原语**，这直接倒转了分层——软件光栅化器成为核心而非"可选后端"，GPU 后端反而降级为可选。确立了"SDL 假装成一块 LCD"的开发模式。

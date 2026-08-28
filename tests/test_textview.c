@@ -118,7 +118,7 @@ int main(void)
 	//首行 y≈10..26,文字自 x=14 起
 	for (GYcoord yy = 10; yy < 26; yy++)
 		for (GYcoord xx = 14; xx < 40; xx++)
-			if (px_at(xx, yy) != bg)
+			if (!GY_PxEqual(px_at(xx, yy), bg))
 				nonbg++;
 	CHECK(nonbg > 0, "text glyph pixels drawn in first line");
 

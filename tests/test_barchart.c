@@ -39,12 +39,12 @@ static void fbFlush(GYdisp* d, const GYrect* a, const GYpx* b)
 }
 
 //统计矩形内非背景像素数
-static int litIn(GYcolor bgpx0, int x0, int x1, int y0, int y1)
+static int litIn(GYpx bgpx0, int x0, int x1, int y0, int y1)
 {
 	int n = 0;
 	for (int yy = y0; yy < y1; yy++)
 		for (int xx = x0; xx < x1; xx++)
-			if (g_fb[yy * SCR_W + xx] != bgpx0) n++;
+			if (!GY_PxEqual(g_fb[yy * SCR_W + xx], bgpx0)) n++;
 	return n;
 }
 
@@ -94,7 +94,7 @@ int main(void)
 
 	//---- 渲染:高柱像素多于矮柱 ----
 	YMGUI_Refresh(ctx);
-	GYcolor bg0 = g_fb[0]; //左上角=背景
+	GYpx bg0 = g_fb[0]; //左上角=背景
 	//柱0(x≈0..23,值10)对比柱7(x≈176..199,值90)
 	int lit_low  = litIn(bg0, 2, 22, 0, 120);
 	int lit_high = litIn(bg0, 177, 197, 0, 120);
@@ -107,8 +107,8 @@ int main(void)
 		int col = 186;
 		GYpx px_top = g_fb[16 * SCR_W + col];  //近柱顶
 		GYpx px_bot = g_fb[115 * SCR_W + col]; //近柱底
-		CHECK(px_top != bg0 && px_bot != bg0, "柱7 顶/底都落在柱身内(非背景)");
-		CHECK(px_top != px_bot, "BY_HEIGHT:同柱顶部与底部颜色不同(竖直渐变)");
+		CHECK(!GY_PxEqual(px_top, bg0) && !GY_PxEqual(px_bot, bg0), "柱7 顶/底都落在柱身内(非背景)");
+		CHECK(!GY_PxEqual(px_top, px_bot), "BY_HEIGHT:同柱顶部与底部颜色不同(竖直渐变)");
 	}
 
 	//---- TopMode:NONE 顶标不画,BAR 顶标画 ----

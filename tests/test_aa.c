@@ -29,7 +29,7 @@ static GYsurface g_s;
 
 static void clearFb(void)
 {
-	for (int i = 0; i < W * H; i++) g_fb[i] = 0;//背景=0(黑)
+	for (int i = 0; i < W * H; i++) g_fb[i] = GY_PX_ZERO;//背景=0(黑)
 }
 static void initSurf(void)
 {
@@ -46,8 +46,8 @@ static void tally(GYpx bg, GYpx fg, int* mid, int* exact)
 	*mid = 0; *exact = 0;
 	for (int i = 0; i < W * H; i++)
 	{
-		if (g_fb[i] == fg) (*exact)++;
-		else if (g_fb[i] != bg) (*mid)++;
+		if (GY_PxEqual(g_fb[i], fg)) (*exact)++;
+		else if (!GY_PxEqual(g_fb[i], bg)) (*mid)++;
 	}
 }
 
@@ -56,22 +56,22 @@ int main(void)
 	initSurf();
 	GYcolor white = GY_ARGB(0xFF, 0xFF, 0xFF, 0xFF);
 	GYpx    whitepx = GY_ColorToPx(white);
-	GYpx    bg = 0;
+	GYpx    bg = GY_PX_ZERO;
 
 	//---- A. 混合基石 ----
 	//GY_MixPx:半覆盖度应出中间值(既非 bg 也非 fg)
 	GYpx half = GY_MixPx(bg, white, 128);
-	CHECK(half != bg && half != whitepx, "GY_MixPx half coverage -> intermediate");
-	CHECK(GY_MixPx(bg, white, 0) == bg, "GY_MixPx opa=0 keeps dst");
-	CHECK(GY_MixPx(bg, white, 255) == whitepx, "GY_MixPx opa=255 -> full src");
+	CHECK(!GY_PxEqual(half, bg) && !GY_PxEqual(half, whitepx), "GY_MixPx half coverage -> intermediate");
+	CHECK(GY_PxEqual(GY_MixPx(bg, white, 0), bg), "GY_MixPx opa=0 keeps dst");
+	CHECK(GY_PxEqual(GY_MixPx(bg, white, 255), whitepx), "GY_MixPx opa=255 -> full src");
 	//GY_BlendPx:裁剪外不写
 	clearFb();
 	g_s.clip = (GYrect){0, 0, 10, 10};
 	GY_BlendPx(&g_s, 50, 50, white, 200);//裁剪区外
-	CHECK(at(50, 50) == bg, "GY_BlendPx outside clip does not write");
+	CHECK(GY_PxEqual(at(50, 50), bg), "GY_BlendPx outside clip does not write");
 	g_s.clip = g_s.buf_area;
 	GY_BlendPx(&g_s, 5, 5, white, 128);
-	CHECK(at(5, 5) != bg && at(5, 5) != whitepx, "GY_BlendPx writes blended pixel");
+	CHECK(!GY_PxEqual(at(5, 5), bg) && !GY_PxEqual(at(5, 5), whitepx), "GY_BlendPx writes blended pixel");
 
 #if YMGUI_ANTIALIAS
 	//---- B1. Wu 斜线:边缘应有中间灰度;端点精确色 ----
@@ -100,7 +100,7 @@ int main(void)
 	tally(bg, whitepx, &mid, &exact);
 	CHECK(exact > 0, "filled circle has solid core");
 	CHECK(mid > 0, "filled circle has AA boundary");
-	CHECK(at(32, 32) == whitepx, "filled circle center is solid fg");
+	CHECK(GY_PxEqual(at(32, 32), whitepx), "filled circle center is solid fg");
 
 	//---- B4. 弧:有中间灰度 ----
 	clearFb();

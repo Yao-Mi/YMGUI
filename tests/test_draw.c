@@ -24,7 +24,7 @@ static GYsurface s;
 
 static void clearBuf(void)
 {
-	for (int i = 0; i < W * H; i++) buf[i] = 0;
+	for (int i = 0; i < W * H; i++) buf[i] = GY_PX_ZERO;
 }
 static void setupFull(void)
 {
@@ -36,14 +36,15 @@ static void setupFull(void)
 static int countSet(void)
 {
 	int c = 0;
-	for (int i = 0; i < W * H; i++) if (buf[i]) c++;
+	for (int i = 0; i < W * H; i++) if (!GY_PxIsZero(buf[i])) c++;
 	return c;
 }
-static int px(int x, int y) { return buf[y * W + x] != 0; }
+static int px(int x, int y) { return !GY_PxIsZero(buf[y * W + x]); }
 
 int main(void)
 {
 	GYcolor white = GY_ARGB(0xFF, 0xFF, 0xFF, 0xFF);
+	GYpx whitepx = GY_ColorToPx(white);
 
 	//---- 定点三角表 ----
 	CHECK(GY_Sin(0) == 0, "sin(0)=0");
@@ -80,16 +81,16 @@ int main(void)
 
 	//---- 图片 blit ----
 	setupFull();
-	GYpx idata[4] = {white, white, white, white};//2x2 全白
-	GYimg img = {idata, 2, 2, 0, 0};
+	GYpx idata[4] = {whitepx, whitepx, whitepx, whitepx};//2x2 全白
+	GYimg img = {idata, 2, 2, 0, GY_PX_ZERO};
 	YMGUI_Draw_Img(&s, &img, 5, 5);
 	CHECK(px(5, 5) && px(6, 6) && px(6, 5) && px(5, 6), "2x2 img blitted");
 	CHECK(countSet() == 4, "img exactly 4 px");
 
 	//---- colorkey 透明 ----
 	setupFull();
-	GYpx kd[4] = {white, 0, 0, white};//对角白,其余=key(0)
-	GYimg kimg = {kd, 2, 2, 1, 0};//use_key, key=0
+	GYpx kd[4] = {whitepx, GY_PX_ZERO, GY_PX_ZERO, whitepx};//对角白,其余=key(0)
+	GYimg kimg = {kd, 2, 2, 1, GY_PX_ZERO};//use_key, key=0
 	YMGUI_Draw_Img(&s, &kimg, 10, 10);
 	CHECK(px(10, 10) && px(11, 11), "colorkey: opaque corners drawn");
 	CHECK(!px(11, 10) && !px(10, 11), "colorkey: key pixels skipped");
@@ -98,27 +99,30 @@ int main(void)
 	//源 2x2:每格不同值(左上1 右上2 左下3 右下4),放大 4x → 8x8 块,每源像素占 4x4
 	setupFull();
 	{
-		GYpx sd[4] = {1, 2, 3, 4};
-		GYimg simg = {sd, 2, 2, 0, 0};
+		GYpx sd[4] = {
+			GY_ColorToPx(GY_ARGB(0xFF, 0x40, 0, 0)), GY_ColorToPx(GY_ARGB(0xFF, 0x80, 0, 0)),
+			GY_ColorToPx(GY_ARGB(0xFF, 0xC0, 0, 0)), GY_ColorToPx(GY_ARGB(0xFF, 0xFF, 0, 0))
+		};
+		GYimg simg = {sd, 2, 2, 0, GY_PX_ZERO};
 		GYrect dst = {10, 10, 8, 8};//2x2 -> 8x8,放大 4 倍
 		YMGUI_Draw_ImgScaled(&s, &simg, dst);
 		CHECK(countSet() == 64, "scale up 2x2->8x8 fills 64 px");
 		//左上区(10..13,10..13)= 源[0][0]=1
-		CHECK(buf[10 * W + 10] == 1 && buf[13 * W + 13] == 1, "scale up: TL quadrant = src 1");
+		CHECK(GY_PxEqual(buf[10 * W + 10], sd[0]) && GY_PxEqual(buf[13 * W + 13], sd[0]), "scale up: TL quadrant = src 1");
 		//右上区(14..17,10..13)= 源[0][1]=2
-		CHECK(buf[10 * W + 14] == 2 && buf[13 * W + 17] == 2, "scale up: TR quadrant = src 2");
+		CHECK(GY_PxEqual(buf[10 * W + 14], sd[1]) && GY_PxEqual(buf[13 * W + 17], sd[1]), "scale up: TR quadrant = src 2");
 		//左下区(10..13,14..17)= 源[1][0]=3
-		CHECK(buf[14 * W + 10] == 3 && buf[17 * W + 13] == 3, "scale up: BL quadrant = src 3");
+		CHECK(GY_PxEqual(buf[14 * W + 10], sd[2]) && GY_PxEqual(buf[17 * W + 13], sd[2]), "scale up: BL quadrant = src 3");
 		//右下区(14..17,14..17)= 源[1][1]=4
-		CHECK(buf[14 * W + 14] == 4 && buf[17 * W + 17] == 4, "scale up: BR quadrant = src 4");
+		CHECK(GY_PxEqual(buf[14 * W + 14], sd[3]) && GY_PxEqual(buf[17 * W + 17], sd[3]), "scale up: BR quadrant = src 4");
 	}
 
 	//---- 缩放 blit:缩小 ----
 	//源 8x8 全白缩到 4x4:应恰好 16 px 且都是白
 	setupFull();
 	{
-		GYpx big[64]; for (int i = 0; i < 64; i++) big[i] = white;
-		GYimg bimg = {big, 8, 8, 0, 0};
+		GYpx big[64]; for (int i = 0; i < 64; i++) big[i] = whitepx;
+		GYimg bimg = {big, 8, 8, 0, GY_PX_ZERO};
 		GYrect dst = {20, 20, 4, 4};
 		YMGUI_Draw_ImgScaled(&s, &bimg, dst);
 		CHECK(countSet() == 16, "scale down 8x8->4x4 = 16 px");
@@ -131,8 +135,8 @@ int main(void)
 	setupFull();
 	s.clip = (GYrect){0, 0, 16, 64};//只留左 16 列
 	{
-		GYpx sd[4] = {white, white, white, white};
-		GYimg simg = {sd, 2, 2, 0, 0};
+		GYpx sd[4] = {whitepx, whitepx, whitepx, whitepx};
+		GYimg simg = {sd, 2, 2, 0, GY_PX_ZERO};
 		GYrect dst = {10, 10, 20, 10};//右侧超出 clip(x>=16 被裁)
 		YMGUI_Draw_ImgScaled(&s, &simg, dst);
 		//x 10..15 可见(6 列)× y 10..19(10 行)= 60 px,右边 16.. 被裁
@@ -143,8 +147,8 @@ int main(void)
 	//---- 缩放 blit:colorkey ----
 	setupFull();
 	{
-		GYpx kd[4] = {white, 0, 0, white};//对角白,其余 key(0)
-		GYimg kimg2 = {kd, 2, 2, 1, 0};
+		GYpx kd[4] = {whitepx, GY_PX_ZERO, GY_PX_ZERO, whitepx};//对角白,其余 key(0)
+		GYimg kimg2 = {kd, 2, 2, 1, GY_PX_ZERO};
 		GYrect dst = {30, 30, 8, 8};//放大 4x
 		YMGUI_Draw_ImgScaled(&s, &kimg2, dst);
 		//TL/BR 象限白(各 16 px)= 32,TR/BL 象限 key 跳过
@@ -156,8 +160,8 @@ int main(void)
 	//---- 缩放 blit:退化保护(空 dst 不崩不画)----
 	setupFull();
 	{
-		GYpx sd[4] = {white, white, white, white};
-		GYimg simg = {sd, 2, 2, 0, 0};
+		GYpx sd[4] = {whitepx, whitepx, whitepx, whitepx};
+		GYimg simg = {sd, 2, 2, 0, GY_PX_ZERO};
 		GYrect z = {5, 5, 0, 8};//w=0
 		YMGUI_Draw_ImgScaled(&s, &simg, z);
 		CHECK(countSet() == 0, "scale: zero-width dst draws nothing");

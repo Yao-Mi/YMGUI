@@ -37,7 +37,7 @@ void YMGUI_Draw_Img(GYSURFACE s, GYIMG img, GYcoord x, GYcoord y)
 		{
 			GYcoord ix = sx - x;//图片内列
 			GYpx p = srow[ix];
-			if (img->use_key && p == img->key)
+			if (img->use_key && GY_PxEqual(p, img->key))
 				continue;//透明色跳过
 			GY_PutPx(s, sx, sy, p);
 		}
@@ -81,7 +81,7 @@ void YMGUI_Draw_ImgScaled(GYSURFACE s, GYIMG img, GYrect dst)
 			if (sxf < 0) sxf = 0;
 			if (sxf >= img->w) sxf = img->w - 1;
 			GYpx p = srow[sxf];
-			if (img->use_key && p == img->key)
+			if (img->use_key && GY_PxEqual(p, img->key))
 				continue;//透明色跳过
 			GY_PutPx(s, sx, sy, p);
 		}

@@ -71,7 +71,7 @@ int main(int argc, char** argv)
 	YMGUI_Label_SetTextColor(title, GY_ARGB(0xFF, 0x60, 0xD0, 0xF0));
 	YMGUI_Label_SetText(title, "Image scale modes: NONE / FIT / FILL");
 
-	static GYimg img = {s_img, IMG_W, IMG_H, 0, 0};
+	static GYimg img = {s_img, IMG_W, IMG_H, 0, GY_PX_ZERO};
 	//一个方框(160x120),背景近黑以看清 FIT 的黑边
 	GYOBJ imw = YMGUI_Creat_Image_Creat(ctx->root, 80, 40, 160, 120);
 	YMGUI_Obj_SetBgColor(imw, GY_ARGB(0xFF, 0x00, 0x00, 0x00));

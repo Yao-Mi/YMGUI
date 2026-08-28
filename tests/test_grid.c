@@ -181,7 +181,7 @@ int main(void)
 	YMGUI_Refresh(ctx);
 	//采样:左上角块区域(网格左上 10,10 起 40x22)应被表头底色填充(非黑背景)
 	GYpx corner = g_fb[12 * SCR_W + 14];
-	CHECK(corner != GY_ColorToPx(GY_ARGB(0xFF, 0, 0, 0)), "左上角块非黑(表头绘制)");
+	CHECK(!GY_PxEqual(corner, GY_ColorToPx(GY_ARGB(0xFF, 0, 0, 0))), "左上角块非黑(表头绘制)");
 
 	//---- 列宽/行高/行号列宽设置 ----
 	YMGUI_Grid_SetColWidth(grid, 0, 120);
