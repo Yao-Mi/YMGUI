@@ -86,8 +86,8 @@ SDL_VIDEODRIVER=dummy ./build/demo_plugin 120 # 插件系统宿主 demo（无头
 
 `project_Demo/ymgui_app.cmake` 原生支持 Android：YMGUI 核心编译为静态库，SDL 假 LCD
 作为 SDL2 目标链接，应用目标构建为 shared library。需要 Android NDK、CMake 和 SDL2
-导出的 CMake package；通过 `SDL2_DIR` 指向 SDL2 的 package 目录，并用 NDK toolchain
-指定 ABI：
+导出的 CMake package，也可以通过 `SDL2_SOURCE_DIR` 直接构建 SDL2 源码；再用 NDK
+toolchain 指定 ABI：
 
 ```bash
 cmake -S project_Demo/alarm_clock \
@@ -99,6 +99,10 @@ cmake -S project_Demo/alarm_clock \
       -DYMGUI_COLOR_DEPTH=24
 cmake --build build/android/arm64-v8a/alarm_clock
 ```
+
+使用 SDL2 源码时，将 `-DSDL2_DIR=...` 替换为
+`-DSDL2_SOURCE_DIR=/path/to/SDL2`。Android native 目标会自动启用 PIC，并构建为 shared
+library，适合由 Gradle/SDL Activity 打包进 APK/AAB。
 
 将 `-DYMGUI_COLOR_DEPTH=16` 改为 24 即可在 Android 构建 RGB565 或 RGB888 framebuffer。
 应用层仍需由 Java/Kotlin 或 SDL Activity 桥接生命周期、触摸/软键盘和资源路径；动态插件
