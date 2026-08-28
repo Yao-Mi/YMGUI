@@ -82,6 +82,29 @@ SDL_VIDEODRIVER=dummy ./build/demo_plugin 120 # 插件系统宿主 demo（无头
 ./capture_shots.sh -b                 # 先构建再批量截图到 docs/shots/(无头,需 ffmpeg)
 ```
 
+### Android 构建
+
+`project_Demo/ymgui_app.cmake` 原生支持 Android：YMGUI 核心编译为静态库，SDL 假 LCD
+作为 SDL2 目标链接，应用目标构建为 shared library。需要 Android NDK、CMake 和 SDL2
+导出的 CMake package；通过 `SDL2_DIR` 指向 SDL2 的 package 目录，并用 NDK toolchain
+指定 ABI：
+
+```bash
+cmake -S project_Demo/alarm_clock \
+      -B build/android/arm64-v8a/alarm_clock \
+      -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake" \
+      -DANDROID_ABI=arm64-v8a \
+      -DANDROID_PLATFORM=android-24 \
+      -DSDL2_DIR=/path/to/SDL2/lib/cmake/SDL2 \
+      -DYMGUI_COLOR_DEPTH=24
+cmake --build build/android/arm64-v8a/alarm_clock
+```
+
+将 `-DYMGUI_COLOR_DEPTH=16` 改为 24 即可在 Android 构建 RGB565 或 RGB888 framebuffer。
+应用层仍需由 Java/Kotlin 或 SDL Activity 桥接生命周期、触摸/软键盘和资源路径；动态插件
+按 ABI 放入 APK/AAB 的 native library 目录。完整的显示、输入、资源和插件移植约定见
+[`CROSS_PLATFORM_PORTING.md`](CROSS_PLATFORM_PORTING.md)。
+
 ### 插件系统 Demo
 
 `YMGUI/PLUGIN/` 提供一个面向嵌入式约束的轻量插件注册表：插件通过版本化的
