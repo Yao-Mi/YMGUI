@@ -378,7 +378,7 @@ add_executable(demo_editview
 )
 target_include_directories(demo_editview PRIVATE ${SDL2_INCLUDE_DIRS})
 target_compile_definitions(demo_editview PRIVATE
-	GB2312_BIN_PATH="${CMAKE_SOURCE_DIR}/Demo/gb2312_glyphs.bin")
+	GB2312_BIN_PATH="${CMAKE_SOURCE_DIR}/tools/gb2312_glyphs.bin")
 target_link_libraries(demo_editview ymgui ${SDL2_LIBRARIES} m)
 
 # 模态对话框 demo(SDL 假 LCD,按钮弹阻塞模态,遮罩锁底层)
@@ -420,7 +420,7 @@ add_executable(demo_font_gb2312
 )
 target_include_directories(demo_font_gb2312 PRIVATE ${SDL2_INCLUDE_DIRS})
 target_compile_definitions(demo_font_gb2312 PRIVATE
-	GB2312_BIN_PATH="${CMAKE_SOURCE_DIR}/Demo/gb2312_glyphs.bin")
+	GB2312_BIN_PATH="${CMAKE_SOURCE_DIR}/tools/gb2312_glyphs.bin")
 target_link_libraries(demo_font_gb2312 ymgui ${SDL2_LIBRARIES} m)
 
 enable_testing()

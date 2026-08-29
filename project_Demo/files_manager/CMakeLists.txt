@@ -9,4 +9,4 @@ ymgui_add_app(files_manager files_manager.c)
 
 # GB2312 全字库外部 blob 路径(库在 Demo/ 下生成,项目复用同一份)
 target_compile_definitions(files_manager PRIVATE
-	GB2312_BIN_PATH="${YMGUI_REPO_ROOT}/Demo/gb2312_glyphs.bin")
+	GB2312_BIN_PATH="${YMGUI_REPO_ROOT}/tools/gb2312_glyphs.bin")

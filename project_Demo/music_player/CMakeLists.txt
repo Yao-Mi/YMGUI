@@ -19,6 +19,6 @@ ymgui_add_app(music_player
 
 # GB2312 全字库外部 blob 路径(库在 Demo/ 下生成,项目复用同一份)+ 内置默认曲目(无 argv 时用)
 target_compile_definitions(music_player PRIVATE
-	GB2312_BIN_PATH="${YMGUI_REPO_ROOT}/Demo/gb2312_glyphs.bin"
+	GB2312_BIN_PATH="${YMGUI_REPO_ROOT}/tools/gb2312_glyphs.bin"
 	MP_DEFAULT_AUDIO="${CMAKE_CURRENT_LIST_DIR}/可能-队长.mp3"
 	MP_DEFAULT_LRC="${CMAKE_CURRENT_LIST_DIR}/可能-队长.lrc")

@@ -7,7 +7,7 @@
 - 每个项目一个子文件夹,内含自己的 `CMakeLists.txt` 和源码。
 - 各项目 CMakeLists 只需 include 共享咬合层 `../ymgui_app.cmake`,再一行 `ymgui_add_app(...)`。样板(9 层裸头 include、GLOB 库源码建 `ymgui`、SDL_LCD 建 `sdl_lcd`、找 SDL2)全在咬合层里,不必每项目重抄。
 - 共享咬合层在 Linux 上通过 `pkg-config` 找 SDL2,在 Windows/Android 上使用 SDL2 CMake target；Android 应用目标构建为 shared library,Windows 可用 `-DYMGUI_SDL_STATIC=ON` 优先选择静态 SDL2 target。
-- 编译输出统一收到 `build/project_Demo/<项目名>/` 下(configure 时用 `-B` 指定)。跨平台工具链和输入适配见 [`../CROSS_PLATFORM_PORTING.md`](../CROSS_PLATFORM_PORTING.md)。
+- 编译输出统一收到 `build/project_Demo/<项目名>/` 下(configure 时用 `-B` 指定)。跨平台工具链和输入适配见 [`../docs/CROSS_PLATFORM_PORTING.md`](../docs/CROSS_PLATFORM_PORTING.md)。
 
 ## 加一个新项目
 

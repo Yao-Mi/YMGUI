@@ -27,13 +27,13 @@
 //
 // 【轴2 字集范围:方案1 精简 / 方案3 GB2312】—— 字模【生成期】拍板,不是宏!
 //   预处理器变不出字模 bitmap:两方案的差别是"哪些汉字被烤进 FontDataCJK.c、文件多大",
-//   属于数据不是代码。用宏裁决只是做戏。改法是重跑 Demo/gen_font.py:
-//     方案1(默认,精简):python3 Demo/gen_font.py --cjk YMGUI/CORE/YMGUI_FontDataCJK.c
+//   属于数据不是代码。用宏裁决只是做戏。改法是重跑 tools/gen_font.py:
+//     方案1(默认,精简):python3 tools/gen_font.py --cjk YMGUI/CORE/YMGUI_FontDataCJK.c
 //                        只烤 PRESET_CJK 里列的字(~75 字,9.6KB),控件标题够用,省 flash。
 //                        代价:表外的字 fallback 画不出(现象=不显示,非 bug)。
-//     方案3(全量):     python3 Demo/gen_font.py --cjk --gb2312 --extern \
-//                          --bin Demo/gb2312_glyphs.bin YMGUI/CORE/YMGUI_FontDataGB2312.c
-//                        烤 GB2312 一二级共 6763 字(~866KB):索引.c 进库,字模 blob 进外部 flash。
+//     方案3(全量):     python3 tools/gen_font.py --cjk --gb2312 --extern \
+//                          --bin tools/gb2312_glyphs.bin YMGUI/CORE/YMGUI_FontDataGB2312.c
+//                        烤 GB2312 汉字+符号共 7448 字形(953344B):索引.c 进库,字模 blob 进外部 flash。
 //                        任意简体中文都能显,配轴3外部 flash 回调。
 //
 // 【轴3 字模存放:内部 rodata / 外部 flash】—— 运行期,靠 GYfont.glyph_read 字段(非本宏)

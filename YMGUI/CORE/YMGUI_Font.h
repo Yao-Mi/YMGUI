@@ -33,7 +33,7 @@ typedef struct YMGUI_font
 }GYfont;
 typedef const GYfont* GYFONT;
 
-//库内嵌的默认字体(见 YMGUI_FontData.c,由 Demo/gen_font.py 生成)
+//库内嵌的默认字体(见 YMGUI_FontData.c,由 tools/gen_font.py 生成)
 extern const GYfont YMGUI_Font_Default;
 
 //运行期全局兜底字体:任一字体的 const fallback 链走空后,再下探这个(默认 NULL 无影响)。

@@ -37,7 +37,7 @@
 static GYOBJ g_ev;
 static uint8 g_wrap = 1;
 
-//---- GB2312 全集(6763 字)挂全局回退链,让编辑框能打任意中文 ----
+//---- GB2312 汉字+符号全集(7448 字形)挂全局回退链,让编辑框能打任意中文 ----
 //固件内只驻留的排序码点索引表(无 bitmap),字模在外部 blob(见 CORE/YMGUI_FontDataGB2312.c)
 extern const uint16 YMGUI_GB2312_cps[];
 extern const uint16 YMGUI_GB2312_glyph_count;

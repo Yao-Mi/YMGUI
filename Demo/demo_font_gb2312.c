@@ -16,7 +16,7 @@
   *	@FileName:    demo_font_gb2312.c
   *	@Author:      yaomimaoren
   *	@Date:        2026-08-01
-  *	@Description: 方案3 + 外部 flash 演示:GB2312 全集(汉字+符号,7445 项)字模不进固件,放"外部 flash"
+  *	@Description: 方案3 + 外部 flash 演示:GB2312 全集(汉字+符号,7448 项)字模不进固件,放"外部 flash"
   *	              (此处用磁盘 blob gb2312_glyphs.bin 模拟)。固件内只留码点索引 YMGUI_GB2312_cps[]
   *	              (~13.5KB)。app 自造 GYfont s_gb_font,填 glyph_read=flashRead 回调:第 i 字
   *	              在 blob 的 i*128 偏移。YMGUI_Font_SetFallback(&s_gb_font) 把它挂进全局回退链,
@@ -65,7 +65,7 @@ static uint32 flashRead(const GYfont* font, uint32 off, uint32 len, uint8* buf)
 static GYfont s_gb_font =
 {
 	NULL,                 //bitmap:外部 flash,不用指针
-	YMGUI_GB2312_cps,     //codepoints:排序码点索引表(含符号区,7445 项)
+	YMGUI_GB2312_cps,     //codepoints:排序码点索引表(含符号区,7448 项)
 	0,                    //glyph_count:非编译期常量,main 运行期填 YMGUI_GB2312_glyph_count
 	0, 0,                 //first_char/last_char:稀疏模式不用
 	16, 16,               //cell_w/cell_h

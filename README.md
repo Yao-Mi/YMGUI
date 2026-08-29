@@ -2,11 +2,11 @@
 
 面向**嵌入式/裸机优先**的跨平台 GUI 库，C99 + GNU 扩展。软件光栅化 + 保留模式 + 分块刷新，桌面(Linux/SDL)开发、裸机(MCU + LCD)部署，两者共用同一套渲染代码，只换一个显示驱动回调。Windows、Android 和真实硬件的平台逻辑集中在 `SDL_LCD/` 或应用桥接层，不进入控件核心。
 
-跨平台显示、输入与构建实践见 [CROSS_PLATFORM_PORTING.md](CROSS_PLATFORM_PORTING.md)。
+当前能力、配置和验证基线见 [当前状态](docs/当前状态.md)；跨平台显示、输入与构建实践见 [跨平台移植](docs/CROSS_PLATFORM_PORTING.md)。
 
 ## 状态
 
-26 控件 · 5 类图元 · 33 单测全过 · 25 个交互 demo · 10 个完整应用 · clean build 0 错 0 警。
+27 个具名控件 + base 容器 · 5 类图元 · 35 个 CTest · 28 个独立 demo · 10 个完整应用。
 （Button/Label/Checkbox/Switch/Slider/Bar/Image/Arc/Spinner/Meter/TextInput/TextView/EditView/List/Chart/Dropdown/Table/Tabview/TreeView/Grid/Canvas/ColorPicker/Roller/BarChart/MsgBox/FileDialog/Joystick + base 容器）
 
 抗锯齿(4bpp 灰度字体 + Wu 斜线 + 距离场圆弧，`YMGUI_ANTIALIAS` 可裁)、中文/CJK(UTF-8 回退链 + 稀疏字模 + 外部 flash 回调，`YMGUI_FONT_CJK` 可裁)、状态/数据绑定地基均已落地。
@@ -80,6 +80,8 @@ SDL_VIDEODRIVER=dummy ./build/demo_plugin 120 # 插件系统宿主 demo（无头
 
 ./build_all.sh                        # 一键建库 + 全部 Demo + 10 个 project_Demo 项目
 ./capture_shots.sh -b                 # 先构建再批量截图到 docs/shots/(无头,需 ffmpeg)
+tools/check_repo.sh                   # 文档/字库/计数/路径快速检查
+tools/test_matrix.sh                  # RGB565 + RGB888 构建和 35 个 CTest
 ```
 
 ### Android 构建
@@ -107,7 +109,7 @@ library，适合由 Gradle/SDL Activity 打包进 APK/AAB。
 将 `-DYMGUI_COLOR_DEPTH=16` 改为 24 即可在 Android 构建 RGB565 或 RGB888 framebuffer。
 应用层仍需由 Java/Kotlin 或 SDL Activity 桥接生命周期、触摸/软键盘和资源路径；动态插件
 按 ABI 放入 APK/AAB 的 native library 目录。完整的显示、输入、资源和插件移植约定见
-[`CROSS_PLATFORM_PORTING.md`](CROSS_PLATFORM_PORTING.md)。
+[跨平台移植](docs/CROSS_PLATFORM_PORTING.md)。
 
 ### 插件系统 Demo
 
@@ -125,12 +127,13 @@ library，适合由 Gradle/SDL Activity 打包进 APK/AAB。
 
 | 想做什么 | 读哪份 |
 |---------|-------|
-| **第一次接触，先搞懂全貌** | `PROJECT.md`（是什么/为什么/进度/目录/构建） |
-| **理解架构、扩展库** | `ARCHITECTURE.md`（分层/核心类型/渲染管线/各机制设计） |
-| **写代码，查控件怎么用** | `API.md`（控件速查 + 最小程序骨架 + demo 索引） |
-| **写代码，守规范** | `代码风格.md`（命名/格式/目录归位/性能惯用手法） |
-| **移植到 Windows、Android 或真机** | `CROSS_PLATFORM_PORTING.md`（显示/输入桥接 + CMake + 验证清单） |
-| **了解怎么一路走来、踩过啥坑** | `DEVLOG.md`（逐轮进程 + 问题记录） |
+| **第一次接触，先搞懂现状** | [`docs/当前状态.md`](docs/当前状态.md) |
+| **理解架构、扩展库** | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) |
+| **写代码，查控件怎么用** | [`docs/API.md`](docs/API.md) |
+| **写代码，守规范** | [`docs/代码风格.md`](docs/代码风格.md) |
+| **移植到 Windows、Android 或真机** | [`docs/CROSS_PLATFORM_PORTING.md`](docs/CROSS_PLATFORM_PORTING.md) |
+| **了解当前开发进程** | [`docs/DEVLOG_V2.md`](docs/DEVLOG_V2.md) |
+| **查看全部文档的分层与归档** | [`docs/README.md`](docs/README.md) |
 
 ## 一分钟理解设计
 
@@ -143,9 +146,6 @@ library，适合由 Gradle/SDL Activity 打包进 APK/AAB。
 
 ## 维护约定（重要）
 
-文档是快照，会随代码过期。**每轮加控件/改机制时顺手更新三处**：
-- `API.md` — 新控件的函数
-- `DEVLOG.md` — 这轮做了啥 + 踩的坑
-- `PROJECT.md` — 控件计数 / 进度快照
+当前事实统一维护在 `docs/当前状态.md`，每轮开发过程续写到 `docs/DEVLOG_V2.md`。公开 API、架构、移植或规范变化时，再更新对应专题文档。`docs/history/` 只保留冻结的 V1 和旧快照，需要追溯决策或排查回归时才阅读。具体规则见 [`AGENTS.md`](AGENTS.md)。
 
 `tests/test_*.c` 里的断言即行为规格 —— 改机制先看对应测试，改完让它继续过。

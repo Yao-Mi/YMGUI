@@ -183,7 +183,7 @@ for 每条 band:
 
 **粗弧环 ArcThick** 用径向填充（角度按外圆弧长自适应细分 + 每角度沿半径逐像素连填），周向+径向双向无缝，解决了多层独立画圆弧留黑洞的问题。
 
-**字体**：`Demo/gen_font.py` 把 TTF 栅格成定宽点阵，生成 `CORE/YMGUI_FontData*.c`。选位图而非 stb_truetype 是裸机决策（无 FPU/无依赖/纯数据）。默认 ASCII 8×16 连续 32..126；CJK 16×16 4bpp 用稀疏排序 `codepoints[]`(二分查找)。
+**字体**：`tools/gen_font.py` 把 TTF 栅格成定宽点阵，生成 `CORE/YMGUI_FontData*.c`。选位图而非 stb_truetype 是裸机决策（无 FPU/无依赖/纯数据）。默认 ASCII 8×16 连续 32..126；CJK 16×16 4bpp 用稀疏排序 `codepoints[]`(二分查找)。
 
 **中文/CJK 三层设计**（`YMGUI_FONT_CJK` 可整体裁掉）：
 - **回退链**：`GYfont` 有 `fallback` 字段。默认 ASCII 字体遇 CJK 码点自动下探 `YMGUI_Font_CJK`；`cell_h` 一致时基线自动对齐。所有控件仍用 `&YMGUI_Font_Default` + `const char*`，零改动出中文。

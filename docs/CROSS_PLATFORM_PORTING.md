@@ -67,7 +67,7 @@ SDL 长按规则为保持 600ms、相对起点移动不超过 10px、每次触�
 
 ## 5. CMake 构建
 
-`project_Demo/ymgui_app.cmake` 统一负责构建 `ymgui`、`sdl_lcd` 和应用目标：
+`../project_Demo/ymgui_app.cmake` 统一负责构建 `ymgui`、`sdl_lcd` 和应用目标：
 
 - Linux：通过 `pkg-config` 查找 SDL2；
 - Windows：使用 SDL2 CMake package 的 `SDL2::SDL2`，存在时链接 `SDL2::SDL2main`；
@@ -105,7 +105,7 @@ Windows/Android 交叉构建时应通过 `SDL2_DIR` 指向 SDL2 导出的 CMake 
 裸机默认 `YMGUI_PLUGIN_DYNAMIC=0`，不包含任何 OS 头文件；有操作系统的平台默认开启，
 也可显式设为 `0`。Android 插件应随 APK/AAB 按 ABI 打包，并从应用允许的 native
 library 或私有目录加载，不应照搬桌面的任意插件目录模型。完整构建例见
-`project_Demo/plugin_host/README.md`。
+`../project_Demo/plugin_host/README.md`。
 
 ## 7. 验证清单
 

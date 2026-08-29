@@ -1,17 +1,8 @@
-# YMGUI 开发进程文档
+# YMGUI 开发进程文档 V1
+
+> **V1 归档，已冻结。** 本卷保留第 0～41 轮的开发记录，其中计数、路径和方案可能已过期。当前事实见 [`../当前状态.md`](../当前状态.md)，后续进程见 [`../DEVLOG_V2.md`](../DEVLOG_V2.md)。
 
 按时间顺序记录每一轮做了什么、遇到什么问题、怎么解决的。开发始于 2026-07。
-
----
-
-## 第 42 轮：RGB888 framebuffer 与双格式构建
-
-- 新增 `YMGUI_COLOR_DEPTH=24`：`GYpx` 为 packed 的 3 字节 RGB888（内存顺序 R、G、B），补齐颜色转换、alpha 混合、图片 colorkey、SDL `RGB24` 输出。
-- 保留并验证 `YMGUI_COLOR_DEPTH=16` 的 RGB565 路径；像素比较统一使用 `GY_PxEqual`，清零使用 `GY_PX_ZERO`，避免把 RGB888 结构体当整数访问。
-- 顶层工程和 `project_Demo` 共用格式选项，构建目录按格式归档：`build/rgb565/...`、`build/rgb888/...`。
-- `video_player` 按格式选择 FFmpeg `rgb565le` 或 `rgb24` 原始帧输入。
-- 验证结果：顶层 RGB565/RGB888 各 35 项测试全部通过；10 个 `project_Demo` 在两种格式下均构建通过。
-- **本轮补充：窗口关闭请求回调**。`SDL_LCD_SetCloseRequestCb(cb, user)` 仅属于桌面 SDL port；收到 `SDL_QUIT` 时，回调返回 0 取消本次关闭，返回非 0 才使 `SDL_LCD_PumpEvents()` 返回 0。未注册时保持旧行为，`Esc` 快捷退出不经过该回调。新增 `demo_close_request`（第一次关闭取消，第二次允许）和 `test_sdl_context` 允许/取消回归覆盖。
 
 ---
 

@@ -41,7 +41,7 @@ SDL_VIDEODRIVER=dummy ./build/project_Demo/files_manager/files_manager 6
 
 ## 中文显示
 
-复用 `Demo/gb2312_glyphs.bin` 全字库外部 blob(GB2312 码点索引在固件、字模在 blob),
+复用 `tools/gb2312_glyphs.bin` 全字库外部 blob(GB2312 码点索引在固件、字模在 blob),
 CMake 通过 `GB2312_BIN_PATH` 传绝对路径。无 blob 时中文/标点回退为占位空格(内置 CJK 仅 75 字)。
 
 ## 暴露/补齐的库缺口

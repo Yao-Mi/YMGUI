@@ -1,5 +1,7 @@
 # YMGUI 项目记录文档
 
+> **历史快照，已冻结。** 本文中的进度、计数和字库体积保留当时语境，不代表当前仓库。当前事实见 [`../当前状态.md`](../当前状态.md)。
+
 ## 一、项目是什么
 
 YMGUI 是一个**面向嵌入式/裸机优先**的跨平台 GUI 库，用 C99 + GNU 扩展编写。
@@ -29,7 +31,7 @@ YMGUI 是一个**面向嵌入式/裸机优先**的跨平台 GUI 库，用 C99 + 
 | 最窄腰部 | 显示驱动回调 `flush(area, buf)` + 输入注入 |
 | 参考 | LVGL 架构路线 |
 
-这些决策的详细论证见 `ARCHITECTURE.md`。
+这些决策的详细论证见 `../ARCHITECTURE.md`。
 
 ## 四、当前进度快照
 
@@ -117,5 +119,5 @@ cd build && ctest --output-on-failure
 
 - `代码风格.md` — 命名/格式/目录归位/性能惯用手法（权威规范）
 - `ARCHITECTURE.md` — 分层、核心类型、渲染管线、各机制设计
-- `DEVLOG.md` — 逐轮开发进程 + 踩过的坑
+- `DEVLOG_V1.md` — 第 0～41 轮开发进程 + 踩过的坑（第 42 轮起见 `../DEVLOG_V2.md`）
 - `CROSS_PLATFORM_PORTING.md` — Linux/Windows/Android SDL 桥接、鼠标/触摸输入、资源与构建验证；真实 MCU 仍照 `flush_cb` 最窄腰部实现

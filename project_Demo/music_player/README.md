@@ -48,7 +48,7 @@ files_manager 催生 `TreeView`、excel_edit 催生 `Grid`、image_edit 催生 `
 - **下方**:可拖动进度 Slider(range 0..1000,`changed` 回调换算毫秒 `seek`;拖动中靠
   `slider->state & GY_STATE_Pressed` 判定,时钟不回写防抖)+ 当前/总时长标签 + 播放/暂停按钮。
 
-GB2312 全字库回退(复用 `Demo/gb2312_glyphs.bin`),中文歌词/标题可显示。
+GB2312 全字库回退(复用 `tools/gb2312_glyphs.bin`),中文歌词/标题可显示。
 
 ## 构建 / 运行
 
