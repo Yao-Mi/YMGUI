@@ -13,10 +13,10 @@
 Linux 构建运行：
 
 ```bash
-cmake -S project_Demo/plugin_host -B build/project_Demo/plugin_host
-cmake --build build/project_Demo/plugin_host
-./build/project_Demo/plugin_host/plugin_host
-ctest --test-dir build/project_Demo/plugin_host --output-on-failure
+cmake -S project_Demo/plugin_host -B build/rgb565/project_Demo/plugin_host
+cmake --build build/rgb565/project_Demo/plugin_host
+./build/rgb565/project_Demo/plugin_host/plugin_host
+ctest --test-dir build/rgb565/project_Demo/plugin_host --output-on-failure
 ```
 
 CTest 会在 SDL dummy 驱动下自动执行一次卸载、重新加载和插件内刷新操作。
@@ -27,7 +27,7 @@ CTest 会在 SDL dummy 驱动下自动执行一次卸载、重新加载和插件
 也可用第二个参数指定扫描目录：
 
 ```bash
-./build/project_Demo/plugin_host/plugin_host -1 /path/to/plugins
+./build/rgb565/project_Demo/plugin_host/plugin_host -1 /path/to/plugins
 ```
 
 探测会打开候选动态库来读取导出描述符，因此能过滤不兼容库，但不构成安全沙箱；

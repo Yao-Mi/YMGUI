@@ -1,0 +1,6 @@
+# YMGUI chinese_ime user dictionary
+# Format: word<TAB>space- or apostrophe-separated pinyin<TAB>initial frequency
+# Example (remove the leading # and keep real TAB separators to enable):
+# 看看你的	kan kan ni de	50000
+嘎达	ga da	50000
+尼玛	ni ma	100000

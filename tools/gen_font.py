@@ -12,7 +12,7 @@
 #   python3 tools/gen_font.py YMGUI/CORE/YMGUI_FontData.c 1            # ASCII 1bpp
 #   python3 tools/gen_font.py YMGUI/CORE/YMGUI_FontDataCJK.c --cjk                  # 方案1:PRESET_CJK(~75字,9.6KB)
 #   python3 tools/gen_font.py YMGUI/CORE/YMGUI_FontDataCJK.c --cjk --charset "确定取消" # 自定义字集
-#   python3 tools/gen_font.py YMGUI/CORE/YMGUI_FontDataGB2312.c --cjk --gb2312 --extern --bin tools/gb2312_glyphs.bin  # 方案3:GB2312+符号(7448字形),索引进库+blob 进外部flash
+#   python3 tools/gen_font.py YMGUI/CORE/YMGUI_FontDataGB2312.c --cjk --gb2312 --extern --bin tools/gb2312_glyphs.bin  # 方案3:GB2312+输入法符号,索引进库+blob 进外部flash
 #
 # CJK 光栅化用 PT=16 / Y_OFF=-5 填满 16px 格高、与 ASCII 基线对齐;曾用 PT=15/Y_OFF=0
 # 导致字沉底半格 + 底行被裁(现象="矮半截/少半截"),已修,见 emit_cjk。
@@ -22,6 +22,29 @@ from PIL import Image, ImageFont, ImageDraw
 
 ASCII_TTF = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
 CJK_TTF   = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+SYMBOL_TTF = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+
+# GB2312 解码表之外、但输入法符号页会直接产出的 BMP 码点。补充符号使用
+# DejaVu Sans 光栅化；Noto Sans CJK 对部分上下标/箭头只会给出 .notdef 方框。
+GB2312_EXTRA = (
+    "—–·"
+    "€£¥¢©®™¶†‡•¤№µ✓✕★☆"
+    "≠≈≤≥±‰∞√∑∏∫∮∝∠⊥∥∪∩∈∉⊂⊃∧∨¬"
+    "∓≡≅≌≒≔≕∛∜∂∇∆∬∭∀∃∄∋∌⊆⊇⊄⊅⊕⊖⊗⊘⊙⊢⊣⊤⋅∙⌈⌉⌊⌋"
+    "⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎ⁿ℃"
+    "℉㎡㎥"
+    "⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳"
+    "⑴⑵⑶⑷⑸⑹⑺⑻⑼⑽⑾⑿⒀⒁⒂⒃⒄⒅⒆⒇ⅰⅱⅲⅳⅴⅵⅶⅷⅸⅹ"
+    "ςϐϑϕϖϱϵ"
+    "āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüêńňǹɑɡ"
+    "ĀÁǍÀĒÉĚÈĪÍǏÌŌÓǑÒŪÚǓÙǕǗǙǛÜÊŃŇǸ"
+    "←↑→↓↖↗↘↙↔↕⇐⇑⇒⇓⇔➜➝➞➟➠↩↪↶↷⇦⇧⇨⇩◀▲▶▼△▽▷◁"
+    "↚↛↜↝↞↟↠↡↢↣↤↥↦↧↫↬↭↮↯↰↱↲↳↴↵↼↽↾↿⇀⇁⇄⇅⇆⇇⇈⇉⇊⇋⇌⇍⇏⇕⇖⇗⇘⇙"
+)
+GB2312_EXTRA_CPS = {ord(ch) for ch in GB2312_EXTRA}
+# DejaVu Sans 没有扩展圈号、带括号序号和方形单位，这些由 Noto CJK 提供。
+NOTO_SYMBOL_CPS = {ord(ch) for ch in "⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳⑴⑵⑶⑷⑸⑹⑺⑻⑼⑽⑾⑿⒀⒁⒂⒃⒄⒅⒆⒇㎡㎥"}
+DEJAVU_SYMBOL_CPS = GB2312_EXTRA_CPS - NOTO_SYMBOL_CPS
 
 # demo 预置字集(方案1):够 demo_font_cjk / 常见控件标题用
 PRESET_CJK = "确定取消开关亮度温度湿度设置返回主菜单音量播放暂停上下左右大小人天一二三四五六七八九十首页列表标签输入框滑块进度条中英文字体测试你好世界系统状态正常错误警告"
@@ -41,9 +64,9 @@ def load_gb2312():
     # 补充:输入法常打、但 GB2312 解码表不产出的符号。
     #   GB2312 的 A1AA 单元被 Python 解码成 U+2015(HORIZONTAL BAR),
     #   而中文输入法打"破折号"实际产出 U+2014(EM DASH),两者码点不同 → 不补就显示占位空格。
-    #   一并补 en-dash 与间隔号(同属常用但非 GB2312 码点)。
-    EXTRA = "—–·"  # — 破折号 / – 连接号 / · 间隔号
-    chars.append(EXTRA)
+    #   一并补输入法符号页使用、但 GB2312 解码表没有的数学、角标、拼音和箭头。
+    #   这里是字模补充集，不改变 GB2312 汉字范围；ASCII 仍由默认字体提供。
+    chars.append(GB2312_EXTRA)
     return "".join(chars)
 
 def glyph_bytes(font, ch, cell_w, cell_h, bpp, bytes_per_row, y_off):
@@ -139,6 +162,7 @@ def emit_ascii(out_path, bpp):
 
 #CJK 光栅化几何(两模式共用):PT=16 填满 16px 格,Y_OFF=-5 与 ASCII 基线对齐
 CJK_CELL_W, CJK_CELL_H, CJK_PT, CJK_Y_OFF = 16, 16, 16, -5
+SYMBOL_Y_OFF = -2
 
 
 def emit_cjk(out_path, charset, bpp):
@@ -146,6 +170,7 @@ def emit_cjk(out_path, charset, bpp):
     CELL_W, CELL_H, PT, Y_OFF = CJK_CELL_W, CJK_CELL_H, CJK_PT, CJK_Y_OFF
     bpr = (CELL_W * bpp + 7) // 8
     font = ImageFont.truetype(CJK_TTF, PT)
+    symbol_font = ImageFont.truetype(SYMBOL_TTF, PT)
     # 去重 + 只留 BMP 内(<=0xFFFF)+ 按码点排序(二分查找要求有序)
     cps = sorted({ord(c) for c in charset if 0 < ord(c) <= 0xFFFF})
     fname = out_path.split("/")[-1]
@@ -167,7 +192,9 @@ def emit_cjk(out_path, charset, bpp):
     out.append("static const uint8 s_cjk_bitmap[] = {")
     for cp in cps:
         ch = chr(cp)
-        rows = glyph_bytes(font, ch, CELL_W, CELL_H, bpp, bpr, Y_OFF)
+        glyph_font = symbol_font if cp in DEJAVU_SYMBOL_CPS else font
+        glyph_y = SYMBOL_Y_OFF if cp in DEJAVU_SYMBOL_CPS else Y_OFF
+        rows = glyph_bytes(glyph_font, ch, CELL_W, CELL_H, bpp, bpr, glyph_y)
         hexs = ", ".join(f"0x{b:02X}" for b in rows)
         out.append(f"\t{hexs}, //U+{cp:04X} '{ch}'")
     out.append("};")
@@ -203,6 +230,7 @@ def emit_cjk_extern(out_path, charset, bpp, bin_path=None):
     bpr = (CELL_W * bpp + 7) // 8
     glyph_sz = CELL_H * bpr
     font = ImageFont.truetype(CJK_TTF, PT)
+    symbol_font = ImageFont.truetype(SYMBOL_TTF, PT)
     cps = sorted({ord(c) for c in charset if 0 < ord(c) <= 0xFFFF})
     fname = out_path.split("/")[-1]
     if bin_path is None:
@@ -235,7 +263,9 @@ def emit_cjk_extern(out_path, charset, bpp, bin_path=None):
     #—— 2) bitmap blob .bin(纯字节,i*glyph_sz 偏移;模拟烧进外部 SPI flash 的内容)——
     with open(bin_path, "wb") as bf:
         for cp in cps:
-            rows = glyph_bytes(font, chr(cp), CELL_W, CELL_H, bpp, bpr, Y_OFF)
+            glyph_font = symbol_font if cp in DEJAVU_SYMBOL_CPS else font
+            glyph_y = SYMBOL_Y_OFF if cp in DEJAVU_SYMBOL_CPS else Y_OFF
+            rows = glyph_bytes(glyph_font, chr(cp), CELL_W, CELL_H, bpp, bpr, glyph_y)
             bf.write(bytes(rows))
     print(f"wrote {out_path}: {len(cps)} 码点索引(无bitmap)")
     print(f"wrote {bin_path}: {len(cps)*glyph_sz} bytes glyph blob (glyph_sz={glyph_sz})")
@@ -247,7 +277,7 @@ if __name__ == "__main__":
     ap.add_argument("bpp_pos", nargs="?", default=None, help="ASCII 模式位置参数 bpp(兼容旧用法)")
     ap.add_argument("--cjk", action="store_true", help="生成 CJK 字体(16x16 稀疏码点表)")
     ap.add_argument("--charset", default=PRESET_CJK, help="CJK 字集(方案1 预置,默认 demo 用字)")
-    ap.add_argument("--gb2312", action="store_true", help="CJK 用 GB2312 汉字+符号全集(方案3,当前 7448 字形)")
+    ap.add_argument("--gb2312", action="store_true", help="CJK 用 GB2312 汉字+输入法符号补充集(方案3)")
     ap.add_argument("--extern", action="store_true",
                     help="外部flash模式:.c 只留码点索引,bitmap 另写 .bin(app 侧自造 GYfont + glyph_read 回调)")
     ap.add_argument("--bpp", type=int, default=4, help="每像素位数 1 或 4(默认 4)")

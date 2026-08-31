@@ -37,12 +37,12 @@ GB2312 全字库外部 blob 回退(同 dashboard/txt_edit,靠 `GB2312_BIN_PATH`)
 ## 构建 / 运行
 
 ```sh
-cmake -S project_Demo/alarm_clock -B build/project_Demo/alarm_clock
-cmake --build build/project_Demo/alarm_clock
+cmake -S project_Demo/alarm_clock -B build/rgb565/project_Demo/alarm_clock
+cmake --build build/rgb565/project_Demo/alarm_clock
 # 交互(SDL 窗口):
-build/project_Demo/alarm_clock/alarm_clock
+build/rgb565/project_Demo/alarm_clock/alarm_clock
 # headless 自检(argv[1]=帧数上限):
-SDL_VIDEODRIVER=dummy build/project_Demo/alarm_clock/alarm_clock 20
+SDL_VIDEODRIVER=dummy build/rgb565/project_Demo/alarm_clock/alarm_clock 20
 ```
 
 headless 把闹钟设在"当前+2秒",跑几帧应触发模态,再模拟点关闭 → 模态隐藏、遮罩解锁。

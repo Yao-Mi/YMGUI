@@ -54,18 +54,18 @@ GB2312 全字库回退(复用 `tools/gb2312_glyphs.bin`),中文歌词/标题可�
 
 ```sh
 # 从仓库根:
-cmake -S project_Demo/music_player -B build/project_Demo/music_player
-cmake --build build/project_Demo/music_player -j
+cmake -S project_Demo/music_player -B build/rgb565/project_Demo/music_player
+cmake --build build/rgb565/project_Demo/music_player -j
 
 # 窗口运行(自动开播;不带参数时用工程自带的默认曲目 可能-队长.mp3 + .lrc):
-./build/project_Demo/music_player/music_player
+./build/rgb565/project_Demo/music_player/music_player
 
 # 指定音频文件 + 歌词:argv[2]=音频, argv[3]=.lrc
-./build/project_Demo/music_player/music_player 0 song.mp3 song.lrc
-./build/project_Demo/music_player/music_player 0 /path/to/song.flac project_Demo/music_player/sample.lrc
+./build/rgb565/project_Demo/music_player/music_player 0 song.mp3 song.lrc
+./build/rgb565/project_Demo/music_player/music_player 0 /path/to/song.flac project_Demo/music_player/sample.lrc
 
 # headless 自检(argv[1]=帧数>0 触发 selftest;判成败以 exit code 为准):
-SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy ./build/project_Demo/music_player/music_player 30
+SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy ./build/rgb565/project_Demo/music_player/music_player 30
 # 打印 "selftest: lrc + spectrum + audio engine OK" + "music_player exit ok",exit 0
 ```
 

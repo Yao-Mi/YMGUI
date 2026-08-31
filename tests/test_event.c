@@ -35,6 +35,10 @@ static int     g_capture_during_finish;
 static int     g_released_off;
 static int     g_event_clicked;
 static int     g_wheel_count;
+static int     g_key_event_count;
+static int     g_key_filter_count;
+static uint32  g_filter_key;
+static uint8   g_filter_pressed;
 static GYcoord g_context_x, g_context_y;
 static int32   g_wheel_x, g_wheel_y;
 
@@ -83,6 +87,17 @@ static void onEvent(GYOBJ obj, GYEvent e)
 		g_wheel_x = obj->ctx->wheel_x;
 		g_wheel_y = obj->ctx->wheel_y;
 	}
+	else if (e == GY_EVENT_Key)
+		g_key_event_count++;
+}
+
+static uint8 keyFilter(uint32 key, uint8 pressed, void* user_data)
+{
+	(void)user_data;
+	g_key_filter_count++;
+	g_filter_key = key;
+	g_filter_pressed = pressed;
+	return key == (uint32)'x';
 }
 
 static void resetFlush(void)
@@ -167,6 +182,16 @@ int main(void)
 	CHECK(ctx->point_x == 240 && ctx->point_y == 20, "wheel stores pointer position");
 	YMGUI_Inject_Wheel(240, 20, 0, 0);
 	CHECK(g_wheel_count == 1, "zero wheel delta is ignored");
+
+	//---- 按键过滤器:按下/抬起都可见；消费后不派焦点，未消费按下保持原行为 ----
+	YMGUI_SetFocus(ctx, wheel_target);
+	YMGUI_Inject_SetKeyFilter(keyFilter, NULL);
+	YMGUI_Inject_Key('x', 1); YMGUI_Inject_Key('x', 0);
+	CHECK(g_key_filter_count == 2 && g_filter_key == 'x' && !g_filter_pressed, "key filter observes down and up");
+	CHECK(g_key_event_count == 0, "consumed key does not reach focused object");
+	YMGUI_Inject_Key('y', 1); YMGUI_Inject_Key('y', 0);
+	CHECK(g_key_filter_count == 4 && g_key_event_count == 1, "unconsumed down preserves focused dispatch");
+	YMGUI_Inject_SetKeyFilter(NULL, NULL);
 
 	//---- 上下文请求:只命中派发,不改变焦点/按下状态 ----
 	GYOBJ target = YMGUI_Creat_Obj_Creat(ctx->root, 10, 10, 50, 40);

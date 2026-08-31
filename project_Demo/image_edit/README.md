@@ -61,14 +61,14 @@ GB2312 全字库回退。
 
 ```sh
 # 从仓库根:
-cmake -S project_Demo/image_edit -B build/project_Demo/image_edit
-cmake --build build/project_Demo/image_edit -j
+cmake -S project_Demo/image_edit -B build/rgb565/project_Demo/image_edit
+cmake --build build/rgb565/project_Demo/image_edit -j
 
 # 窗口运行:
-./build/project_Demo/image_edit/image_edit
+./build/rgb565/project_Demo/image_edit/image_edit
 
 # headless 自检(argv[1]=帧数;判成败以 exit code 为准):
-SDL_VIDEODRIVER=dummy ./build/project_Demo/image_edit/image_edit 3
+SDL_VIDEODRIVER=dummy ./build/rgb565/project_Demo/image_edit/image_edit 3
 # 打印 "selftest: all tools + compositing OK" + "image_edit exit ok",exit 0
 ```
 

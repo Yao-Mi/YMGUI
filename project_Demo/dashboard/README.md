@@ -39,12 +39,12 @@ GB2312 全字库外部 blob 回退(同 txt_edit/excel_edit,靠 `GB2312_BIN_PATH`
 ## 构建 / 运行
 
 ```sh
-cmake -S project_Demo/dashboard -B build/project_Demo/dashboard
-cmake --build build/project_Demo/dashboard
+cmake -S project_Demo/dashboard -B build/rgb565/project_Demo/dashboard
+cmake --build build/rgb565/project_Demo/dashboard
 # 交互(SDL 窗口):
-build/project_Demo/dashboard/dashboard
+build/rgb565/project_Demo/dashboard/dashboard
 # headless 自检(argv[1]=帧数上限):
-SDL_VIDEODRIVER=dummy build/project_Demo/dashboard/dashboard 30
+SDL_VIDEODRIVER=dummy build/rgb565/project_Demo/dashboard/dashboard 30
 ```
 
 headless 通过打印 `selftest: dashboard bind + chart feed OK` + `dashboard exit ok`,

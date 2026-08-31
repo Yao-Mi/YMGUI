@@ -34,14 +34,14 @@ primary = number | addr | func '(' addr ':' addr ')' | '(' expr ')'
 
 ```sh
 # 从仓库根:
-cmake -S project_Demo/excel_edit -B build/project_Demo/excel_edit
-cmake --build build/project_Demo/excel_edit -j
+cmake -S project_Demo/excel_edit -B build/rgb565/project_Demo/excel_edit
+cmake --build build/rgb565/project_Demo/excel_edit -j
 
 # 窗口运行:
-./build/project_Demo/excel_edit/excel_edit
+./build/rgb565/project_Demo/excel_edit/excel_edit
 
 # headless 自检(argv[1]=帧数;判成败以 exit code 为准):
-SDL_VIDEODRIVER=dummy ./build/project_Demo/excel_edit/excel_edit 6
+SDL_VIDEODRIVER=dummy ./build/rgb565/project_Demo/excel_edit/excel_edit 6
 # 打印 "selftest: formula eval OK" + "excel_edit exit ok",exit 0
 ```
 

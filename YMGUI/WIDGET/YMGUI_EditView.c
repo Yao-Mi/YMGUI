@@ -30,7 +30,7 @@
   * Copyright (C), 2026-2036, YAOMI Tech. Co., Ltd.
   ***************************************************************************************************************************/
 
-#define EV_PAD_X    4  //文字左内边距(像素)
+#define EV_PAD_X    4  //默认水平内边距(像素)
 #define LINE_CAP0   8  //行表初始容量
 #define EV_NL_MARK  6  //选中含换行时行尾高亮块宽(像素,示意"选中了换行")
 #define EV_FIND_MAX 64 //查找词缓冲上限(字节)
@@ -56,6 +56,7 @@ typedef struct
 	GYcoord    line_h;     //行高
 	int32      scroll_y;   //纵向滚动偏移(像素,可负;大文件像素高可超 int16,用 int32)
 	GYcoord    last_w;     //上次算行表时的控件宽(宽度变则重算)
+	GYcoord    pad_left, pad_top, pad_right, pad_bottom;//文字内容区内边距
 	uint8      wrap;       //按宽度自动折行
 	//拖动状态
 	GYcoord    drag_start_y;
@@ -86,8 +87,19 @@ static void selRange(GYev_data* d, size_t* s, size_t* e);
   */
 static GYcoord contentW(GYOBJ ev)
 {
-	GYcoord w = ev->area.w - EV_PAD_X * 2;
+	GYev_data* d = (GYev_data*)ev->user_data;
+	GYcoord w = ev->area.w - d->pad_left - d->pad_right;
 	return (w > 0) ? w : 1;
+}
+
+/**
+  * @brief 内容视口高 = 控件高 - 上下内边距(下限 1)
+  */
+static GYcoord viewportH(GYOBJ ev)
+{
+	GYev_data* d = (GYev_data*)ev->user_data;
+	GYcoord h = ev->area.h - d->pad_top - d->pad_bottom;
+	return (h > 0) ? h : 1;
 }
 
 /**
@@ -201,7 +213,7 @@ static int32 contentH(GYev_data* d)
 static void clampScroll(GYOBJ ev)
 {
 	GYev_data* d = (GYev_data*)ev->user_data;
-	int32 maxs = contentH(d) - ev->area.h;
+	int32 maxs = contentH(d) - viewportH(ev);
 	if (maxs < 0)
 		maxs = 0;
 	d->scroll_y = GYLimitMaxMin(0, d->scroll_y, maxs);
@@ -275,8 +287,8 @@ static void ensureCursorVisible(GYOBJ ev)
 	int32 bot = top + d->line_h;
 	if (top < d->scroll_y)
 		d->scroll_y = top;
-	else if (bot > d->scroll_y + ev->area.h)
-		d->scroll_y = bot - ev->area.h;
+	else if (bot > d->scroll_y + viewportH(ev))
+		d->scroll_y = bot - viewportH(ev);
 	clampScroll(ev);
 }
 /**
@@ -537,9 +549,9 @@ static size_t posFromPoint(GYOBJ ev, GYcoord px, GYcoord py)
 	GYFONT font = &YMGUI_Font_Default;
 	GYrect abs;
 	YMGUI_Obj_GetAbsArea(ev, &abs);
-	int32 y_content = (int32)(py - abs.y) + d->scroll_y;
+	int32 y_content = (int32)(py - abs.y - d->pad_top) + d->scroll_y;
 	size_t li = lineAtPixelY(d, y_content);
-	GYcoord target_x = (GYcoord)(px - abs.x - EV_PAD_X);
+	GYcoord target_x = (GYcoord)(px - abs.x - d->pad_left);
 	if (target_x < 0) target_x = 0;
 	return lineByteAtPixel(d, font, li, target_x);
 }
@@ -568,6 +580,18 @@ static void evDrawCb(GYOBJ obj, GYSURFACE s, const GYrect* abs)
 
 	YMGUI_Draw_Fill(s, abs, d->bg, GY_OPA_COVER);
 
+	//文字、选区和光标只允许落在去除内边距后的内容区。
+	GYrect content_rect = {
+		abs->x + d->pad_left,
+		abs->y + d->pad_top,
+		contentW(obj),
+		viewportH(obj)
+	};
+	GYrect content_clip;
+	if (!GY_Rect_Intersect(&content_clip, &content_rect, &self_clip))
+		content_clip = (GYrect){0, 0, 0, 0};
+	s->clip = content_clip;
+
 	//选区范围(字节),供逐行高亮
 	size_t selS = 0, selE = 0;
 	uint8 sel_on = hasSel(d);
@@ -579,11 +603,11 @@ static void evDrawCb(GYOBJ obj, GYSURFACE s, const GYrect* abs)
 		size_t first = (size_t)(d->scroll_y / d->line_h);
 		for (size_t li = first; li < d->line_count; li++)
 		{
-			GYcoord ly = abs->y + (GYcoord)((int32)li * d->line_h - d->scroll_y);
-			if (ly >= abs->y + abs->h)
+			GYcoord ly = abs->y + d->pad_top + (GYcoord)((int32)li * d->line_h - d->scroll_y);
+			if (ly >= content_rect.y + content_rect.h)
 				break;//滚出下沿
 			GYev_line* ln = &d->lines[li];
-			GYcoord tx = abs->x + EV_PAD_X;
+			GYcoord tx = abs->x + d->pad_left;
 
 			//—— 查找匹配高亮(在选区之下先画):本行内所有 needle 出现处 ——
 			if (d->find_len > 0 && d->find_len <= ln->len)
@@ -639,13 +663,15 @@ static void evDrawCb(GYOBJ obj, GYSURFACE s, const GYrect* abs)
 	if (obj->state & GY_STATE_Editing)
 	{
 		size_t li = cursorLine(d);
-		GYcoord cy = abs->y + (GYcoord)((int32)li * d->line_h - d->scroll_y);
-		GYcoord cx = abs->x + EV_PAD_X + cursorPixelX(d, font, li);
+		GYcoord cy = abs->y + d->pad_top + (GYcoord)((int32)li * d->line_h - d->scroll_y);
+		GYcoord cx = abs->x + d->pad_left + cursorPixelX(d, font, li);
 		GYrect cur = {cx, cy, 2, font->cell_h};
 		//仅当光标行在可视区内才画
-		if (cy + font->cell_h > abs->y && cy < abs->y + abs->h)
+		if (cy + font->cell_h > content_rect.y && cy < content_rect.y + content_rect.h)
 			YMGUI_Draw_Fill(s, &cur, GY_ARGB(0xFF, 0xF0, 0xF0, 0xF0), GY_OPA_COVER);
 	}
+
+	s->clip = self_clip;
 
 	//边框 1px(勾出编辑区范围,不管背景什么色都看得见)。alpha=0 则不画
 	if (GY_COLOR_A(d->border_color) != 0)
@@ -912,6 +938,10 @@ GYOBJ YMGUI_Creat_EditView_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, 
 	d->line_h = YMGUI_Font_Default.cell_h + 4;
 	d->scroll_y = 0;
 	d->last_w = w;
+	d->pad_left = EV_PAD_X;
+	d->pad_top = 0;
+	d->pad_right = EV_PAD_X;
+	d->pad_bottom = 0;
 	d->wrap = 0;
 	d->changed = NULL;
 	d->find_cb = NULL;
@@ -973,6 +1003,23 @@ const char* YMGUI_EditView_GetText(GYOBJ ev)
 	return ((GYev_data*)ev->user_data)->text;
 }
 
+void YMGUI_EditView_InsertText(GYOBJ ev, const char* text)
+{
+	gy_assert(ev && ev->user_data);
+	if (ev == NULL || ev->user_data == NULL || text == NULL || text[0] == '\0') return;
+	GYev_data* d = (GYev_data*)ev->user_data;
+	size_t len = 0;
+	while (text[len] != '\0') len++;
+	undoSnapshot(d);
+	if (hasSel(d)) deleteSelection(d);
+	insertBytes(d, text, len);
+	rebuildLines(ev);
+	ensureCursorVisible(ev);
+	YMGUI_Obj_Invalidate(ev);
+	if (d->changed != NULL)
+		d->changed(ev, d->text);
+}
+
 /**
   * @brief 设 Wrap(按宽度自动折行),变则重算行表 + 钳滚动 + 标脏
   */
@@ -987,6 +1034,30 @@ void YMGUI_EditView_SetWrap(GYOBJ ev, uint8 on)
 	d->wrap = nv;
 	rebuildLines(ev);
 	clampScroll(ev);
+	YMGUI_Obj_Invalidate(ev);
+}
+
+void YMGUI_EditView_SetPadding(GYOBJ ev, GYcoord left, GYcoord top, GYcoord right, GYcoord bottom)
+{
+	gy_assert(ev && ev->user_data);
+	gy_log_explain((ev == NULL) || (ev->user_data == NULL), GY_LOG_PtrI, "可编辑文本框或数据不存在");
+	if (ev == NULL || ev->user_data == NULL)
+		return;
+	GYev_data* d = (GYev_data*)ev->user_data;
+	if (left < 0) left = 0;
+	if (top < 0) top = 0;
+	if (right < 0) right = 0;
+	if (bottom < 0) bottom = 0;
+	if (d->pad_left == left && d->pad_top == top &&
+		d->pad_right == right && d->pad_bottom == bottom)
+		return;
+	d->pad_left = left;
+	d->pad_top = top;
+	d->pad_right = right;
+	d->pad_bottom = bottom;
+	rebuildLines(ev);
+	clampScroll(ev);
+	ensureCursorVisible(ev);
 	YMGUI_Obj_Invalidate(ev);
 }
 

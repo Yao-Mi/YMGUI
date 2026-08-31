@@ -6,7 +6,7 @@
 
 ## 状态
 
-27 个具名控件 + base 容器 · 5 类图元 · 35 个 CTest · 28 个独立 demo · 10 个完整应用。
+27 个具名控件 + base 容器 · 5 类图元 · 35 个 CTest · 28 个独立 demo · 11 个完整应用。
 （Button/Label/Checkbox/Switch/Slider/Bar/Image/Arc/Spinner/Meter/TextInput/TextView/EditView/List/Chart/Dropdown/Table/Tabview/TreeView/Grid/Canvas/ColorPicker/Roller/BarChart/MsgBox/FileDialog/Joystick + base 容器）
 
 抗锯齿(4bpp 灰度字体 + Wu 斜线 + 距离场圆弧，`YMGUI_ANTIALIAS` 可裁)、中文/CJK(UTF-8 回退链 + 稀疏字模 + 外部 flash 回调，`YMGUI_FONT_CJK` 可裁)、状态/数据绑定地基均已落地。
@@ -78,7 +78,7 @@ cd build && ctest --output-on-failure # 跑全部单测
 ./build/demo_font_gb2312              # 中文字体(GB2312 全集走外部 flash 回调)
 SDL_VIDEODRIVER=dummy ./build/demo_plugin 120 # 插件系统宿主 demo（无头跑 120 帧）
 
-./build_all.sh                        # 一键建库 + 全部 Demo + 10 个 project_Demo 项目
+./build_all.sh                        # 一键建库 + 全部 Demo + 11 个 project_Demo 项目
 ./capture_shots.sh -b                 # 先构建再批量截图到 docs/shots/(无头,需 ffmpeg)
 tools/check_repo.sh                   # 文档/字库/计数/路径快速检查
 tools/test_matrix.sh                  # RGB565 + RGB888 构建和 35 个 CTest

@@ -28,10 +28,10 @@
 ## 构建 / 运行
 
 ```bash
-cmake -S project_Demo/txt_edit -B build/project_Demo/txt_edit
-cmake --build build/project_Demo/txt_edit -j
-./build/project_Demo/txt_edit/txt_edit                          # 有显示时交互跑(800×600)
-SDL_VIDEODRIVER=dummy ./build/project_Demo/txt_edit/txt_edit 6  # 无头跑 6 帧(预置多行 + 菜单动作/查找替换/折行自检)
+cmake -S project_Demo/txt_edit -B build/rgb565/project_Demo/txt_edit
+cmake --build build/rgb565/project_Demo/txt_edit -j
+./build/rgb565/project_Demo/txt_edit/txt_edit                          # 有显示时交互跑(800×600)
+SDL_VIDEODRIVER=dummy ./build/rgb565/project_Demo/txt_edit/txt_edit 6  # 无头跑 6 帧(预置多行 + 菜单动作/查找替换/折行自检)
 ```
 
 ## 验证到的:库能用的部分

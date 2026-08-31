@@ -20,6 +20,10 @@
 #define GY_KEY_TAB       0x1005  //先派发给焦点控件;控件未消费(未置 key_handled)才轮转焦点
 #define GY_KEY_HOME      0x1006  //行首
 #define GY_KEY_END       0x1007  //行尾
+#define GY_KEY_SHIFT     0x1008  //原始修饰键状态；按下/抬起供按键过滤器维护
+#define GY_KEY_CTRL      0x1009
+#define GY_KEY_ALT       0x100A
+#define GY_KEY_CAPS      0x100B  //锁定键；通常只在非重复按下时翻转状态
 
 //编辑器扩展键(0x1100 段):修饰键组合由 HAL 层(SDL_LCD)检测后合成为这些虚拟键,
 //库/控件只认虚拟键,不需要 ctx 存修饰键位。见 SDL_LCD.c 的 SDL_GetModState 分支。

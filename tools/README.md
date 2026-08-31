@@ -18,6 +18,26 @@ tools/verify_gb2312.sh
 tools/verify_gb2312.sh --rebuild
 ```
 
+## 中文输入法词典
+
+`gen_ime_dict.py` 从 Apache-2.0 的 `rime-pinyin-simp` 生成中文单字/词语数据，并可从 Apache-2.0 的 `wordfreq` 生成带常用度顺序的外挂英文词库：
+
+```bash
+curl -L -o /tmp/rime-pinyin-simp.zip \
+  https://codeload.github.com/rime/rime-pinyin-simp/zip/refs/heads/master
+unzip -p /tmp/rime-pinyin-simp.zip '*/pinyin_simp.dict.yaml' > /tmp/pinyin_simp.dict.yaml
+python3 -m pip install wordfreq==3.1.1
+python3 tools/gen_ime_dict.py --rime-dict /tmp/pinyin_simp.dict.yaml \
+  --english-wordlist large
+```
+
+词语模型必须提供明确的分音节拼音和初始频率；生成器不会用单字默认读音拼出词语读音。
+项目内的 `project_Demo/chinese_ime/user_phrases.tsv` 会自动作为用户词库合并，格式为 `词语<TAB>分音节拼音<TAB>初始词频`。也可重复使用 `--extra-dict` 合并其他 TSV 词库；不合法行会报告文件和行号并终止生成。
+
+生成结果包括 7291 条单字读音的 `pinyin_gb2312.bin`、47278 条词语的 `phrases_rime.bin` 和 288996 个英文单词的 `english_words.bin`。不传 `--english-wordlist` 时只重建中文数据，避免强制中文生成环境安装 `wordfreq`。英文来源和许可见 `project_Demo/chinese_ime/ENGLISH_DICTIONARY.md`。
+
+`python3 tools/verify_ime_dict.py` 同时校验三份外挂 BIN 的独立魔数、可扩展头、26 个首字母桶、条数、长度、字符串偏移和关键排序回归。应用的 `EXTERNAL` 模式也会在每次启动时执行同类校验。
+
 ## 检查与测试
 
 ```bash

@@ -29,12 +29,12 @@ project_Demo 第二个基础验证项目。用一个真实小应用验证 YMGUI 
 
 ```sh
 # 在仓库根目录
-cmake -S project_Demo/files_manager -B build/project_Demo/files_manager
-cmake --build build/project_Demo/files_manager
+cmake -S project_Demo/files_manager -B build/rgb565/project_Demo/files_manager
+cmake --build build/rgb565/project_Demo/files_manager
 # 交互运行
-./build/project_Demo/files_manager/files_manager
+./build/rgb565/project_Demo/files_manager/files_manager
 # 无头自检(N 帧后退出;跑一遍 mkdir/rename/rmdir/remove + 树载入自检)
-SDL_VIDEODRIVER=dummy ./build/project_Demo/files_manager/files_manager 6
+SDL_VIDEODRIVER=dummy ./build/rgb565/project_Demo/files_manager/files_manager 6
 ```
 
 判成败以 exit code 为准。无头模式打印 `selftest: file ops + tree load OK` 与 `files_manager exit ok`。

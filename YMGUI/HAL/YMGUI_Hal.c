@@ -82,6 +82,8 @@ void YMGUI_Disp_FrameDone(GYDISP d)
 
 //接收注入事件的上下文(GUI 层注册)
 static GYCTX s_inject_ctx = NULL;
+static GYkey_filter_cb s_key_filter = NULL;
+static void* s_key_filter_user = NULL;
 
 /**
   * @brief 注册接收注入事件的上下文
@@ -89,6 +91,12 @@ static GYCTX s_inject_ctx = NULL;
 void YMGUI_Inject_SetCtx(void* ctx)
 {
 	s_inject_ctx = (GYCTX)ctx;
+}
+
+void YMGUI_Inject_SetKeyFilter(GYkey_filter_cb cb, void* user_data)
+{
+	s_key_filter = cb;
+	s_key_filter_user = user_data;
 }
 
 /**
@@ -105,7 +113,9 @@ void YMGUI_Inject_Pointer(GYcoord x, GYcoord y, uint8 pressed)
   */
 void YMGUI_Inject_Key(uint32 key, uint8 pressed)
 {
-	//只在按下时派发(抬起不产生字符输入)
+	if (s_key_filter != NULL && s_key_filter(key, pressed != 0, s_key_filter_user))
+		return;
+	//抬起只供过滤器维护状态，不产生字符输入
 	if (pressed && s_inject_ctx != NULL)
 		YMGUI_Event_Key(s_inject_ctx, key);
 }

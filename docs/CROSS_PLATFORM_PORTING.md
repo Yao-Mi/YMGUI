@@ -48,9 +48,12 @@ SDL 长按规则为保持 600ms、相对起点移动不超过 10px、每次触�
 可打印文本和控制键应分开处理：
 
 - `SDL_TEXTINPUT` 注入文本；
-- `SDL_KEYDOWN` 映射退格、删除、方向、Home/End、Tab 和 Ctrl 组合键。
+- `SDL_KEYDOWN` 映射退格、删除、方向、Home/End、Tab 和 Ctrl 组合键；
+- 需要同步输入法键盘状态时，`SDL_KEYDOWN/SDL_KEYUP` 分别注入 `GY_KEY_SHIFT/CTRL/ALT/CAPS` 的按下和抬起。窗口失焦、切后台或退出必须补发修饰键抬起，避免应用层残留按下态。
 
 不要同时从 `KEYDOWN` 和 `TEXTINPUT` 注入普通字符，否则中文输入法、组合输入和 Android 软键盘可能产生重复字符。
+
+应用可通过 `YMGUI_Inject_SetKeyFilter()` 在焦点控件之前统一处理实体键和屏幕键盘。过滤器能观察按下/抬起，返回 1 表示已经消费；未消费的按下继续派给焦点控件，抬起不进入现有文本控件。输入法实例销毁前必须注销过滤器，回调也不应直接递归注入同一按键，确需转发时应在应用层设置短暂旁路标志。
 
 ## 4. 资源路径
 
@@ -78,8 +81,17 @@ SDL 长按规则为保持 600ms、相对起点移动不超过 10px、每次触�
 Linux 示例：
 
 ```bash
-cmake -S project_Demo/alarm_clock -B build/project_Demo/alarm_clock
-cmake --build build/project_Demo/alarm_clock -j
+cmake -S project_Demo/alarm_clock -B build/rgb565/project_Demo/alarm_clock -DYMGUI_COLOR_DEPTH=16
+cmake --build build/rgb565/project_Demo/alarm_clock -j
+```
+
+RGB888 或其他色深必须使用独立路径，避免与默认 RGB565 二进制混淆：
+
+```bash
+cmake -S project_Demo/alarm_clock \
+      -B build/rgb888/project_Demo/alarm_clock \
+      -DYMGUI_COLOR_DEPTH=24
+cmake --build build/rgb888/project_Demo/alarm_clock -j
 ```
 
 Windows/Android 交叉构建时应通过 `SDL2_DIR` 指向 SDL2 导出的 CMake package，并提供对应工具链文件。

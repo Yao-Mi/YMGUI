@@ -119,6 +119,21 @@ int main(void)
 	YMGUI_EditView_SetScroll(ev, -100);
 	CHECK(YMGUI_EditView_GetScroll(ev) == 0, "scroll clamped to 0");
 
+	//---- 可配置内边距:参与折行、滚动视口和点击定位 ----
+	YMGUI_EditView_SetPadding(ev, 12, 8, 6, 4);
+	YMGUI_EditView_SetWrap(ev, 1);
+	YMGUI_EditView_SetText(ev, "AAAAAAAAAAAAAAAAAAAAAAAA");//24*8=192px,内容宽 182px
+	CHECK(YMGUI_EditView_GetLineCount(ev) == 2, "padding reduces wrap content width");
+	YMGUI_EditView_SetWrap(ev, 0);
+	YMGUI_EditView_SetText(ev, "l0\nl1\nl2\nl3\nl4");
+	YMGUI_EditView_SetScroll(ev, 30000);
+	maxs = (GYcoord)(5 * (YMGUI_Font_Default.cell_h + 4)) - (80 - 8 - 4);
+	CHECK(YMGUI_EditView_GetScroll(ev) == maxs, "padding reduces vertical scroll viewport");
+	YMGUI_EditView_SetText(ev, "hello");
+	YMGUI_Inject_Pointer(10 + 12, 10 + 8, 1); YMGUI_Inject_Pointer(10 + 12, 10 + 8, 0);
+	CHECK(YMGUI_EditView_GetCursor(ev) == 0, "click at padded content origin positions cursor at start");
+	YMGUI_EditView_SetPadding(ev, 4, 0, 4, 0);//后续用默认点击坐标
+
 	//======================================================================
 	// 选区 / 剪贴板 / 查找替换 / 撤销 / 点击定位 / 双击选词(第 23 轮新增)
 	//   注:未注册 SDL 剪贴板后端 → YMGUI_Clipboard 走库内静态缓冲(正是要测的裸机回退路径)
@@ -239,6 +254,17 @@ int main(void)
 		YMGUI_EditView_GetCursorRowCol(ev, &row, &col);
 		CHECK(row == 2 && col == 4, "cursor row/col at doc end = 2,4");
 	}
+
+	//---- 程序插入:输入法上屏到当前光标/选区 ----
+	YMGUI_EditView_SetText(ev, "ac");
+	YMGUI_Inject_Key(GY_KEY_LEFT, 1);//a|c
+	YMGUI_EditView_InsertText(ev, "b");
+	CHECK(strcmp(YMGUI_EditView_GetText(ev), "abc") == 0, "InsertText inserts at cursor");
+	YMGUI_EditView_SelectAll(ev);
+	YMGUI_EditView_InsertText(ev, "替换");
+	CHECK(strcmp(YMGUI_EditView_GetText(ev), "替换") == 0, "InsertText replaces selection");
+	YMGUI_EditView_Undo(ev);
+	CHECK(strcmp(YMGUI_EditView_GetText(ev), "abc") == 0, "InsertText participates in undo");
 
 	//---- 剪贴板后端注册可覆盖(移植缝验证)----
 	YMGUI_Clipboard_SetText("internal");

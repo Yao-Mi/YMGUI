@@ -4,7 +4,7 @@
 #
 #   为什么需要它:顶层 build/ 只编译库本体 + Demo/ 下的 demo/test;
 #   project_Demo/ 下每个 app 是独立 CMake 工程、有独立构建目录
-#   build/project_Demo/<name>/,顶层 `cmake --build build` 完全不碰它们
+#   build/rgb565/project_Demo/<name>/,顶层 `cmake --build build` 完全不碰它们
 #   (改完 app 只 build 顶层会跑到旧二进制)。本脚本把两边一次性建齐。
 #
 #   用法:
@@ -100,7 +100,7 @@ fi
 for cml in project_Demo/*/CMakeLists.txt; do
 	[ -e "$cml" ] || continue          # 无匹配时跳过(nullglob 兜底)
 	name="$(basename "$(dirname "$cml")")"
-	build_unit "project_Demo/$name" "project_Demo/$name" "build/project_Demo/$name"
+	build_unit "project_Demo/$name (rgb565)" "project_Demo/$name" "build/rgb565/project_Demo/$name"
 done
 
 # ---- 汇总 ----

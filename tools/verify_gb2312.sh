@@ -6,9 +6,9 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BLOB="$REPO_ROOT/tools/gb2312_glyphs.bin"
 INDEX="$REPO_ROOT/YMGUI/CORE/YMGUI_FontDataGB2312.c"
-EXPECTED_SIZE=953344
-EXPECTED_COUNT=7448
-EXPECTED_SHA256="c2c42b2c1c2041c158a13b162549a03504202887d8179f476f9ef1a152d51316"
+EXPECTED_SIZE=982016
+EXPECTED_COUNT=7672
+EXPECTED_SHA256="d9acfc7312d2d6588bf143cdd90ef7904fa3da7c99e3dd6fa6b15652f36dbf35"
 DO_REBUILD=0
 
 if [ "${1:-}" = "--rebuild" ]; then
@@ -41,6 +41,10 @@ python3 -c 'from PIL import Image, ImageDraw, ImageFont' >/dev/null 2>&1 || {
 }
 [ -f /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc ] || {
 	echo "NotoSansCJK-Regular.ttc is required for --rebuild (install fonts-noto-cjk)" >&2
+	exit 1
+}
+[ -f /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf ] || {
+	echo "DejaVuSans.ttf is required for --rebuild (install fonts-dejavu-core)" >&2
 	exit 1
 }
 

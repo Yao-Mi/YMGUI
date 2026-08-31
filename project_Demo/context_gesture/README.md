@@ -17,12 +17,12 @@
 ## 构建 / 运行
 
 ```sh
-cmake -S project_Demo/context_gesture -B build/project_Demo/context_gesture
-cmake --build build/project_Demo/context_gesture
-build/project_Demo/context_gesture/context_gesture
+cmake -S project_Demo/context_gesture -B build/rgb565/project_Demo/context_gesture
+cmake --build build/rgb565/project_Demo/context_gesture
+build/rgb565/project_Demo/context_gesture/context_gesture
 
 # 无头运行并自动退出
-SDL_VIDEODRIVER=dummy build/project_Demo/context_gesture/context_gesture 20
+SDL_VIDEODRIVER=dummy build/rgb565/project_Demo/context_gesture/context_gesture 20
 ```
 
 设置 `YMGUI_SHOT` 时，应用会自动构造正常释放、取消恢复和菜单三个场景，供批量截图脚本使用。

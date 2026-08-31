@@ -46,8 +46,12 @@ GYOBJ YMGUI_Creat_EditView_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, 
 void  YMGUI_EditView_SetText(GYOBJ ev, const char* text);
 //取当前文本(内部缓冲指针;空返回 "")
 const char* YMGUI_EditView_GetText(GYOBJ ev);
+//在当前光标插入 UTF-8 文本；有选区时替换选区，纳入撤销并保持光标可见
+void  YMGUI_EditView_InsertText(GYOBJ ev, const char* text);
 //是否按控件宽度自动折行(默认关=0)。变则重算行表
 void  YMGUI_EditView_SetWrap(GYOBJ ev, uint8 on);
+//设置文字内容区的四边内边距(像素)，负值按 0 处理。默认 left/right=4、top/bottom=0
+void  YMGUI_EditView_SetPadding(GYOBJ ev, GYcoord left, GYcoord top, GYcoord right, GYcoord bottom);
 //文字颜色
 void  YMGUI_EditView_SetTextColor(GYOBJ ev, GYcolor color);
 //背景色(编辑区底色),标脏

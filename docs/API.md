@@ -92,6 +92,8 @@ void  YMGUI_Inject_ContextBegin(GYcoord x, GYcoord y);   // 捕获式上下文�
 void  YMGUI_Inject_ContextMove(GYcoord x, GYcoord y);
 void  YMGUI_Inject_ContextEnd(GYcoord x, GYcoord y);
 void  YMGUI_Inject_ContextCancel(void);
+typedef uint8 (*GYkey_filter_cb)(uint32 key, uint8 pressed, void* user_data);
+void  YMGUI_Inject_SetKeyFilter(GYkey_filter_cb cb, void* user_data); // 可选;返回 1 消费
 void  YMGUI_Inject_Key(uint32 key, uint8 pressed);
 void  YMGUI_Inject_Wheel(GYcoord x, GYcoord y, int32 delta_x, int32 delta_y);
 void  YMGUI_Inject_Tick(uint32 elapsed_ms);               // SDL 自动注入;裸机主循环调用
@@ -100,7 +102,7 @@ GYOBJ YMGUI_HitTest(GYCTX ctx, GYcoord x, GYcoord y);    // 命中最上层对�
 void  YMGUI_SetFocus(GYCTX ctx, GYOBJ obj);              // 设焦点(派发 FocusLost/Got)
 ```
 
-键码：可打印字符用 ASCII；控制键用 `GY_KEY_BACKSPACE/ENTER/LEFT/RIGHT/UP/DOWN/DEL`。
+按键过滤器先于焦点对象收到按下和抬起；未消费的按下继续走原有 `GY_EVENT_Key`，抬起只供过滤器维护状态。注销时传 `NULL, NULL`。键码：可打印字符用 ASCII；控制键用 `GY_KEY_BACKSPACE/ENTER/LEFT/RIGHT/UP/DOWN/DEL`，原始修饰键状态用 `GY_KEY_SHIFT/CTRL/ALT/CAPS`。
 事件类型（控件 event_cb 收）：`GY_EVENT_Pressed/Pressing/Released/ReleasedOff/Clicked/DoubleClicked/ContextRequested/ContextDragging/ContextReleased/ContextCancelled/FocusGot/FocusLost/Key/Wheel/Tick`。
 鼠标右键和触摸长按统一为上下文语义，不等价于普通 `Clicked`，也不自动改变焦点。右键短点击只派一次 `ContextRequested`；右键拖动和长按后拖动走 `ContextRequested → ContextDragging* → ContextReleased/ContextCancelled`，捕获对象保存在 `ctx->context_obj`。`PointerCancel` 会清除普通按下状态并派 `ReleasedOff`，但不会派 `Clicked`。
 坐标/键值从 `ctx->point_x`、`ctx->point_y`、`ctx->last_key` 读。滚轮事件发给指针位置命中的对象，横纵有符号增量从 `ctx->wheel_x/y` 读。SDL 触摸长按依靠周期调用 `SDL_LCD_PumpEvents()` 检查超时。
@@ -287,7 +289,9 @@ FileDialog 复用 TreeView，因此 `YMGUI_TREEVIEW=0` 时会自动一并裁掉 
 GYOBJ YMGUI_Creat_EditView_Creat(parent, x,y,w,h, size_t capacity);// capacity=可用字节,按需申报(密码框几十 B / 编辑器 128K)
 void  YMGUI_EditView_SetText(GYOBJ ev, const char* text);   // 拷进内部缓冲(超 capacity 截断);NULL/"" 清空
 const char* YMGUI_EditView_GetText(GYOBJ ev);
+void  YMGUI_EditView_InsertText(GYOBJ ev, const char* text); // 光标处插入;有选区时替换选区,可撤销
 void  YMGUI_EditView_SetWrap(GYOBJ ev, uint8 on);           // 按宽度自动折行(默认关)
+void  YMGUI_EditView_SetPadding(GYOBJ ev, GYcoord left, GYcoord top, GYcoord right, GYcoord bottom);// 负值按0;默认4,0,4,0
 void  YMGUI_EditView_SetTextColor(GYOBJ ev, GYcolor color);
 void  YMGUI_EditView_SetBgColor(GYOBJ ev, GYcolor color);    // 编辑区底色
 void  YMGUI_EditView_SetBorderColor(GYOBJ ev, GYcolor color);// 1px 外框;alpha=0 则不画
@@ -506,7 +510,7 @@ Draw_Text / TextWidth 按 UTF-8 解码码点;默认 ASCII 字体遇 CJK 码点�
 | 决策 | 时机 | 机制 | 选项 |
 |---|---|---|---|
 | CJK 开/关 | 编译期 | 宏 `YMGUI_FONT_CJK` | `1`=带中文 / `0`=纯 ASCII 足迹 |
-| 字集范围 | 字模**生成期** | `gen_font.py` 参数(**非宏**) | 方案1 精简(`--cjk`,~75字/9.6KB) / 方案3 GB2312+符号(`--cjk --gb2312`,7448字形/953344B) |
+| 字集范围 | 字模**生成期** | `gen_font.py` 参数(**非宏**) | 方案1 精简(`--cjk`,~75字/9.6KB) / 方案3 GB2312+输入法符号(`--cjk --gb2312`,7672字形/982016B) |
 | 字模存放 | 运行期 | `GYfont.glyph_read` 字段 | `NULL`=直接指针(内部/映射flash) / 置回调=拷贝再blit(非映射SPI flash) |
 
 字集范围**不用宏裁决**:两方案差别是"哪些字被烤进 `FontDataCJK.c`",属数据非代码,

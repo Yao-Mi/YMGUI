@@ -45,6 +45,10 @@ void YMGUI_Disp_FrameDone(GYDISP d);
 //===========================================================================
 //注册接收注入事件的上下文(传 GYCTX)
 void YMGUI_Inject_SetCtx(void* ctx);
+//可选按键过滤器:按下/抬起均先到此处；返回 1 表示已消费。未消费的按下事件继续派给焦点控件，
+//抬起事件只用于过滤器维护状态，不会进入现有文本控件。适合输入法/快捷键层统一实体与虚拟键盘。
+typedef uint8 (*GYkey_filter_cb)(uint32 key, uint8 pressed, void* user_data);
+void YMGUI_Inject_SetKeyFilter(GYkey_filter_cb cb, void* user_data);
 //指针(触摸/鼠标):x,y 屏幕坐标,pressed=1 按下/0 抬起
 void YMGUI_Inject_Pointer(GYcoord x, GYcoord y, uint8 pressed);
 //按键:key 键码,pressed=1 按下/0 抬起

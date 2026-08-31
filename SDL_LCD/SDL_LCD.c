@@ -104,6 +104,14 @@ static void sdlRightCancel(void)
 	sdlRightReset();
 }
 
+static void sdlKeyCancel(void)
+{
+	YMGUI_Inject_Key(GY_KEY_SHIFT, 0);
+	YMGUI_Inject_Key(GY_KEY_CTRL, 0);
+	YMGUI_Inject_Key(GY_KEY_ALT, 0);
+	YMGUI_Inject_Key(GY_KEY_TAB, 0);
+}
+
 static void sdlCheckLongPress(Uint32 now)
 {
 	if (!s_touch_active || !s_long_press_eligible || s_context_fired)
@@ -319,6 +327,7 @@ int SDL_LCD_PumpEvents(void)
 		{
 			sdlTouchCancel();
 			sdlRightCancel();
+			sdlKeyCancel();
 			YMGUI_Inject_PointerCancel();
 			if (s_close_request_cb == NULL || s_close_request_cb(s_close_request_user))
 				return 0;
@@ -331,6 +340,7 @@ int SDL_LCD_PumpEvents(void)
 		{
 			sdlTouchCancel();
 			sdlRightCancel();
+			sdlKeyCancel();
 			YMGUI_Inject_PointerCancel();
 			continue;
 		}
@@ -457,14 +467,32 @@ int SDL_LCD_PumpEvents(void)
 			for (const char* p = e.text.text; *p != '\0'; p++)
 				YMGUI_Inject_Key((uint32)(uint8)*p, 1);
 		}
-		//控制键 → 映射到 GY_KEY_*。修饰键(Ctrl/Shift)在此合成为编辑器虚拟键,
-		//库/控件只认虚拟键,无需 ctx 存修饰键位(见 YMGUI_Event.h 0x1100 段说明)。
-		else if (e.type == SDL_KEYDOWN)
+		//控制键:修饰键保留按下/抬起供输入法过滤器同步状态；普通控制键仍只在按下时派发。
+		else if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)
 		{
 			SDL_Keycode  k    = e.key.keysym.sym;
 			SDL_Keymod   mod  = SDL_GetModState();
+			int          down = e.type == SDL_KEYDOWN;
 			int          ctrl = (mod & KMOD_CTRL)  != 0;
 			int          shft = (mod & KMOD_SHIFT) != 0;
+			uint32 modifier = 0;
+
+			if (k == SDLK_LSHIFT || k == SDLK_RSHIFT) modifier = GY_KEY_SHIFT;
+			else if (k == SDLK_LCTRL || k == SDLK_RCTRL) modifier = GY_KEY_CTRL;
+			else if (k == SDLK_LALT || k == SDLK_RALT) modifier = GY_KEY_ALT;
+			else if (k == SDLK_CAPSLOCK) modifier = GY_KEY_CAPS;
+			if (modifier != 0)
+			{
+				if (!(down && e.key.repeat)) YMGUI_Inject_Key(modifier, (uint8)down);
+				continue;
+			}
+			if (!down)
+			{
+				if (k == SDLK_TAB) YMGUI_Inject_Key(GY_KEY_TAB, 0);
+				else if (k == SDLK_BACKSPACE) YMGUI_Inject_Key(GY_KEY_BACKSPACE, 0);
+				else if (k == SDLK_RETURN || k == SDLK_KP_ENTER) YMGUI_Inject_Key(GY_KEY_ENTER, 0);
+				continue;
+			}
 
 			if (k == SDLK_ESCAPE)
 			{
@@ -499,7 +527,7 @@ int SDL_LCD_PumpEvents(void)
 			else if (k == SDLK_DOWN)      YMGUI_Inject_Key(shft ? GY_KEY_SHIFT_DOWN  : GY_KEY_DOWN, 1);
 			else if (k == SDLK_HOME)      YMGUI_Inject_Key(shft ? GY_KEY_SHIFT_HOME  : GY_KEY_HOME, 1);
 			else if (k == SDLK_END)       YMGUI_Inject_Key(shft ? GY_KEY_SHIFT_END   : GY_KEY_END, 1);
-			else if (k == SDLK_TAB)       YMGUI_Inject_Key(GY_KEY_TAB, 1);
+			else if (k == SDLK_TAB && !e.key.repeat) YMGUI_Inject_Key(GY_KEY_TAB, 1);
 		}
 	}
 	//手指完全静止时不会再有 SDL 事件,每轮消息泵末尾主动检查超时。
