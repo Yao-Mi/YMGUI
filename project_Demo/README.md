@@ -9,6 +9,8 @@
 - 共享咬合层在 Linux 上通过 `pkg-config` 找 SDL2,在 Windows/Android 上使用 SDL2 CMake target；Android 应用目标构建为 shared library,Windows 可用 `-DYMGUI_SDL_STATIC=ON` 优先选择静态 SDL2 target。
 - 编译输出按色深隔离：RGB565 使用 `build/rgb565/project_Demo/<项目名>/`，RGB888 使用 `build/rgb888/project_Demo/<项目名>/`；configure 时分别指定 `-DYMGUI_COLOR_DEPTH=16` 或 `24`。跨平台工具链和输入适配见 [`../docs/CROSS_PLATFORM_PORTING.md`](../docs/CROSS_PLATFORM_PORTING.md)。
 
+`extern_lib/` 是 `project_Demo/` 的第三方依赖目录，各应用按需使用，例如 `video_stidio` 使用其中的 `FFmpeg/`。应用仍直接复用仓库内的 `YMGUI/` 和 `SDL_LCD/`；第三方库的编译产物放在对应应用的 build 目录。
+
 ## 加一个新项目
 
 以下命令均从仓库根目录执行（即包含 `CMakeLists.txt`、`YMGUI/` 和 `project_Demo/` 的目录）。构建目录不是项目源码目录，而是根目录下对应色深前缀的目录。
@@ -49,3 +51,5 @@ ymgui_add_app(my_app my_app.c)
 - **music_player** —— 音乐播放器。第五个验证项目,催生库控件 `Roller`(居中高亮平滑滚动列表) + `BarChart`(通用柱状图,此处当频谱用);音乐语义(ffmpeg 解码 / SDL2 声卡 / .lrc 解析 / 频段分析)全在 app 侧(见 `music_player/README.md`)。
 - **context_gesture** —— 上下文手势实验室。用基础对象、自定义绘制和 top_layer 菜单验证右键/触摸长按、捕获式拖动及取消恢复；不新增控件(见 `context_gesture/README.md`)。
 - **chinese_ime** —— 中英文虚拟键盘。中文单字、中文词语和英文单词三份数据独立外挂，支持拼音/英文前缀候选、动态分页、点击或数字选择、用户频率学习和 CJK 字体回退。
+
+- **video_stidio** —— Linux 视频剪辑器，素材导入、8 条视频轨、修剪/分割、撤销重做、项目保存和后台 H.264 导出；独立编译 FFmpeg，仅支持 RGB565，使用 `--frames N` 无头退出（见 [说明](video_stidio/README.md)）。

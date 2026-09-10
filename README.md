@@ -6,14 +6,14 @@
 
 ## 状态
 
-27 个具名控件 + base 容器 · 5 类图元 · 35 个 CTest · 28 个独立 demo · 11 个完整应用。
+27 个具名控件 + base 容器 · 5 类图元 · 35 个 CTest · 28 个独立 demo · 12 个完整应用。
 （Button/Label/Checkbox/Switch/Slider/Bar/Image/Arc/Spinner/Meter/TextInput/TextView/EditView/List/Chart/Dropdown/Table/Tabview/TreeView/Grid/Canvas/ColorPicker/Roller/BarChart/MsgBox/FileDialog/Joystick + base 容器）
 
 抗锯齿(4bpp 灰度字体 + Wu 斜线 + 距离场圆弧，`YMGUI_ANTIALIAS` 可裁)、中文/CJK(UTF-8 回退链 + 稀疏字模 + 外部 flash 回调，`YMGUI_FONT_CJK` 可裁)、状态/数据绑定地基均已落地。
 
 ## 效果预览
 
-截图由 `./capture_shots.sh` 一键生成(SDL dummy 驱动无头渲染，产物落 `docs/shots/`)。
+控件及常规应用截图由 `./capture_shots.sh` 一键生成（SDL dummy 驱动无头渲染，产物落 `docs/shots/`）；视频剪辑器截图来自导入 `卖瓜.mp4` 并加入轨道后的实际渲染画面。
 
 ### 完整应用（`project_Demo/`）
 
@@ -26,6 +26,10 @@
 | **图层画板** Canvas + ColorPicker + 图层融合/工具<br><img src="docs/shots/image_edit.png" width="420"> | **音乐播放器** BarChart 频谱 + Roller 歌词 + ffmpeg 解码<br><img src="docs/shots/music_player.png" width="420"> |
 | **多行编辑器** EditView 选区/剪贴板/撤销/查找替换 + 菜单栏<br><img src="docs/shots/txt_edit.png" width="420"> | **视频播放器** Image 缩放模式 + 流式解码 + A/V 同步<br><img src="docs/shots/video_player.png" width="420"> |
 | **上下文手势实验室** 右键/触摸长按菜单 + 捕获式卡片拖动<br><img src="docs/shots/context_gesture.png" width="420"> | **插件管理器** 动态加载/卸载 + 插件自建 UI + 生命周期日志<br><img src="docs/shots/plugin_host.png" width="420"> |
+
+**视频剪辑器** · `卖瓜.mp4` 已加入 V1 轨道，显示项目预览、片段属性和入出点缩略图。
+
+<img src="project_Demo/video_stidio/docs/export-ui.png" width="840" alt="video_stidio 导入卖瓜.mp4 并加入 V1 时间线后的实际界面">
 
 ### 控件演示（`Demo/`）
 
@@ -78,11 +82,16 @@ cd build && ctest --output-on-failure # 跑全部单测
 ./build/demo_font_gb2312              # 中文字体(GB2312 全集走外部 flash 回调)
 SDL_VIDEODRIVER=dummy ./build/demo_plugin 120 # 插件系统宿主 demo（无头跑 120 帧）
 
-./build_all.sh                        # 一键建库 + 全部 Demo + 11 个 project_Demo 项目
+./build_all.sh                        # 一键建库 + 全部 Demo + 12 个 project_Demo 项目
 ./capture_shots.sh -b                 # 先构建再批量截图到 docs/shots/(无头,需 ffmpeg)
+./build/rgb565/project_Demo/video_stidio/video_stidio # 视频剪辑器（build_all 后）
 tools/check_repo.sh                   # 文档/字库/计数/路径快速检查
 tools/test_matrix.sh                  # RGB565 + RGB888 构建和 35 个 CTest
 ```
+
+`extern_lib/` 用于存放 `project_Demo/` 应用所需的第三方依赖，各应用按需引用；构建产物放在对应的 `build/` 目录。YMGUI 核心库的依赖与移植范围保持在 `YMGUI/` 内。
+
+视频剪辑器需额外准备 `extern_lib/FFmpeg` 源码（或系统 FFmpeg 开发包）和 FFmpeg 命令行，仅支持 Linux/RGB565。独立构建、操作和测试见 [video_stidio](project_Demo/video_stidio/README.md)。
 
 ### Android 构建
 
@@ -128,6 +137,7 @@ library，适合由 Gradle/SDL Activity 打包进 APK/AAB。
 | 想做什么 | 读哪份 |
 |---------|-------|
 | **第一次接触，先搞懂现状** | [`docs/当前状态.md`](docs/当前状态.md) |
+| **AI 助手接手、选控件、查使用技巧** | [`docs/AI_GUIDE.md`](docs/AI_GUIDE.md) |
 | **理解架构、扩展库** | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) |
 | **写代码，查控件怎么用** | [`docs/API.md`](docs/API.md) |
 | **写代码，守规范** | [`docs/代码风格.md`](docs/代码风格.md) |

@@ -3,9 +3,10 @@
 ## 默认阅读顺序
 
 1. 先读 `README.md` 和 `docs/当前状态.md`。
-2. 根据任务按需读 `docs/API.md`、`docs/ARCHITECTURE.md`、`docs/CROSS_PLATFORM_PORTING.md` 或 `docs/代码风格.md`。
-3. `docs/DEVLOG_V2.md` 是当前续写的开发进程文档；需要承接上轮背景或本轮完成后追加记录时阅读。
-4. `docs/history/` 是冻结的历史归档。除非需要追溯决策、排查回归或用户明确询问历史，不要读取或修改。
+2. AI 编程助手在选控件、写应用或排查问题前，阅读 [`docs/AI_GUIDE.md`](docs/AI_GUIDE.md)；其中包含能力选型、最小示例、生命周期和验证入口。
+3. 根据任务按需读 `docs/API.md`、`docs/ARCHITECTURE.md`、`docs/CROSS_PLATFORM_PORTING.md` 或 `docs/代码风格.md`。
+4. `docs/DEVLOG_V2.md` 是当前续写的开发进程文档；需要承接上轮背景或本轮完成后追加记录时阅读。
+5. `docs/history/` 是冻结的历史归档。除非需要追溯决策、排查回归或用户明确询问历史，不要读取或修改。
 
 ## 事实优先级
 

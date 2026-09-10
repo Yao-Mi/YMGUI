@@ -7,7 +7,7 @@
 ```
 CONFIG   ← 平台适配 + 编译期配置(COLOR_DEPTH / coord 宽度 / buffer 尺寸 / 数学宏 / 裁剪开关)
    ↑
-HAL      ← 显示驱动接口 + 输入注入接口(纯头,最窄腰部 flush(area,buf))
+HAL      ← 显示、输入注入、时钟和剪贴板接口及通用实现
    ↑
 COMMON   ← 平台无关纯算法(几何 rect 运算、定点三角),不碰 GYsurface
    ↑
@@ -24,7 +24,7 @@ SDL_LCD  ← HAL 的具体实现(Linux 假 LCD → 换成真实 LCD)
 DEBUG    ← 横切层(assert/log),被所有层调用
 ```
 
-上面 CONFIG/COMMON/OPOBJ/CORE/GUI/WIDGET/HAL/DEBUG/STATE 九层都在库根 **`YMGUI/`** 下（对齐 YMCV 的 `OpenSrc-YMCV/YMCV/`），自包含、移植时整个拷走；`SDL_LCD/`、`Demo/` 是 PC 演示外壳，留在顶层不带走。
+上面 CONFIG/COMMON/OPOBJ/CORE/GUI/WIDGET/HAL/DEBUG/STATE/PLUGIN 十层都在库根 **`YMGUI/`** 下（对齐 YMCV 的 `OpenSrc-YMCV/YMCV/`），自包含、移植时整个拷走；`SDL_LCD/`、`Demo/` 是 PC 演示外壳，留在顶层不带走。
 
 **归位判据**（决定新文件放哪）：
 - 是否直接读写 `GYsurface`/framebuffer 像素 → 碰像素进 `YMGUI/CORE/`；纯几何/数据结构进 `YMGUI/COMMON/`。
@@ -40,7 +40,7 @@ typedef struct GYdisp
 {
     GYcoord hor_res, ver_res;   // 屏幕尺寸
     GYpx*   buf1;               // draw buffer，可远小于整屏
-    GYpx*   buf2;               // 可选第二块(异步双缓冲，当前未启用)
+    GYpx*   buf2;               // 可选第二块(非 NULL 时启用异步双缓冲)
     uint32  buf_px_cnt;         // 每块能放多少像素 → 决定 band 高度
     void (*flush_cb)(struct GYdisp* d, const GYrect* area, const GYpx* buf);
     void*   user_data;          // SPI 句柄 / SDL_Texture 等
@@ -134,7 +134,7 @@ for 每条 band:
 |------|---------|--------|
 | `GY_malloc0/1` `GY_free` | `CONFIG/YMGUI_Mem.c` | 必改:换平台分配器(小/快 vs 大/慢分档) |
 | `GYdisp.flush_cb` | 用户 LCD port | 必改:SPI/并口把像素推上屏 |
-| `GYdisp.FlushReady` 调用点 | LCD port(同步末尾/异步中断) | 异步双缓冲才用 |
+| `YMGUI_Disp_FlushReady(d)` 调用点 | LCD port(同步末尾/异步中断) | 异步双缓冲才用 |
 | `GYdisp.wait_cb` | LCD port(可选) | 想省电填 `__WFI`,否则 NULL 忙等 |
 | `Inject_Pointer/Key` | 用户输入层 | 触摸/按键读数翻译成注入调用 |
 | `GYfont.glyph_read` | app 自造 GYfont(见字体节) | 方案3 外部 flash 才用 |
@@ -203,4 +203,4 @@ for 每条 band:
 
 ## 九、可裁剪性
 
-`CONFIG/` 里 `YMGUI_XXX_USE` 开关，功能代码 `#if ... #endif` 包裹，按 Flash/RAM 预算砍模块。`GY_INV_MAX`(脏矩形数)、`GYGUI_COLOR_DEPTH`、`GYcoord` 宽度都是编译期可调的裸机旋钮。`YMGUI_ANTIALIAS`(抗锯齿，单色屏强制关) / `YMGUI_FONT_CJK`(中文，关掉回退链断开、CJK 字模数据整段 `#if` 编译成空、无悬空符号，回到纯 ASCII 足迹) 是两个大件裁剪开关。
+`CONFIG/` 中的 `YMGUI_LAYOUT`、`YMGUI_TREEVIEW`、`YMGUI_GRID`、`YMGUI_CANVAS` 等开关由 `#if ... #endif` 裁减对应模块，按 Flash/RAM 预算配置，具体名称以头文件为准。`GY_INV_MAX`（脏矩形数）、`YMGUI_COLOR_DEPTH`、`YMGUI_COORD_32`（坐标宽度）是编译期配置；是否支持直接通过 CMake 设置需查看构建脚本。`YMGUI_ANTIALIAS`(抗锯齿，单色屏强制关) / `YMGUI_FONT_CJK`(中文，关掉回退链断开、CJK 字模数据整段 `#if` 编译成空、无悬空符号，回到纯 ASCII 足迹) 是两个大件裁剪开关。

@@ -21,7 +21,7 @@ git diff --check
 
 expect_count "CTest entries" "$(rg -c '^add_test\(' CMakeLists.txt)" 35
 expect_count "Demo sources" "$(find Demo -maxdepth 1 -name 'demo_*.c' | wc -l | tr -d ' ')" 28
-expect_count "Project demos" "$(find project_Demo -mindepth 2 -maxdepth 2 -name CMakeLists.txt | wc -l | tr -d ' ')" 11
+expect_count "Project demos" "$(find project_Demo -mindepth 2 -maxdepth 2 -name CMakeLists.txt | wc -l | tr -d ' ')" 12
 expect_count "Widget headers" "$(find YMGUI/WIDGET -maxdepth 1 -name 'YMGUI_*.h' | wc -l | tr -d ' ')" 27
 expect_count "IME character pronunciations" "$(rg -c '^    \{' project_Demo/chinese_ime/pinyin_gb2312.inc)" 7291
 expect_count "IME phrases" "$(rg -c '^    \{' project_Demo/chinese_ime/phrases_rime.inc)" 47280
