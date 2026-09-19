@@ -11,6 +11,7 @@
 - [架构](ARCHITECTURE.md)：修改库内部、渲染管线或跨层边界时阅读。
 - [跨平台移植](CROSS_PLATFORM_PORTING.md)：处理 SDL、Windows、Android 或真实硬件时阅读。
 - [二进制 SDK](../sdk/README.md) / [接入手册](../sdk/MANUAL.md)：生成独立静态库包、通过 CMake 接入、匹配 ABI 和与 YMGRE 联用。
+- [预编译分发包](../releases/README.md)：随 Git 提交的 Linux x86_64 库包、校验和解压步骤。
 - [代码风格](代码风格.md)：新增模块、设计 API 或整理目录时阅读。
 
 ## 辅助资料

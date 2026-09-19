@@ -10,11 +10,15 @@
 ./sdk/build.sh
 # 可选：验证外部 YMGRE SDK 的所有窗口示例
 ./sdk/build.sh --ymgre-dir /path/to/YMGRE_libs/cmake
+# 更新需要提交的分发包（仍先完成全部接入验证）
+./sdk/build.sh --release --ymgre-dir /path/to/YMGRE_libs/cmake
 ```
 
 需要 Python 3、CMake、C 编译器、binutils、make，以及 SDL2 开发包和 pkg-config。`--jobs 8` 调整并行数；`--without-sdl` 生成纯核心包，此时不需要 SDL2 或 pkg-config。当前打包器支持原生 Linux 构建，默认 Release、PIC、16 位坐标、完整默认控件配置。
 
 生成位置为 `build/YMGUI_libs/`，压缩包为 `build/YMGUI_libs-linux-<架构>.tar.gz`，附带压缩包 SHA-256 文件。构建中间文件在 `build/_ymgui_sdk/`；包内不包含库实现、FFmpeg、SDL2 库或 project_Demo 应用。
+
+`build/` 属于 Git 忽略目录，本地生成不等于已提交。加 `--release` 后，压缩包及校验文件输出到仓库可跟踪的 `releases/`；将这两个文件与相关改动一起提交，其他人才能直接取得预编译包。普通构建不更新该分发目录。
 
 ## 包内容
 

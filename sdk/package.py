@@ -46,6 +46,7 @@ def main():
     parser.add_argument("--without-sdl", action="store_true", help="Build core archives only; SDL2 is not required")
     parser.add_argument("--ymgre-dir", type=Path, help="YMGRE binary package cmake directory; validate its examples")
     parser.add_argument("--jobs", type=int, default=4)
+    parser.add_argument("--release", action="store_true", help="Write the verified archive and checksum to the tracked releases directory")
     args = parser.parse_args()
     if args.jobs < 1:
         parser.error("--jobs must be positive")
@@ -157,7 +158,9 @@ def main():
         if OUT.exists():
             shutil.rmtree(OUT)
         shutil.move(str(stage), OUT)
-    archive = OUT.parent / f"YMGUI_libs-{platform.system().lower()}-{platform.machine()}.tar.gz"
+    archive_dir = ROOT / "releases" if args.release else OUT.parent
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    archive = archive_dir / f"YMGUI_libs-{platform.system().lower()}-{platform.machine()}.tar.gz"
     pending = archive.with_suffix(".tmp")
     with tarfile.open(pending, "w:gz") as bundle:
         bundle.add(OUT, arcname="YMGUI_libs")

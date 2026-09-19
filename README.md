@@ -95,6 +95,8 @@ tools/test_matrix.sh                  # RGB565 + RGB888 构建和 35 个 CTest
 
 ### 生成独立 lib 包
 
+直接使用预编译库可从 [releases 分发目录](releases/README.md) 获取 Linux x86_64 压缩包；该目录随仓库提交。`build/` 是被 Git 忽略的本地构建目录。
+
 运行 `./sdk/build.sh` 生成 `build/YMGUI_libs/` 和对应的压缩包，包含 RGB565 / RGB888 核心静态库、独立 SDL 适配库、头文件、CMake 接口、示例和字模。外部工程通过 `find_package(YMGUI CONFIG REQUIRED)` 接入，无需携带库实现。当前打包支持原生 Linux；核心与 SDL 分开，`--without-sdl` 可生成纯核心包。详见 [SDK 说明](sdk/README.md) 和 [接入手册](sdk/MANUAL.md)。
 
 ### Android 构建

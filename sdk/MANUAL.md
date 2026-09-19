@@ -79,4 +79,6 @@ YMGRE 和 YMGUI 保持各自的库包及许可；不将另一套引擎的库和�
 
 `verification/` 保存执行结果；`BUILD_INFO.json` 记录本次配置和是否实际执行 YMGRE 验证，不承诺所有平台通过。解压后运行 `sha256sum -c checksums.sha256` 检查包内文件。文件哈希用于完整性检查，不代表发布者身份签名。
 
+仓库中的 `build/` 被 Git 忽略，仅用于本地生成。维护者通过 `./sdk/build.sh --release` 将验收后的压缩包和校验文件写入 `releases/` 并提交；用户可直接解压该目录的包使用。可同时传 `--ymgre-dir` 保留 YMGRE 联用验收日志。
+
 本包沿用 YMGUI 仓库的 Apache-2.0 `LICENSE`。SDL2、YMGRE 等外部依赖遵循各自许可，未把 YMGRE 的许可复制到 YMGUI。
