@@ -2,16 +2,17 @@
 # ==============================================================================
 # build_all.sh —— 一键重建整个 YMGUI 仓库的所有可执行产物。
 #
-#   为什么需要它:顶层 build/ 只编译库本体 + Demo/ 下的 demo/test;
+#   根 CMake 编译库本体 + Demo/ 下的 demo/test,统一放 build/<色深>/Demo/;
 #   project_Demo/ 下每个 app 是独立 CMake 工程、有独立构建目录
-#   build/rgb565/project_Demo/<name>/,顶层 `cmake --build build` 完全不碰它们
+#   build/<色深>/project_Demo/<name>/,根 CMake 完全不碰它们
 #   (改完 app 只 build 顶层会跑到旧二进制)。本脚本把两边一次性建齐。
 #
 #   用法:
 #     ./build_all.sh            # 增量重建顶层 + 所有 project_Demo
-#     ./build_all.sh -c         # 先清空所有 build 目录再全新重建
+#     ./build_all.sh --depth 24 # RGB888;跳过仅支持 RGB565 的 video_stidio
+#     ./build_all.sh -c         # 仅清空当前色深的 Demo 和各应用构建目录
 #     ./build_all.sh -t         # 顶层建完顺带跑 ctest
-#     ./build_all.sh -c -t      # 全新重建 + 跑单测
+#     ./build_all.sh -c -t      # 全新重建 + 跑单测;不会删除 SDK 或其他色深
 #
 #   判定成败以命令 exit code 为准(工程铁律,不看 stdout 文字)。
 #   任一单元失败 → 脚本最终退出码非 0,末尾汇总列出。
@@ -23,12 +24,18 @@ set -u
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$REPO_ROOT"
 
-JOBS="$(nproc 2>/dev/null || echo 4)"
+JOBS="${YMGUI_BUILD_JOBS:-$(nproc 2>/dev/null || echo 4)}"
+if ! [[ "$JOBS" =~ ^[1-9][0-9]*$ ]]; then
+	echo "YMGUI_BUILD_JOBS must be a positive integer" >&2
+	exit 2
+fi
+if [ -z "${YMGUI_BUILD_JOBS:-}" ] && [ "$JOBS" -gt 8 ]; then JOBS=8; fi
 DO_CLEAN=0
 DO_TEST=0
+DEPTH=16
 
 usage() {
-	sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+	sed -n '2,/^$/p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
 	exit "${1:-0}"
 }
 
@@ -36,11 +43,19 @@ while [ $# -gt 0 ]; do
 	case "$1" in
 		-c|--clean) DO_CLEAN=1 ;;
 		-t|--test)  DO_TEST=1 ;;
+		--depth) DEPTH="${2:?missing depth}"; shift ;;
 		-h|--help)  usage 0 ;;
 		*) echo "未知参数: $1" >&2; usage 1 ;;
 	esac
 	shift
 done
+
+case "$DEPTH" in
+	16) BUILD_BASE="build/rgb565" ;;
+	24) BUILD_BASE="build/rgb888" ;;
+	*) echo "--depth must be 16 or 24" >&2; exit 2 ;;
+esac
+DEMO_BUILD="$BUILD_BASE/Demo"
 
 # 颜色(非终端时禁用)
 if [ -t 1 ]; then
@@ -53,21 +68,22 @@ PASS_LIST=()
 FAIL_LIST=()
 
 # build_unit <标签> <源码目录> <构建目录>
-#   configure(缺 CMakeCache 时)+ build。任一步失败记入 FAIL_LIST。
+#   每次 configure 以确认色深,然后增量 build。任一步失败记入 FAIL_LIST。
 build_unit() {
 	local label="$1" src="$2" bdir="$3"
 	echo "${C_HD}==> [$label]${C_RST} $src -> $bdir"
 
 	if [ "$DO_CLEAN" -eq 1 ]; then
-		rm -rf "$bdir"
-	fi
-
-	if [ ! -f "$bdir/CMakeCache.txt" ]; then
-		if ! cmake -S "$src" -B "$bdir"; then
-			echo "${C_ERR}    configure 失败${C_RST}"
-			FAIL_LIST+=("$label (configure)")
+		if ! rm -rf "$bdir"; then
+			FAIL_LIST+=("$label (clean)")
 			return 1
 		fi
+	fi
+
+	if ! cmake -S "$src" -B "$bdir" -DYMGUI_COLOR_DEPTH="$DEPTH"; then
+		echo "${C_ERR}    configure 失败${C_RST}"
+		FAIL_LIST+=("$label (configure)")
+		return 1
 	fi
 
 	if ! cmake --build "$bdir" -j "$JOBS"; then
@@ -82,12 +98,15 @@ build_unit() {
 }
 
 # ---- 1) 顶层:库 + 全部 Demo/ 下 demo/test ----
-build_unit "top-level (lib + demos + tests)" "." "build"
+TOP_OK=0
+if build_unit "Demo (lib + demos + tests, depth $DEPTH)" "." "$DEMO_BUILD"; then
+	TOP_OK=1
+fi
 
 # ---- 2) 可选:跑顶层单测 ----
-if [ "$DO_TEST" -eq 1 ] && [ -f "build/CMakeCache.txt" ]; then
+if [ "$DO_TEST" -eq 1 ] && [ "$TOP_OK" -eq 1 ]; then
 	echo "${C_HD}==> [ctest]${C_RST} 顶层单测"
-	if ( cd build && ctest --output-on-failure ); then
+	if ctest --test-dir "$DEMO_BUILD" --output-on-failure; then
 		echo "${C_OK}    ctest 全过${C_RST}"
 		PASS_LIST+=("ctest")
 	else
@@ -100,7 +119,11 @@ fi
 for cml in project_Demo/*/CMakeLists.txt; do
 	[ -e "$cml" ] || continue          # 无匹配时跳过(nullglob 兜底)
 	name="$(basename "$(dirname "$cml")")"
-	build_unit "project_Demo/$name (rgb565)" "project_Demo/$name" "build/rgb565/project_Demo/$name"
+	if [ "$name" = video_stidio ] && [ "$DEPTH" != 16 ]; then
+		echo "SKIP project_Demo/video_stidio: 仅支持 RGB565"
+		continue
+	fi
+	build_unit "project_Demo/$name (depth $DEPTH)" "project_Demo/$name" "$BUILD_BASE/project_Demo/$name"
 done
 
 # ---- 汇总 ----

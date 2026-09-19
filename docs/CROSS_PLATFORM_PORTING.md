@@ -70,6 +70,8 @@ SDL 长按规则为保持 600ms、相对起点移动不超过 10px、每次触�
 
 ## 5. CMake 构建
 
+默认目录按色深和类型隔离：根工程使用 `build/rgb565/Demo/` 或 `build/rgb888/Demo/`，完整应用使用同色深下的 `project_Demo/<项目名>/`。构建 / 测试 / 截图脚本共享这套约定，具体命令和旧目录说明见 [构建目录说明](BUILD_LAYOUT.md)。
+
 独立二进制分发使用 [sdk](../sdk/README.md)：`./sdk/build.sh` 生成核心 / SDL 分开的 RGB565、RGB888 静态库，通过 `YMGUI::ymgui`、`YMGUI::sdl` 接入。当前打包器仅支持原生 Linux；包会核对目标系统、架构和指针位宽，不能直接用于 MCU、Windows 或 Android。其他目标沿用下面的源码构建流程。`SDL_LCD_WindowId()` 和 `SDL_LCD_SetTitle()` 可供外部引擎查询窗口和设置标题，窗口资源仍由 SDL 适配层拥有。
 
 `../project_Demo/ymgui_app.cmake` 统一负责构建 `ymgui`、`sdl_lcd` 和应用目标：

@@ -12,6 +12,8 @@
 #   用法:
 #     ./capture_shots.sh          # 用现有二进制截图(缺了会提示先 build)
 #     ./capture_shots.sh -b        # 先 ./build_all.sh 再截
+#     ./capture_shots.sh --depth 24 # RGB888,跳过 video_stidio
+#     ./capture_shots.sh --output build/shots-check # 指定验证输出目录
 #
 #   判定成败以 exit code 为准;任一截图失败 → 末尾汇总 + 退出码非 0。
 # ==============================================================================
@@ -25,15 +27,24 @@ OUT="docs/shots"
 FRAMES=40          # 跑够帧数让动画/缓动稳定
 TIMEOUT=20         # 单个 demo 最长跑多少秒(兜底防挂)
 DO_BUILD=0
+DEPTH=16
 
 while [ $# -gt 0 ]; do
 	case "$1" in
 		-b|--build) DO_BUILD=1 ;;
-		-h|--help)  sed -n '2,22p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+		--depth) DEPTH="${2:?missing depth}"; shift ;;
+		--output) OUT="${2:?missing output directory}"; shift ;;
+		-h|--help)  sed -n '2,/^$/p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
 		*) echo "未知参数: $1" >&2; exit 1 ;;
 	esac
 	shift
 done
+
+case "$DEPTH" in
+	16) BUILD_BASE="build/rgb565" ;;
+	24) BUILD_BASE="build/rgb888" ;;
+	*) echo "--depth must be 16 or 24" >&2; exit 2 ;;
+esac
 
 if [ -t 1 ]; then
 	C_OK=$'\033[32m'; C_ERR=$'\033[31m'; C_HD=$'\033[36m'; C_RST=$'\033[0m'
@@ -45,10 +56,10 @@ command -v ffmpeg >/dev/null || { echo "${C_ERR}需要 ffmpeg 把 BMP 转 PNG${C
 
 if [ "$DO_BUILD" -eq 1 ]; then
 	echo "${C_HD}==> 先构建全部${C_RST}"
-	./build_all.sh || { echo "${C_ERR}构建失败,终止截图${C_RST}"; exit 1; }
+	./build_all.sh --depth "$DEPTH" || { echo "${C_ERR}构建失败,终止截图${C_RST}"; exit 1; }
 fi
 
-mkdir -p "$OUT"
+mkdir -p "$OUT" || exit 1
 OK_LIST=()
 FAIL_LIST=()
 
@@ -56,6 +67,7 @@ FAIL_LIST=()
 #   跑 exe(dummy 驱动 + YMGUI_SHOT)→ BMP → PNG。exe 不存在/超时/无 BMP 记失败。
 shoot() {
 	local name="$1" exe="$2"
+	shift 2
 	local bmp="$OUT/$name.bmp" png="$OUT/$name.png"
 	if [ ! -x "$exe" ]; then
 		echo "${C_ERR}  跳过 $name:可执行不存在 ($exe) —— 先 ./build_all.sh${C_RST}"
@@ -63,8 +75,12 @@ shoot() {
 		return 1
 	fi
 	rm -f "$bmp"
-	SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy YMGUI_SHOT="$bmp" \
-		timeout "$TIMEOUT" "$exe" "$FRAMES" >/dev/null 2>&1
+	if ! SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy YMGUI_SHOT="$bmp" \
+		timeout "$TIMEOUT" "$exe" "$@" >/dev/null 2>&1; then
+		echo "${C_ERR}  失败 $name:运行失败或超时${C_RST}"
+		FAIL_LIST+=("$name (运行失败)")
+		return 1
+	fi
 	if [ ! -s "$bmp" ]; then
 		echo "${C_ERR}  失败 $name:没生成 BMP${C_RST}"
 		FAIL_LIST+=("$name (无输出)")
@@ -82,21 +98,28 @@ shoot() {
 	fi
 }
 
-# ---- 1) Demo/ 下 25 个单控件 demo(顶层 build/ 产物)----
+# ---- 1) 按源码枚举 Demo,避免缺少二进制时误报成功或运行旧 demo ----
 echo "${C_HD}==> Demo/ 单控件演示${C_RST}"
-for exe in build/demo_*; do
-	[ -x "$exe" ] || continue
-	[ -f "$exe" ] || continue          # 排除目录
-	shoot "$(basename "$exe")" "$exe"
+for src in Demo/demo_*.c; do
+	name="$(basename "$src" .c)"
+	shoot "$name" "$BUILD_BASE/Demo/$name" "$FRAMES"
 done
 
-# ---- 2) project_Demo/ 下 10 个完整应用(各自 build 目录)----
+# ---- 2) project_Demo/ 下完整应用(各自 build 目录)----
 echo "${C_HD}==> project_Demo/ 完整应用${C_RST}"
 for d in project_Demo/*/; do
 	name="$(basename "$d")"
-	exe="build/project_Demo/$name/$name"
+	exe="$BUILD_BASE/project_Demo/$name/$name"
 	[ -f "project_Demo/$name/CMakeLists.txt" ] || continue
-	shoot "$name" "$exe"
+	if [ "$name" = video_stidio ]; then
+		if [ "$DEPTH" != 16 ]; then
+			echo "SKIP video_stidio: 仅支持 RGB565"
+			continue
+		fi
+		shoot "$name" "$exe" --frames "$FRAMES"
+	else
+		shoot "$name" "$exe" "$FRAMES"
+	fi
 done
 
 # ---- 汇总 ----

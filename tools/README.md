@@ -48,4 +48,4 @@ tools/test_matrix.sh                # 仓库检查 + RGB565/RGB888
 tools/test_matrix.sh --all-depths   # 1/8/16/24 全像素格式
 ```
 
-`test.sh` 默认把产物放在 `build/verify/rgb<depth>/`，可用 `--build-dir` 覆盖。构建并发默认不超过 8，可通过 `YMGUI_TEST_JOBS=4 tools/test.sh` 覆盖。脚本均以自身位置解析仓库根目录，可从任意工作目录调用。
+`test.sh` 默认复用 `build_all.sh` 的 Demo 构建目录：RGB565 为 `build/rgb565/Demo/`，RGB888 为 `build/rgb888/Demo/`；1/8bpp 分别为 `build/depth1/Demo/`、`build/depth8/Demo/`。可用 `--build-dir` 指定独立实验目录，详见 [构建目录说明](../docs/BUILD_LAYOUT.md)。构建并发默认不超过 8，可通过 `YMGUI_TEST_JOBS=4 tools/test.sh` 覆盖。脚本均以自身位置解析仓库根目录，可从任意工作目录调用。

@@ -301,3 +301,12 @@ V2 是 [V1](history/DEVLOG_V1.md) 的直接续集，从第 42 轮开始持续记
 - 背景：上一轮提交了 SDK 构建入口，但实际产物位于被 Git 忽略的 `build/`，其他人拉取后不能直接取得预编译库。新增 `releases/`，提交 Linux x86_64 的完整 SDK 压缩包与 SHA-256 文件，分发说明提供校验、解压和示例构建步骤。
 - 打包器增加 `--release`：验收通过后将压缩包和校验文件输出到可跟踪的 `releases/`；普通构建继续使用 `build/`，避免每次本地构建都改动入库的分发包。解包目录与构建中间文件仍留在 `build/`。README、SDK 说明 / 手册、AI 指南、文档导航和当前状态同步说明两类目录。
 - 验证：重新生成分发包，双色深核心 / SDL 示例均通过，外部 YMGRE index16 / index32 各 30/30 通过。对最终 tar.gz 验证 SHA-256，并解压到仓库外临时目录，包内清单完整，原样运行 `build_demos.sh 16` 后 2/2 CTest 通过。库实现与 SDL 接口未改变。
+
+## 第 86 轮：统一 Demo 与完整应用的构建目录
+
+- 背景：默认构建将控件 Demo 散放在 `build/`，完整应用已使用 `build/rgb565/project_Demo/`，测试脚本另用 `build/verify/`，截图脚本却仍引用旧的 `build/project_Demo/`。这会产生多份缓存，并可能找不到或运行旧的应用。
+- 统一默认入口为 `build/rgb565/Demo/` 与 `build/rgb565/project_Demo/<项目名>/`；RGB888 对应 `build/rgb888/`。根工程的核心库、28 个 Demo 和 35 个测试共用 Demo 构建目录，各完整应用保持自己的独立构建目录。根测试脚本复用这套布局，1/8bpp 放在 `build/depth1/Demo/`、`build/depth8/Demo/`，保留 `--build-dir` 供独立实验使用。
+- `build_all.sh` 增加 `--depth 16/24`，每次显式配置色深，RGB888 跳过仅支持 RGB565 的 video_stidio；并发默认不超过 8，可用 `YMGUI_BUILD_JOBS` 调整。根构建失败时不再运行旧的测试程序；`-c` 仅清理当前色深的 Demo 和当前源码中各应用的构建目录，不再删除整个 build 和 SDK。
+- 截图脚本同步新路径，增加 `--depth`、`--output`，按源码列表枚举所需二进制，缺少文件或程序运行失败都报错；video_stidio 改用 `--frames`，避免把帧数当作待导入文件。新增构建目录专题，同步 README、当前状态、AI 指南、跨平台说明、工具和应用入口。历史缓存保留，避免删除其中的个人文件；新入口不读取旧目录，也不直接移动含绝对路径的 CMake 缓存。
+- 验证：`build_all.sh -t` 的 RGB565 根工程和 12 个应用全部构建成功；`--depth 24 -t` 的 RGB888 根工程和 11 个应用成功，根 CTest 各 35/35 通过。核对两套目录均有 28 个 Demo 和对应应用，缓存色深正确；从仓库外调用 `tools/test.sh --depth 24` 通过。非法色深在执行清理或截图前被拒绝，脚本语法检查通过。
+- 截图验收：最终脚本在 RGB565 生成 40 张、RGB888 生成 39 张 PNG，全部正常退出，输出位于 build 下的检查目录，未覆盖文档既有图片。仓库自检及 `git diff --check` 通过，build 仍无被 Git 跟踪的文件。

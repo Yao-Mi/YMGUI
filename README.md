@@ -76,11 +76,12 @@
 
 ```bash
 sudo apt-get install libsdl2-dev      # 仅桌面开发/demo 需要，库本体不依赖 SDL
-cmake -B build -S . && cmake --build build
-cd build && ctest --output-on-failure # 跑全部单测
-./build/demo_dashboard                # 看效果(需显示器)
-./build/demo_font_gb2312              # 中文字体(GB2312 全集走外部 flash 回调)
-SDL_VIDEODRIVER=dummy ./build/demo_plugin 120 # 插件系统宿主 demo（无头跑 120 帧）
+cmake -S . -B build/rgb565/Demo -DYMGUI_COLOR_DEPTH=16
+cmake --build build/rgb565/Demo -j8
+ctest --test-dir build/rgb565/Demo --output-on-failure # 跑全部单测
+./build/rgb565/Demo/demo_dashboard                # 看效果(需显示器)
+./build/rgb565/Demo/demo_font_gb2312              # 中文字体(GB2312 全集走外部 flash 回调)
+SDL_VIDEODRIVER=dummy ./build/rgb565/Demo/demo_plugin 120 # 插件系统宿主 demo（无头跑 120 帧）
 
 ./build_all.sh                        # 一键建库 + 全部 Demo + 12 个 project_Demo 项目
 ./capture_shots.sh -b                 # 先构建再批量截图到 docs/shots/(无头,需 ffmpeg)
@@ -88,6 +89,8 @@ SDL_VIDEODRIVER=dummy ./build/demo_plugin 120 # 插件系统宿主 demo（无头
 tools/check_repo.sh                   # 文档/字库/计数/路径快速检查
 tools/test_matrix.sh                  # RGB565 + RGB888 构建和 35 个 CTest
 ```
+
+默认构建按色深和类型归档：`build/rgb565/Demo/` 集中放控件演示、核心库和根工程测试；`build/rgb565/project_Demo/<项目名>/` 分别放完整应用。RGB888 对应 `build/rgb888/`，用 `./build_all.sh --depth 24` 构建（跳过仅支持 RGB565 的视频剪辑器）。详见 [构建目录说明](docs/BUILD_LAYOUT.md)。
 
 `extern_lib/` 用于存放 `project_Demo/` 应用所需的第三方依赖，各应用按需引用；构建产物放在对应的 `build/` 目录。YMGUI 核心库的依赖与移植范围保持在 `YMGUI/` 内。
 

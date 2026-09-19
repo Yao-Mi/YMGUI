@@ -193,24 +193,24 @@ TextInput / EditView 有聚焦和编辑两种状态；程序设置焦点不一�
 
 ## 6. 构建、配置和验证入口
 
-所有命令默认在仓库根执行。根工程编译核心、Demo 和核心测试，**不包含 project_Demo 的独立应用**。
+默认输出布局和清理范围见 [构建目录说明](BUILD_LAYOUT.md)。所有命令默认在仓库根执行。根工程编译核心、Demo 和核心测试，**不包含 project_Demo 的独立应用**。
 
 ```bash
-cmake -S . -B build/verify/rgb16 -DYMGUI_COLOR_DEPTH=16
-cmake --build build/verify/rgb16 -j8
-ctest --test-dir build/verify/rgb16 --output-on-failure
+cmake -S . -B build/rgb565/Demo -DYMGUI_COLOR_DEPTH=16
+cmake --build build/rgb565/Demo -j8
+ctest --test-dir build/rgb565/Demo --output-on-failure
 ```
 
-针对机制可选测，例如 `ctest --test-dir build/verify/rgb16 -R 'test_(event|focus|bind)$' --output-on-failure`；需先构建对应测试可执行文件。改应用则重新构建该应用的独立目录，并运行它自己的测试 / 自测与启动检查。
+针对机制可选测，例如 `ctest --test-dir build/rgb565/Demo -R 'test_(event|focus|bind)$' --output-on-failure`；需先构建对应测试可执行文件。改应用则重新构建该应用的独立目录，并运行它自己的测试 / 自测与启动检查。
 
 | 入口 | 范围 |
 | --- | --- |
 | `tools/check_repo.sh` | 文档链接、资源一致性、计数和 diff 空白检查；不编译 |
-| `tools/test.sh --depth 16` | 根工程单色深构建与测试，默认 `build/verify/rgb16` |
+| `tools/test.sh --depth 16` | 根工程单色深构建与测试，默认 `build/rgb565/Demo` |
 | `tools/test_matrix.sh` | 根工程 RGB565 + RGB888；`--all-depths` 加入 1 / 8 bpp |
 | `./sdk/build.sh` | 原生 Linux 二进制 SDK，双色深核心 / 可选 SDL 库及脱离源码的接入验证 |
-| `./build_all.sh` | 根工程 + 所有独立应用（RGB565）；`-t` 额外跑根工程 CTest |
-| `./capture_shots.sh` | 常规 Demo / 应用批量截图；具体应用截图要求先看各自说明 |
+| `./build_all.sh` | 按色深分组构建 Demo 和完整应用；默认 RGB565，`--depth 24` 跳过 video_stidio；`-t` 跑根工程 CTest |
+| `./capture_shots.sh` | 从统一构建目录批量截图；`--depth` 选择色深，`--output` 指定验证输出目录 |
 
 像素、字体、渲染等通用变化应覆盖 RGB565 / RGB888；修改裁减路径再验证相关宏或其他色深。每种色深用独立 build 目录，勿覆盖另一种 ABI 的产物。功能开关定义在 [PubDefine](../YMGUI/CONFIG/YMGUI_PubDefine.h)，像素类型在 [PubType](../YMGUI/CONFIG/YMGUI_PubType.h)。`-DYMGUI_COLOR_DEPTH=24` 是已接入的 CMake 变量；其他头文件宏并非都能直接作为 CMake 参数，先查 CMake 是否会传给编译器。裁减控件时应用也要避开被裁掉的调用。
 

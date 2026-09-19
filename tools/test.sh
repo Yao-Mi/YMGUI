@@ -27,7 +27,11 @@ case "$DEPTH" in
 esac
 
 if [ -z "$BUILD_DIR" ]; then
-	BUILD_DIR="$REPO_ROOT/build/verify/rgb$DEPTH"
+	case "$DEPTH" in
+		16) BUILD_DIR="$REPO_ROOT/build/rgb565/Demo" ;;
+		24) BUILD_DIR="$REPO_ROOT/build/rgb888/Demo" ;;
+		*) BUILD_DIR="$REPO_ROOT/build/depth$DEPTH/Demo" ;;
+	esac
 elif [[ "$BUILD_DIR" != /* ]]; then
 	BUILD_DIR="$REPO_ROOT/$BUILD_DIR"
 fi

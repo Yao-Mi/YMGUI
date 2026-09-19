@@ -5,11 +5,13 @@
 ## 约定
 
 - 每个项目一个子文件夹,内含自己的 `CMakeLists.txt` 和源码。
-- 各项目 CMakeLists 只需 include 共享咬合层 `../ymgui_app.cmake`,再一行 `ymgui_add_app(...)`。样板(9 层裸头 include、GLOB 库源码建 `ymgui`、SDL_LCD 建 `sdl_lcd`、找 SDL2)全在咬合层里,不必每项目重抄。
+- 各项目 CMakeLists 只需 include 共享咬合层 `../ymgui_app.cmake`,再一行 `ymgui_add_app(...)`。样板(10 层裸头 include、GLOB 库源码建 `ymgui`、SDL_LCD 建 `sdl_lcd`、找 SDL2)全在咬合层里,不必每项目重抄。
 - 共享咬合层在 Linux 上通过 `pkg-config` 找 SDL2,在 Windows/Android 上使用 SDL2 CMake target；Android 应用目标构建为 shared library,Windows 可用 `-DYMGUI_SDL_STATIC=ON` 优先选择静态 SDL2 target。
 - 编译输出按色深隔离：RGB565 使用 `build/rgb565/project_Demo/<项目名>/`，RGB888 使用 `build/rgb888/project_Demo/<项目名>/`；configure 时分别指定 `-DYMGUI_COLOR_DEPTH=16` 或 `24`。跨平台工具链和输入适配见 [`../docs/CROSS_PLATFORM_PORTING.md`](../docs/CROSS_PLATFORM_PORTING.md)。
 
 `extern_lib/` 是 `project_Demo/` 的第三方依赖目录，各应用按需使用，例如 `video_stidio` 使用其中的 `FFmpeg/`。应用仍直接复用仓库内的 `YMGUI/` 和 `SDL_LCD/`；第三方库的编译产物放在对应应用的 build 目录。
+
+单控件 `Demo/` 的产物集中在同色深的 `build/rgb565/Demo/` 或 `build/rgb888/Demo/`；这里的完整应用则各占 `project_Demo/<项目名>/` 子目录，避免可执行文件、资源和插件混在一起。`./build_all.sh` 一次构建 RGB565 全部应用，`--depth 24` 构建 RGB888 支持的应用（跳过 video_stidio）。完整布局见 [构建目录说明](../docs/BUILD_LAYOUT.md)。
 
 ## 加一个新项目
 
