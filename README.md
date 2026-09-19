@@ -93,6 +93,10 @@ tools/test_matrix.sh                  # RGB565 + RGB888 构建和 35 个 CTest
 
 视频剪辑器需额外准备 `extern_lib/FFmpeg` 源码（或系统 FFmpeg 开发包）和 FFmpeg 命令行，仅支持 Linux/RGB565。独立构建、操作和测试见 [video_stidio](project_Demo/video_stidio/README.md)。
 
+### 生成独立 lib 包
+
+运行 `./sdk/build.sh` 生成 `build/YMGUI_libs/` 和对应的压缩包，包含 RGB565 / RGB888 核心静态库、独立 SDL 适配库、头文件、CMake 接口、示例和字模。外部工程通过 `find_package(YMGUI CONFIG REQUIRED)` 接入，无需携带库实现。当前打包支持原生 Linux；核心与 SDL 分开，`--without-sdl` 可生成纯核心包。详见 [SDK 说明](sdk/README.md) 和 [接入手册](sdk/MANUAL.md)。
+
 ### Android 构建
 
 `project_Demo/ymgui_app.cmake` 原生支持 Android：YMGUI 核心编译为静态库，SDL 假 LCD

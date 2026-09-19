@@ -251,6 +251,19 @@ fail:
 	return -1;
 }
 
+unsigned SDL_LCD_WindowId(void)
+{
+	return s_win ? SDL_GetWindowID(s_win) : 0;
+}
+
+int SDL_LCD_SetTitle(const char* title)
+{
+	if (!s_win || !title)
+		return 0;
+	SDL_SetWindowTitle(s_win, title);
+	return 1;
+}
+
 void SDL_LCD_SetCloseRequestCb(SDL_LCD_CloseRequestCb cb, void* user)
 {
 	s_close_request_cb = cb;

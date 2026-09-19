@@ -100,6 +100,8 @@ static void pushQuit(void)
 
 int main(void)
 {
+	CHECK(SDL_LCD_WindowId() == 0, "no window ID before initialization");
+	CHECK(SDL_LCD_SetTitle("before init") == 0, "no title update before initialization");
 	GYdisp disp = {0};
 	disp.hor_res = SCR_W;
 	disp.ver_res = SCR_H;
@@ -111,6 +113,12 @@ int main(void)
 	YMGUI_Inject_SetCtx(ctx);
 
 	CHECK(SDL_LCD_Init(&disp, 1) == 0, "SDL LCD initializes with dummy driver");
+	SDL_Window* window = SDL_GetWindowFromID(SDL_LCD_WindowId());
+	CHECK(window != NULL, "window ID identifies the live SDL window");
+	CHECK(SDL_LCD_SetTitle(NULL) == 0, "null title rejected");
+	CHECK(SDL_LCD_SetTitle("YMGUI SDK") == 1, "window title update succeeds");
+	CHECK(window && SDL_strcmp(SDL_GetWindowTitle(window), "YMGUI SDK") == 0,
+	      "title update reaches SDL");
 
 	//主键盘 Enter 与数字小键盘 Enter 必须统一为同一个 YMGUI 虚拟键。
 	key_count = 0;
@@ -195,6 +203,8 @@ int main(void)
 	      "close callback can allow window close");
 
 	SDL_LCD_Destroy();
+	CHECK(SDL_LCD_WindowId() == 0, "window ID cleared after destroy");
+	CHECK(SDL_LCD_SetTitle("after destroy") == 0, "no title update after destroy");
 	YMGUI_Inject_SetCtx(NULL);
 	YMGUI_Free_CtxFree(ctx);
 	GY_free1(disp.buf1);

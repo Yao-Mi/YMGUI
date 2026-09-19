@@ -51,6 +51,10 @@ int main(void)
 `SDL_LCD_SetCloseRequestCb(cb, user)`。回调返回非 0 允许主循环退出，返回 0
 取消本次关闭；未注册时保持默认直接退出。回调内不应销毁 SDL 资源。
 
+`unsigned SDL_LCD_WindowId(void)` 返回当前 SDL 窗口 ID，未初始化或已销毁时返回 0。
+`int SDL_LCD_SetTitle(const char* title)` 设置窗口标题，成功返回 1；无窗口或 `title == NULL` 返回 0。
+这两个接口位于 SDL 适配层，公共头文件不暴露 SDL 结构体类型。
+
 裸机上：去掉 SDL_LCD，主循环里自己轮询触摸/按键调 `YMGUI_Inject_Pointer/Key`，用定时器/vsync 节奏调 `YMGUI_Refresh`。
 
 ## 上下文 / 对象 / 生命周期（OPOBJ）

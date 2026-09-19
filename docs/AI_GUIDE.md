@@ -28,6 +28,7 @@ YMGUI 是嵌入式 / 裸机优先的保留模式 GUI：C99 + GNU 扩展、软件
 | `YMGUI/STATE/` | subject、observer 和控件绑定 |
 | `YMGUI/PLUGIN/` | 静态插件注册、生命周期和可选动态加载 |
 | `SDL_LCD/` | 桌面 / Android 的显示和输入桥接 |
+| `sdk/` | 独立 lib 包的构建、CMake 接入、最小示例与手册；产物在 `build/YMGUI_libs/` |
 | `Demo/` | 单控件和机制的用法示例，由根 CMake 构建 |
 | `project_Demo/` | 独立应用，每个子目录单独配置 / 构建 |
 | `extern_lib/` | **供 project_Demo 应用按需使用的第三方依赖**，如 FFmpeg；产物放到对应 build 目录 |
@@ -206,10 +207,13 @@ ctest --test-dir build/verify/rgb16 --output-on-failure
 | `tools/check_repo.sh` | 文档链接、资源一致性、计数和 diff 空白检查；不编译 |
 | `tools/test.sh --depth 16` | 根工程单色深构建与测试，默认 `build/verify/rgb16` |
 | `tools/test_matrix.sh` | 根工程 RGB565 + RGB888；`--all-depths` 加入 1 / 8 bpp |
+| `./sdk/build.sh` | 原生 Linux 二进制 SDK，双色深核心 / 可选 SDL 库及脱离源码的接入验证 |
 | `./build_all.sh` | 根工程 + 所有独立应用（RGB565）；`-t` 额外跑根工程 CTest |
 | `./capture_shots.sh` | 常规 Demo / 应用批量截图；具体应用截图要求先看各自说明 |
 
 像素、字体、渲染等通用变化应覆盖 RGB565 / RGB888；修改裁减路径再验证相关宏或其他色深。每种色深用独立 build 目录，勿覆盖另一种 ABI 的产物。功能开关定义在 [PubDefine](../YMGUI/CONFIG/YMGUI_PubDefine.h)，像素类型在 [PubType](../YMGUI/CONFIG/YMGUI_PubType.h)。`-DYMGUI_COLOR_DEPTH=24` 是已接入的 CMake 变量；其他头文件宏并非都能直接作为 CMake 参数，先查 CMake 是否会传给编译器。裁减控件时应用也要避开被裁掉的调用。
+
+外部工程需要预编译库时，先看 [SDK 说明](../sdk/README.md) 和 [接入手册](../sdk/MANUAL.md)。`YMGUI_DIR` 指向包内 `cmake/`，链接 `YMGUI::ymgui` 或 `YMGUI::sdl`，色深由导入目标统一传递；不要将仓库 `ymgui_app.cmake` 和 SDK 混用。SDK 固定默认 ABI，裁减功能、改坐标位宽或移植平台必须重建库。`--without-sdl` 生成纯核心包；`--ymgre-dir` 可验收 YMGRE 联用。
 
 应用特例：
 

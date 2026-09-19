@@ -287,3 +287,11 @@ V2 是 [V1](history/DEVLOG_V1.md) 的直接续集，从第 42 轮开始持续记
 - 指南强调代码和测试优先，不另建功能事实来源；保留核心库、平台适配、应用及 `extern_lib/` 的职责。明确控件私有 `user_data`、双向绑定占用 changed 回调、TextInput 字符串借用、移动时旧新区域失效、band 自绘坐标、输入 / 字体全局状态和独立应用重建等容易误用的细节。
 - `AGENTS.md` 增加 AI 使用指南的阅读步骤，根 README、docs 导航和当前状态补充入口；架构文档修正库层数、双缓冲已启用、FlushReady 函数名及实际配置宏，避免后续助手继承过期结论。
 - 验证：从 Markdown 提取原样 C 示例，在 build 临时目录只调整 CMake 公共脚本引用位置，分别按 RGB565 / RGB888 完整编译并无头运行 30 帧，均返回 0；不增加正式应用或 CTest 数量。文档链接、仓库自检和 `git diff --check` 通过。本轮不修改库实现。
+
+## 第 84 轮：参考 YMGRE 的独立 lib 包与外部接入
+
+- 背景：用户希望参考 `0502_YMGRE/build/YMGRE_libs` 提供可直接接入的 YMGUI 库包。检查其打包脚本、CMake 目标、示例 host 与验收方式后，采用独立 `sdk/` 构建入口；`SDL_LCD/` 继续只做平台适配，`extern_lib/` 继续供 project_Demo 的第三方依赖使用。YMGRE 工程仅只读检查，不复制它的库或许可。
+- 新增 library-only CMake 与 Python 打包器，一次生成 RGB565 / RGB888 核心静态库和对应的可选 SDL 静态库，Release/PIC；导出可重定位的 `YMGUI::ymgui`、`YMGUI::sdl`，包内包含匹配头文件、纯核心和 SDL 示例及可执行文件、GB2312 字模、手册、原有 LICENSE、构建元数据和校验清单。生成目录为 `build/YMGUI_libs`，同时输出 tar.gz 和 SHA-256。不把 Demo、业务应用或 FFmpeg 收入库包。
+- 核心库与 SDL 依赖分开；`--without-sdl` 可生成纯核心包，消费端 `YMGUI_WITH_SDL=OFF` 可禁用适配。默认依赖可用时自动提供 SDL 目标，兼容 YMGRE 无组件的 `find_package(YMGUI)` 调用。SDK 仅支持原生 Linux，检查系统、架构、指针位宽与色深；包内头文件拒绝坐标宽度、色深和脏区容量的常见 ABI 冲突。需要裁减或跨平台时仍从源码构建。
+- YMGRE host 还使用窗口 ID 和标题接口，因此补充 `SDL_LCD_WindowId` / `SDL_LCD_SetTitle`，并扩展原 `test_sdl_context` 验证初始化前、有效窗口和销毁后的行为。根工程仍为 35 个 CTest；API、移植文档、README、AI 指南和当前状态同步更新。
+- 验证：RGB565 / RGB888 根工程各 35/35 通过；SDK 复制到仓库外后，两种色深各完成纯核心 1 项和 SDL 2 项 CTest，覆盖绘图、按钮注入、绑定、空闲刷新与有限帧窗口运行。核心 archive 无 SDL 未解析符号，非法色深和三类 ABI 冲突均被拒绝；`--without-sdl` 整包生成与双色深示例验收同样通过。外部 YMGRE index16 / index32 各 30/30 通过（核心 + 29 个窗口示例，无头有限帧）；构建目录位于临时目录，没有修改外部 YMGRE。只有接入验证成功后才替换带生成器标记的旧包。

@@ -17,6 +17,10 @@ typedef int (*SDL_LCD_CloseRequestCb)(void* user);
 int SDL_LCD_Init(GYDISP disp, int scale);
 //设置标题栏关闭请求回调;cb=NULL 恢复默认直接关闭。
 void SDL_LCD_SetCloseRequestCb(SDL_LCD_CloseRequestCb cb, void* user);
+//当前窗口 ID;未初始化或已销毁时返回 0,不暴露 SDL 类型。
+unsigned SDL_LCD_WindowId(void);
+//设置当前窗口标题;成功返回 1,无窗口或 title=NULL 时返回 0。
+int SDL_LCD_SetTitle(const char* title);
 //销毁
 void SDL_LCD_Destroy(void);
 //抽干事件队列;返回 0 表示收到退出请求

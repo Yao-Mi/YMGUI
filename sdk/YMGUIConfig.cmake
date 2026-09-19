@@ -1,0 +1,70 @@
+# Relocatable, precompiled package. Consumers never compile YMGUI sources.
+get_filename_component(_ymgui_sdk "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
+include("${CMAKE_CURRENT_LIST_DIR}/platform.cmake")
+set(YMGUI_FOUND TRUE)
+if(NOT CMAKE_SYSTEM_NAME STREQUAL YMGUI_SDK_SYSTEM OR
+   NOT CMAKE_SYSTEM_PROCESSOR STREQUAL YMGUI_SDK_PROCESSOR OR
+   NOT CMAKE_SIZEOF_VOID_P EQUAL YMGUI_SDK_POINTER_SIZE)
+    set(YMGUI_FOUND FALSE)
+    set(YMGUI_NOT_FOUND_MESSAGE "This SDK requires ${YMGUI_SDK_SYSTEM}/${YMGUI_SDK_PROCESSOR}, pointer size ${YMGUI_SDK_POINTER_SIZE}; rebuild for your target")
+    return()
+endif()
+if(NOT DEFINED YMGUI_COLOR_DEPTH)
+    set(YMGUI_COLOR_DEPTH 16 CACHE STRING "Precompiled YMGUI framebuffer depth")
+endif()
+if(NOT YMGUI_COLOR_DEPTH MATCHES "^(16|24)$")
+    set(YMGUI_FOUND FALSE)
+    set(YMGUI_NOT_FOUND_MESSAGE "Precompiled YMGUI_COLOR_DEPTH must be 16 or 24")
+    return()
+endif()
+if(TARGET YMGUI::ymgui)
+    get_target_property(_previous YMGUI::ymgui YMGUI_SDK_COLOR_DEPTH)
+    get_target_property(_location YMGUI::ymgui IMPORTED_LOCATION)
+    if(NOT _previous STREQUAL YMGUI_COLOR_DEPTH OR
+       NOT _location STREQUAL "${_ymgui_sdk}/lib/libymgui_rgb${YMGUI_COLOR_DEPTH}.a")
+        message(FATAL_ERROR "Use one YMGUI SDK and color depth per consumer build")
+    endif()
+else()
+    file(GLOB_RECURSE _headers "${_ymgui_sdk}/include/YMGUI/*.h")
+    set(_includes "${_ymgui_sdk}/include")
+    foreach(_header IN LISTS _headers)
+        get_filename_component(_dir "${_header}" DIRECTORY)
+        list(APPEND _includes "${_dir}")
+    endforeach()
+    list(REMOVE_DUPLICATES _includes)
+    add_library(YMGUI::ymgui STATIC IMPORTED)
+    set_target_properties(YMGUI::ymgui PROPERTIES
+        IMPORTED_LOCATION "${_ymgui_sdk}/lib/libymgui_rgb${YMGUI_COLOR_DEPTH}.a"
+        YMGUI_SDK_COLOR_DEPTH "${YMGUI_COLOR_DEPTH}"
+        INTERFACE_INCLUDE_DIRECTORIES "${_includes}"
+        INTERFACE_COMPILE_DEFINITIONS "YMGUI_COLOR_DEPTH=${YMGUI_COLOR_DEPTH};YMGUI_SDK_COLOR_DEPTH=${YMGUI_COLOR_DEPTH}"
+        INTERFACE_COMPILE_FEATURES c_std_99
+        INTERFACE_LINK_LIBRARIES "m;${CMAKE_DL_LIBS}")
+endif()
+set(YMGUI_core_FOUND TRUE)
+set(YMGUI_sdl_FOUND FALSE)
+option(YMGUI_WITH_SDL "Expose SDL adapter when SDL2 is available" ON)
+if(YMGUI_WITH_SDL AND EXISTS "${_ymgui_sdk}/lib/libymgui_sdl_rgb${YMGUI_COLOR_DEPTH}.a")
+    if(NOT TARGET YMGUI::sdl)
+        find_package(PkgConfig QUIET)
+        if(PkgConfig_FOUND)
+            pkg_check_modules(YMGUI_SDK_SDL2 QUIET IMPORTED_TARGET sdl2)
+        endif()
+        if(TARGET PkgConfig::YMGUI_SDK_SDL2)
+            add_library(YMGUI::sdl STATIC IMPORTED)
+            set_target_properties(YMGUI::sdl PROPERTIES
+                IMPORTED_LOCATION "${_ymgui_sdk}/lib/libymgui_sdl_rgb${YMGUI_COLOR_DEPTH}.a"
+                INTERFACE_INCLUDE_DIRECTORIES "${_ymgui_sdk}/include/SDL_LCD"
+                INTERFACE_LINK_LIBRARIES "YMGUI::ymgui;PkgConfig::YMGUI_SDK_SDL2")
+        endif()
+    endif()
+    if(TARGET YMGUI::sdl)
+        set(YMGUI_sdl_FOUND TRUE)
+    endif()
+endif()
+foreach(_component IN LISTS YMGUI_FIND_COMPONENTS)
+    if(NOT YMGUI_${_component}_FOUND AND YMGUI_FIND_REQUIRED_${_component})
+        set(YMGUI_FOUND FALSE)
+        set(YMGUI_NOT_FOUND_MESSAGE "Unavailable YMGUI component: ${_component}; sdl needs the adapter archive, YMGUI_WITH_SDL=ON and SDL2 development files")
+    endif()
+endforeach()
