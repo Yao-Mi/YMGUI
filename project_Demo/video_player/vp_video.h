@@ -27,12 +27,20 @@ void     vp_video_destroy(VPvideo* v);
 //打开视频文件:ffprobe 探参 + 启动 ffmpeg 流式解码,输出缩放到 <= max_w×max_h(保比、偶数)。
 //成功返回 1(REAL 模式);无 ffmpeg/ffprobe/文件不可解 → 合成动画兜底并返回 0(引擎仍可"播")。
 uint8    vp_video_open(VPvideo* v, const char* path, int32 max_w, int32 max_h);
+/* 从指定源时间启动解码管道，避免先从 0 播放再 seek。 */
+uint8    vp_video_open_at(VPvideo* v, const char* path, int32 max_w, int32 max_h, int32 start_ms);
+/* 复用已知媒体参数从指定位置启动，供高频异步 seek 使用，避免重复 ffprobe。 */
+uint8    vp_video_open_prepared(VPvideo* v, const char* path, int32 out_w, int32 out_h,
+                                int32 fps_num, int32 fps_den, int32 dur_ms, int32 start_ms);
 
 //解码输出帧尺寸(display_buf 尺寸)
 int32    vp_video_width (const VPvideo* v);
 int32    vp_video_height(const VPvideo* v);
 //总时长(毫秒;探测不到时为兜底值)
 int32    vp_video_dur_ms(const VPvideo* v);
+//源视频帧率分子/分母，用于编辑器按帧生成时间刻度
+int32    vp_video_fps_num(const VPvideo* v);
+int32    vp_video_fps_den(const VPvideo* v);
 
 //稳定显示缓冲指针(out_w×out_h GYpx)。app 把 GYimg.data 指向它(一次),后续原地更新
 const GYpx* vp_video_pixels(const VPvideo* v);

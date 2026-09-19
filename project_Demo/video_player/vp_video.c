@@ -254,8 +254,14 @@ static uint8 openSynth(VPvideo* v, int32 max_w, int32 max_h)
 
 uint8 vp_video_open(VPvideo* v, const char* path, int32 max_w, int32 max_h)
 {
+	return vp_video_open_at(v, path, max_w, max_h, 0);
+}
+
+uint8 vp_video_open_at(VPvideo* v, const char* path, int32 max_w, int32 max_h, int32 start_ms)
+{
 	if (v == NULL) return 0;
 	if (max_w < 2) max_w = 2; if (max_h < 2) max_h = 2;
+	if (start_ms < 0) start_ms = 0;
 
 	if (path == NULL || path[0] == '\0') { openSynth(v, max_w, max_h); return 0; }
 	//文件在不在
@@ -273,7 +279,8 @@ uint8 vp_video_open(VPvideo* v, const char* path, int32 max_w, int32 max_h)
 	snprintf(v->path, sizeof(v->path), "%s", path);
 	if (!allocBuffers(v)) { gy_log_print("vp_video: OOM -> synth\n"); freeRing(v); openSynth(v, max_w, max_h); return 0; }
 
-	if (!startPipe(v, 0))
+	if (start_ms > v->dur_ms && v->dur_ms > 0) start_ms = v->dur_ms;
+	if (!startPipe(v, start_ms))
 	{ gy_log_print("vp_video: ffmpeg popen failed -> synth\n"); openSynth(v, max_w, max_h); return 0; }
 
 	gy_log_print("vp_video: opened '%s' src %dx%d -> out %dx%d @ %d/%d fps, %d ms\n",
@@ -281,9 +288,27 @@ uint8 vp_video_open(VPvideo* v, const char* path, int32 max_w, int32 max_h)
 	return 1;
 }
 
+uint8 vp_video_open_prepared(VPvideo* v, const char* path, int32 out_w, int32 out_h,
+                             int32 fps_num, int32 fps_den, int32 dur_ms, int32 start_ms)
+{
+	if (v == NULL || path == NULL || path[0] == '\0' || out_w < 2 || out_h < 2) return 0;
+	if (start_ms < 0) start_ms = 0;
+	if (dur_ms > 0 && start_ms > dur_ms) start_ms = dur_ms;
+	v->out_w = out_w;
+	v->out_h = out_h;
+	v->fps_num = fps_num > 0 ? fps_num : 25;
+	v->fps_den = fps_den > 0 ? fps_den : 1;
+	v->dur_ms = dur_ms;
+	snprintf(v->path, sizeof(v->path), "%s", path);
+	if (!allocBuffers(v)) return 0;
+	return startPipe(v, start_ms);
+}
+
 int32 vp_video_width (const VPvideo* v) { return v ? v->out_w : 0; }
 int32 vp_video_height(const VPvideo* v) { return v ? v->out_h : 0; }
 int32 vp_video_dur_ms(const VPvideo* v) { return v ? v->dur_ms : 0; }
+int32 vp_video_fps_num(const VPvideo* v) { return v ? v->fps_num : 25; }
+int32 vp_video_fps_den(const VPvideo* v) { return v ? v->fps_den : 1; }
 uint8 vp_video_is_synth(const VPvideo* v){ return v ? v->is_synth : 0; }
 const GYpx* vp_video_pixels(const VPvideo* v) { return v ? v->display_buf : NULL; }
 
