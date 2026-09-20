@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:mp="http://www.mutopiaproject.org/piece-data/0.1/">
+
+<rdf:Description rdf:about=".">
+    <mp:title>Greensleaves</mp:title>
+    <mp:composer>Traditional</mp:composer>
+    <mp:opus/>
+    <mp:lyricist/>
+    <mp:for>Lute, Guitar, Vihuela</mp:for>
+    <mp:date/>
+    <mp:style>Renaissance</mp:style>
+    <mp:metre/>
+    <mp:arranger/>
+    <mp:source>Unknown</mp:source>
+    <mp:licence>Public Domain</mp:licence>
+
+    <mp:lyFile>Greensleaves.ly</mp:lyFile>
+    <mp:midFile>Greensleaves.mid</mp:midFile>
+    <mp:psFileA4>Greensleaves-a4.ps.gz</mp:psFileA4>
+    <mp:pdfFileA4>Greensleaves-a4.pdf</mp:pdfFileA4>
+    <mp:psFileLet>Greensleaves-let.ps.gz</mp:psFileLet>
+    <mp:pdfFileLet>Greensleaves-let.pdf</mp:pdfFileLet>
+    <mp:pngFile>Greensleaves-preview.png</mp:pngFile>
+    <mp:pngHeight>78</mp:pngHeight>
+    <mp:pngWidth>539</mp:pngWidth>
+
+    <mp:id>Mutopia-2013/03/23-109</mp:id>
+    <mp:maintainer>Aaron Fontaine</mp:maintainer>
+    <mp:maintainerEmail>afontain@d.umn.edu</mp:maintainerEmail>
+    <mp:maintainerWeb/>
+    <mp:moreInfo/>
+    <mp:lilypondVersion>2.16.1</mp:lilypondVersion>
+</rdf:Description>
+
+</rdf:RDF>

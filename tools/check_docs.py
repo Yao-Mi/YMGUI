@@ -14,7 +14,11 @@ SKIP_DIRS = {".git", "build"}
 
 def markdown_files():
     for path in ROOT.rglob("*.md"):
-        if not any(part in SKIP_DIRS for part in path.relative_to(ROOT).parts):
+        relative = path.relative_to(ROOT)
+        # The entire local reference directory is excluded from version control.
+        if relative.parts[0] == "参考":
+            continue
+        if not any(part in SKIP_DIRS for part in relative.parts):
             yield path
 
 

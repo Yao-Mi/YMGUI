@@ -71,6 +71,13 @@ int main(void)
 	setupFull();
 	YMGUI_Draw_Line(&s, 0, 0, 20, 20, white);
 	CHECK(px(0, 0) && px(10, 10) && px(20, 20), "diagonal passes through (10,10)");
+	// 负斜率和负起点覆盖 AA 定点转换，UBSan 下也不得左移负数。
+	setupFull();
+	YMGUI_Draw_Line(&s, 0, 20, 20, 0, white);
+	CHECK(px(0, 20) && px(10, 10) && px(20, 0), "descending diagonal endpoints and midpoint");
+	setupFull();
+	YMGUI_Draw_Line(&s, -5, -5, 20, 20, white);
+	CHECK(px(0, 0) && px(10, 10) && px(20, 20), "negative line origin clips correctly");
 
 	//---- 线裁剪:超出 clip 不写 ----
 	setupFull();

@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:mp="http://www.mutopiaproject.org/piece-data/0.1/">
+
+<rdf:Description rdf:about=".">
+    <mp:title>Menuet</mp:title>
+    <mp:composer>BachJS</mp:composer>
+    <mp:opus>BWV Anh. 114</mp:opus>
+    <mp:lyricist/>
+    <mp:for>Harpsichord, Piano, Clavichord</mp:for>
+    <mp:date>1725</mp:date>
+    <mp:style>Baroque</mp:style>
+    <mp:metre/>
+    <mp:arranger/>
+    <mp:source>Bach-Gesellschaft</mp:source>
+    <mp:licence>Public Domain</mp:licence>
+
+    <mp:lyFile>anna-magdalena-04.ly</mp:lyFile>
+    <mp:midFile>anna-magdalena-04.mid</mp:midFile>
+    <mp:psFileA4>anna-magdalena-04-a4.ps.gz</mp:psFileA4>
+    <mp:pdfFileA4>anna-magdalena-04-a4.pdf</mp:pdfFileA4>
+    <mp:psFileLet>anna-magdalena-04-let.ps.gz</mp:psFileLet>
+    <mp:pdfFileLet>anna-magdalena-04-let.pdf</mp:pdfFileLet>
+    <mp:pngFile>anna-magdalena-04-preview.svg</mp:pngFile>
+    <mp:pngHeight>0</mp:pngHeight>
+    <mp:pngWidth>0</mp:pngWidth>
+
+    <mp:id>Mutopia-2017/01/19-75</mp:id>
+    <mp:maintainer>Allen Garvin</mp:maintainer>
+    <mp:maintainerEmail/>
+    <mp:maintainerWeb/>
+    <mp:moreInfo>&lt;p&gt;A guitar arrangement and a trumpet duet transcription of this piece can both be found in the Mutopia archive.&lt;/p&gt;</mp:moreInfo>
+    <mp:lilypondVersion>2.19.49</mp:lilypondVersion>
+</rdf:Description>
+
+</rdf:RDF>

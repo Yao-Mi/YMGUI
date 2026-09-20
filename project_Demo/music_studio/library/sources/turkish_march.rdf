@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:mp="http://www.mutopiaproject.org/piece-data/0.1/">
+
+<rdf:Description rdf:about=".">
+    <mp:title>Sonate Opus KV 331 - Rondo Alla Turca</mp:title>
+    <mp:composer>MozartWA</mp:composer>
+    <mp:opus>KV 331</mp:opus>
+    <mp:lyricist/>
+    <mp:for>Piano</mp:for>
+    <mp:date/>
+    <mp:style>Classical</mp:style>
+    <mp:metre/>
+    <mp:arranger/>
+    <mp:source>IMSLP</mp:source>
+    <mp:licence>Public Domain</mp:licence>
+
+    <mp:lyFile>KV331_3_RondoAllaTurca-lys.zip</mp:lyFile>
+    <mp:midFile>KV331_3_RondoAllaTurca.mid</mp:midFile>
+    <mp:psFileA4>KV331_3_RondoAllaTurca-a4.ps.gz</mp:psFileA4>
+    <mp:pdfFileA4>KV331_3_RondoAllaTurca-a4.pdf</mp:pdfFileA4>
+    <mp:psFileLet>KV331_3_RondoAllaTurca-let.ps.gz</mp:psFileLet>
+    <mp:pdfFileLet>KV331_3_RondoAllaTurca-let.pdf</mp:pdfFileLet>
+    <mp:pngFile>KV331_3_RondoAllaTurca-preview.png</mp:pngFile>
+    <mp:pngHeight>103</mp:pngHeight>
+    <mp:pngWidth>539</mp:pngWidth>
+
+    <mp:id>Mutopia-2015/08/13-108</mp:id>
+    <mp:maintainer>Rune Zedeler and Chris Sawer</mp:maintainer>
+    <mp:maintainerEmail>chris@mutopiaproject.org</mp:maintainerEmail>
+    <mp:maintainerWeb/>
+    <mp:moreInfo/>
+    <mp:lilypondVersion>2.16.2</mp:lilypondVersion>
+</rdf:Description>
+
+</rdf:RDF>

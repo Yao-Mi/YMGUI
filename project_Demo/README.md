@@ -46,6 +46,8 @@ ymgui_add_app(my_app my_app.c)
 
 ## 现有项目
 
+- **music_studio（音乐工坊）** —— 中文多轨音乐制作工作台，鼓机、钢琴卷帘、音频编排、基础混音、保存和 WAV 导出；Linux / RGB565 / RGB888，带内置演示与独立测试（见 [说明](music_studio/README.md)）。
+
 - **txt_edit** —— 行式文本编辑器。第一个验证项目,产出了第一份缺口清单(见 `txt_edit/README.md`)。
 - **files_manager** —— 沙箱文件管理器。第二个验证项目,催生库控件 `TreeView`(见 `files_manager/README.md`)。
 - **excel_edit** —— 电子表格。第三个验证项目,催生库控件 `Grid`,公式引擎在 app 侧(见 `excel_edit/README.md`)。

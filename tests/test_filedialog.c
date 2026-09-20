@@ -66,6 +66,16 @@ static uint8 directoriesOnly(GYOBJ fd, GYfiledialog_mode mode, const char* paren
 static void click(GYCTX ctx, GYcoord x, GYcoord y)
 { YMGUI_Event_Pointer(ctx, x, y, 1); YMGUI_Event_Pointer(ctx, x, y, 0); }
 
+static const char* translateText(const char* key, void* user)
+{
+	unsigned* seen = user;
+	if (!strcmp(key, "Open")) { *seen |= 1; return "打开"; }
+	if (!strcmp(key, "Save")) { *seen |= 2; return "保存"; }
+	if (!strcmp(key, "Select")) { *seen |= 4; return "选择"; }
+	if (!strcmp(key, "Cannot open directory")) { *seen |= 8; return "无法打开目录"; }
+	return NULL; // 未提供的文案回退为原文。
+}
+
 int main(void)
 {
 	GYdisp disp = {0}; disp.hor_res = SCR_W; disp.ver_res = SCR_H; disp.buf_px_cnt = SCR_W * 32;
@@ -161,6 +171,20 @@ int main(void)
 	YMGUI_FileDialog_Close(fd); CHECK(!YMGUI_FileDialog_IsShown(fd), "close hides");
 	CHECK(ctx->focus_obj == NULL, "close releases hidden input focus");
 
+	unsigned translated_modes = 0;
+	YMGUI_FileDialog_SetTranslator(fd, translateText, &translated_modes);
+	CHECK(YMGUI_FileDialog_Show(fd, GY_FILE_DIALOG_OPEN_FILE, "/", "a.txt"), "translated open");
+	CHECK(YMGUI_FileDialog_Show(fd, GY_FILE_DIALOG_SAVE_FILE, "/", "a.txt"), "translated save");
+	CHECK(YMGUI_FileDialog_Show(fd, GY_FILE_DIALOG_SELECT_DIRECTORY, "/", ""), "translated select");
+	CHECK(!YMGUI_FileDialog_Navigate(fd, "/missing"), "translated navigation error");
+	YMGUI_Refresh(ctx);
+	CHECK(translated_modes == 15, "translator receives mode labels and displayed error");
+	CHECK(!strcmp(YMGUI_FileDialog_GetStatus(fd), "Cannot open directory"), "status key remains stable for programmatic callers");
+	CHECK(!strcmp(YMGUI_FileDialog_GetPath(fd), "/"), "translation does not change filesystem path");
+	YMGUI_FileDialog_SetTranslator(fd, NULL, NULL);
+	translated_modes = 0;
+	YMGUI_Refresh(ctx);
+	CHECK(translated_modes == 0, "translator can be detached before user data expires");
 	YMGUI_Free_CtxFree(ctx); GY_free1(disp.buf1);
 	if (fails) { printf("test_filedialog: %d failure(s)\n", fails); return 1; }
 	printf("test_filedialog: all passed\n"); return 0;

@@ -1,0 +1,77 @@
+[
+  {
+    "file": "minuet.mid",
+    "url": "https://www.mutopiaproject.org/ftp/BachJS/BWVAnh114/anna-magdalena-04/anna-magdalena-04.mid",
+    "sha256": "fd87a6673e18104047842a1c858d2c9d8eb9ad845d7a8fa46e3664b17642cb75"
+  },
+  {
+    "file": "minuet.ly",
+    "url": "https://www.mutopiaproject.org/ftp/BachJS/BWVAnh114/anna-magdalena-04/anna-magdalena-04.ly",
+    "sha256": "aa6c19e6fecf20753591d739f9e6cf32f3d925fa8a50245c011c8928a1cd1d83"
+  },
+  {
+    "file": "minuet.rdf",
+    "url": "https://www.mutopiaproject.org/ftp/BachJS/BWVAnh114/anna-magdalena-04/anna-magdalena-04.rdf",
+    "sha256": "3a611edfc0522334eb61036fd40f7fd2e83cb07a34b5b2f24fd8a5bc90f4508b"
+  },
+  {
+    "file": "greensleeves.mid",
+    "url": "https://www.mutopiaproject.org/ftp/Traditional/Greensleaves/Greensleaves.mid",
+    "sha256": "468c9878cff4709a7f369819313eea41eb38f90a043e377540ac66d8d2f937f7"
+  },
+  {
+    "file": "greensleeves.ly",
+    "url": "https://www.mutopiaproject.org/ftp/Traditional/Greensleaves/Greensleaves.ly",
+    "sha256": "255ea5f776564ab917cdf2fbe7c04bb7a15a2a2c509aad6aa2e5b0a4547c2cc4"
+  },
+  {
+    "file": "greensleeves.rdf",
+    "url": "https://www.mutopiaproject.org/ftp/Traditional/Greensleaves/Greensleaves.rdf",
+    "sha256": "dc01d6ccd2d9d8f99071b2649fafe0156313b8c3b2433fcc6ec49948bdda9b40"
+  },
+  {
+    "file": "turkish_march.mid",
+    "url": "https://www.mutopiaproject.org/ftp/MozartWA/KV331/KV331_3_RondoAllaTurca/KV331_3_RondoAllaTurca.mid",
+    "sha256": "c14299cbdd34c8b2081da84dc06519ef8a52a0d589ee53c758d28b8e3d727d1c"
+  },
+  {
+    "file": "turkish_march.zip",
+    "url": "https://www.mutopiaproject.org/ftp/MozartWA/KV331/KV331_3_RondoAllaTurca/KV331_3_RondoAllaTurca-lys.zip",
+    "sha256": "ac2eba084c584b5e820e8a4554efdf630fa63e661b61ad064a85c041ce92fb24"
+  },
+  {
+    "file": "turkish_march.rdf",
+    "url": "https://www.mutopiaproject.org/ftp/MozartWA/KV331/KV331_3_RondoAllaTurca/KV331_3_RondoAllaTurca.rdf",
+    "sha256": "dab7a4425616dfd2ba23a5e839c8ff0838070ccd0a52c9f2b87ad5823340e221"
+  },
+  {
+    "file": "fur_elise.mid",
+    "url": "https://www.mutopiaproject.org/ftp/BeethovenLv/WoO59/fur_Elise_WoO59/fur_Elise_WoO59.mid",
+    "sha256": "1c12c21c7bbf4cf163896732672648a69d497636059837abd153c71abe50215a"
+  },
+  {
+    "file": "fur_elise.ly",
+    "url": "https://www.mutopiaproject.org/ftp/BeethovenLv/WoO59/fur_Elise_WoO59/fur_Elise_WoO59.ly",
+    "sha256": "828a7bd1b42e441fe1b0eb0389ba46f1502dab28bbe488389e635fb446ba7a67"
+  },
+  {
+    "file": "fur_elise.rdf",
+    "url": "https://www.mutopiaproject.org/ftp/BeethovenLv/WoO59/fur_Elise_WoO59/fur_Elise_WoO59.rdf",
+    "sha256": "a527e7b5e21f94edd9131817fc633ef15936263bd355fd2ab442499893919c39"
+  },
+  {
+    "file": "ode_to_joy.mid",
+    "url": "https://www.mutopiaproject.org/ftp/BeethovenLv/ode/ode.mid",
+    "sha256": "fb1604c08c865b275b464d74e5a7c526ff1a8acccdf9853cb92f0778daaed14b"
+  },
+  {
+    "file": "ode_to_joy.ly",
+    "url": "https://www.mutopiaproject.org/ftp/BeethovenLv/ode/ode.ly",
+    "sha256": "a0c865aa9f71221605362622d281405071e0734540e86ce131131757cc803a71"
+  },
+  {
+    "file": "ode_to_joy.rdf",
+    "url": "https://www.mutopiaproject.org/ftp/BeethovenLv/ode/ode.rdf",
+    "sha256": "5edbf04a599a3c4e6ddf5479d7be60d8ddb13f84b6d7e14756d675eb469d71e8"
+  }
+]

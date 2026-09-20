@@ -1,0 +1,172 @@
+[
+  {
+    "file": "01-致爱丽丝-钢琴主题节选.ymmusic",
+    "seconds": 28.125,
+    "notes": 151,
+    "tracks": 1,
+    "patterns": 8,
+    "clips": 9,
+    "sha256": "ed7494738cd92c8dba226c6698b9123ef7af7bcbbeb1c1c96b532f9fe89e43e4",
+    "source": "fur_elise.mid",
+    "source_tempos": [
+      [
+        0,
+        833333
+      ]
+    ],
+    "source_signatures": [
+      [
+        0,
+        3,
+        8
+      ]
+    ],
+    "source_events_not_rendered": {
+      "channel_event_b": 3
+    }
+  },
+  {
+    "file": "02-土耳其进行曲-钢琴节选.ymmusic",
+    "seconds": 25.714,
+    "notes": 265,
+    "tracks": 2,
+    "patterns": 12,
+    "clips": 12,
+    "sha256": "538f5dbf010a6ac2ca02114447b29264e4dca5230051650c29e811df0bb2db5f",
+    "source": "turkish_march.mid",
+    "source_tempos": [
+      [
+        0,
+        1000000
+      ]
+    ],
+    "source_signatures": [
+      [
+        0,
+        2,
+        4
+      ]
+    ],
+    "source_events_not_rendered": {}
+  },
+  {
+    "file": "03-G大调小步舞曲-钢琴全曲.ymmusic",
+    "seconds": 48.0,
+    "notes": 204,
+    "tracks": 1,
+    "patterns": 13,
+    "clips": 13,
+    "sha256": "ba7d932d2a56a6d0c35d23f5f99567745e05e353da4c38f0a93c0387d6d67721",
+    "source": "minuet.mid",
+    "source_tempos": [
+      [
+        0,
+        428571
+      ]
+    ],
+    "source_signatures": [
+      [
+        0,
+        3,
+        4
+      ]
+    ],
+    "source_events_not_rendered": {}
+  },
+  {
+    "file": "04-G大调小步舞曲-室内乐节选.ymmusic",
+    "seconds": 24.0,
+    "notes": 102,
+    "tracks": 2,
+    "patterns": 11,
+    "clips": 13,
+    "sha256": "0fdedcd88cf12dbe0b8cef9e522457caa6bf6006f9ca3dfe9ce847973576cae3",
+    "source": "minuet.mid",
+    "source_tempos": [
+      [
+        0,
+        428571
+      ]
+    ],
+    "source_signatures": [
+      [
+        0,
+        3,
+        4
+      ]
+    ],
+    "source_events_not_rendered": {}
+  },
+  {
+    "file": "05-绿袖子-吉他全曲.ymmusic",
+    "seconds": 48.5,
+    "notes": 110,
+    "tracks": 1,
+    "patterns": 14,
+    "clips": 16,
+    "sha256": "6903a7d564d93c2bc26e522c2feca0eff78506cc8fd51e49e9d4e1bcba06f346",
+    "source": "greensleeves.mid",
+    "source_tempos": [
+      [
+        0,
+        375000
+      ]
+    ],
+    "source_signatures": [
+      [
+        0,
+        3,
+        4
+      ]
+    ],
+    "source_events_not_rendered": {}
+  },
+  {
+    "file": "06-欢乐颂-合唱全曲.ymmusic",
+    "seconds": 38.4,
+    "notes": 238,
+    "tracks": 2,
+    "patterns": 14,
+    "clips": 16,
+    "sha256": "8c18748f0b640502393a2e93f1f01ad57b582b8c9259d414d29ab595c4943655",
+    "source": "ode_to_joy.mid",
+    "source_tempos": [
+      [
+        0,
+        600000
+      ]
+    ],
+    "source_signatures": [
+      [
+        0,
+        4,
+        4
+      ]
+    ],
+    "source_events_not_rendered": {}
+  },
+  {
+    "file": "07-欢乐颂-铜管全曲.ymmusic",
+    "seconds": 35.556,
+    "notes": 238,
+    "tracks": 2,
+    "patterns": 14,
+    "clips": 16,
+    "sha256": "4539c547ebfa0857e61be9825f359daa006afa4330e971550e1af98d9a62390d",
+    "source": "ode_to_joy.mid",
+    "source_tempos": [
+      [
+        0,
+        600000
+      ]
+    ],
+    "source_signatures": [
+      [
+        0,
+        4,
+        4
+      ]
+    ],
+    "source_events_not_rendered": {}
+  }
+]

@@ -1,19 +1,21 @@
 # YMGUI
 
+[![License: Apache-2.0](docs/badges/license-apache-2.0.svg)](LICENSE)
+
 面向**嵌入式/裸机优先**的跨平台 GUI 库，C99 + GNU 扩展。软件光栅化 + 保留模式 + 分块刷新，桌面(Linux/SDL)开发、裸机(MCU + LCD)部署，两者共用同一套渲染代码，只换一个显示驱动回调。Windows、Android 和真实硬件的平台逻辑集中在 `SDL_LCD/` 或应用桥接层，不进入控件核心。
 
 当前能力、配置和验证基线见 [当前状态](docs/当前状态.md)；跨平台显示、输入与构建实践见 [跨平台移植](docs/CROSS_PLATFORM_PORTING.md)。
 
 ## 状态
 
-27 个具名控件 + base 容器 · 5 类图元 · 35 个 CTest · 28 个独立 demo · 12 个完整应用。
+27 个具名控件 + base 容器 · 5 类图元 · 35 个 CTest · 28 个独立 demo · 13 个完整应用。
 （Button/Label/Checkbox/Switch/Slider/Bar/Image/Arc/Spinner/Meter/TextInput/TextView/EditView/List/Chart/Dropdown/Table/Tabview/TreeView/Grid/Canvas/ColorPicker/Roller/BarChart/MsgBox/FileDialog/Joystick + base 容器）
 
 抗锯齿(4bpp 灰度字体 + Wu 斜线 + 距离场圆弧，`YMGUI_ANTIALIAS` 可裁)、中文/CJK(UTF-8 回退链 + 稀疏字模 + 外部 flash 回调，`YMGUI_FONT_CJK` 可裁)、状态/数据绑定地基均已落地。
 
 ## 效果预览
 
-控件及常规应用截图由 `./capture_shots.sh` 一键生成（SDL dummy 驱动无头渲染，产物落 `docs/shots/`）；视频剪辑器截图来自导入 `卖瓜.mp4` 并加入轨道后的实际渲染画面。
+每个 demo 展示一张代表性运行截图。控件及常规应用截图由 `./capture_shots.sh` 一键生成（SDL dummy 驱动无头渲染，产物落 `docs/shots/`）；视频剪辑器展示导入 `卖瓜.mp4` 后的时间线，音乐工坊展示当前版本的鼓机与多轨编排工作区。
 
 ### 完整应用（`project_Demo/`）
 
@@ -30,6 +32,10 @@
 **视频剪辑器** · `卖瓜.mp4` 已加入 V1 轨道，显示项目预览、片段属性和入出点缩略图。
 
 <img src="project_Demo/video_stidio/docs/export-ui.png" width="840" alt="video_stidio 导入卖瓜.mp4 并加入 V1 时间线后的实际界面">
+
+**音乐工坊** · 中文多轨编排、九声部采样鼓机、钢琴卷帘、基础混音与 WAV 导出，附可编辑曲库。下图为“午后律动”工程的实际运行界面，详见 [使用说明](project_Demo/music_studio/README.md)。
+
+<img src="project_Demo/music_studio/docs/workspace.png" width="840" alt="音乐工坊的中文鼓机与多轨时间线">
 
 ### 控件演示（`Demo/`）
 
@@ -83,7 +89,7 @@ ctest --test-dir build/rgb565/Demo --output-on-failure # 跑全部单测
 ./build/rgb565/Demo/demo_font_gb2312              # 中文字体(GB2312 全集走外部 flash 回调)
 SDL_VIDEODRIVER=dummy ./build/rgb565/Demo/demo_plugin 120 # 插件系统宿主 demo（无头跑 120 帧）
 
-./build_all.sh                        # 一键建库 + 全部 Demo + 12 个 project_Demo 项目
+./build_all.sh                        # 一键建库 + 全部 Demo + 13 个 project_Demo 项目
 ./capture_shots.sh -b                 # 先构建再批量截图到 docs/shots/(无头,需 ffmpeg)
 ./build/rgb565/project_Demo/video_stidio/video_stidio # 视频剪辑器（build_all 后）
 tools/check_repo.sh                   # 文档/字库/计数/路径快速检查
@@ -162,6 +168,12 @@ library，适合由 Gradle/SDL Activity 打包进 APK/AAB。
 - **无 FPU 友好**：几何用 int16，三角/渐变查表(Q15 定点)，不走 float 必经路径。
 - **中文三轴可裁**：CJK 开关是编译期宏(轴1)，字集范围(精简/GB2312)是字模生成期参数(轴2)，字模存放(内部/外部 flash)是运行期 `glyph_read` 回调(轴3)——各归其位，方案切换不改控件代码。
 - **目录对齐前作 YMCV**：可移植的 10 层全收在 `YMGUI/` 库根下（对齐 YMCV 的 `OpenSrc-YMCV/YMCV/`，拷一个文件夹即移植）；CONFIG/DEBUG/COMMON/OPOBJ/CORE 与 YMCV 同名，GUI/HAL/WIDGET/STATE/PLUGIN 为 GUI 新增。
+
+## 开源许可
+
+YMGUI 采用 **Apache License 2.0（Apache-2.0）**，完整条款见 [LICENSE](LICENSE)。顶部协议徽章可直接打开许可证，徽章图片随仓库保存。
+
+`extern_lib/` 中的第三方依赖与音源、音乐工坊曲库素材，分别遵循各自附带的许可与来源说明；详见 [第三方依赖说明](extern_lib/README.md) 和 [曲库来源与许可](project_Demo/music_studio/library/README.md)。本地 `参考/` 目录和其他位置的 WAV 音频不纳入提交；`extern_lib/` 中运行必需的采样 WAV 随仓库提供。
 
 ## 维护约定（重要）
 

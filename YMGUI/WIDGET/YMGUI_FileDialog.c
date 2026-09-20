@@ -29,6 +29,8 @@ typedef struct
 	GYfiledialog_result_cb result_cb;
 	GYfiledialog_overwrite_cb overwrite_cb;
 	GYfiledialog_filter_cb filter_cb;
+	GYfiledialog_translate_cb translate_cb;
+	void* translate_user;
 	void* cb_user;
 	void* filter_user;
 	GYfiledialog_mode mode;
@@ -59,6 +61,22 @@ static void setStatus(GYOBJ fd, const char* text)
 	GYfd_data* d = (GYfd_data*)fd->user_data;
 	copyText(d->status, sizeof(d->status), text);
 	YMGUI_Obj_Invalidate(d->card);
+}
+
+static const char* translated(GYfd_data* d, const char* text)
+{
+	const char* result = d->translate_cb ? d->translate_cb(text, d->translate_user) : NULL;
+	return result ? result : text;
+}
+
+static void translateButtons(GYfd_data* d)
+{
+	YMGUI_Button_SetText(d->btn_up, translated(d, "Up"));
+	YMGUI_Button_SetText(d->btn_go, translated(d, "Go"));
+	YMGUI_Button_SetText(d->btn_refresh, translated(d, "Refresh"));
+	YMGUI_Button_SetText(d->btn_mkdir, translated(d, "New dir"));
+	YMGUI_Button_SetText(d->btn_cancel, translated(d, "Cancel"));
+	YMGUI_Button_SetText(d->btn_ok, translated(d, d->mode == GY_FILE_DIALOG_OPEN_FILE ? "Open" : d->mode == GY_FILE_DIALOG_SAVE_FILE ? "Save" : "Select"));
 }
 
 static uint8 validName(const char* name)
@@ -133,7 +151,7 @@ static void cardDraw(GYOBJ obj, GYSURFACE s, const GYrect* abs)
 	YMGUI_Draw_Fill(s, &t, c, GY_OPA_COVER); YMGUI_Draw_Fill(s, &b, c, GY_OPA_COVER);
 	YMGUI_Draw_Fill(s, &l, c, GY_OPA_COVER); YMGUI_Draw_Fill(s, &r, c, GY_OPA_COVER);
 	GYcoord sy = abs->y + abs->h - FD_ACTION_H - FD_NAME_H - FD_STATUS_H - FD_PAD;
-	YMGUI_Draw_Text(s, &YMGUI_Font_Default, abs->x + FD_PAD, sy, d->status,
+	YMGUI_Draw_Text(s, &YMGUI_Font_Default, abs->x + FD_PAD, sy, translated(d, d->status),
 		GY_ARGB(0xFF, 0xA8, 0xB0, 0xBC));
 }
 
@@ -454,6 +472,14 @@ void YMGUI_FileDialog_SetOverwriteCb(GYOBJ fd, GYfiledialog_overwrite_cb cb)
 { if (fd && fd->user_data) ((GYfd_data*)fd->user_data)->overwrite_cb = cb; }
 void YMGUI_FileDialog_SetFilterCb(GYOBJ fd, GYfiledialog_filter_cb cb, void* user)
 { if (fd && fd->user_data) { GYfd_data* d = fd->user_data; d->filter_cb = cb; d->filter_user = user; } }
+void YMGUI_FileDialog_SetTranslator(GYOBJ fd, GYfiledialog_translate_cb cb, void* user)
+{
+	if (!fd || !fd->user_data) return;
+	GYfd_data* d = fd->user_data;
+	d->translate_cb = cb; d->translate_user = user;
+	translateButtons(d);
+	YMGUI_Obj_Invalidate(d->card);
+}
 
 uint8 YMGUI_FileDialog_Show(GYOBJ fd, GYfiledialog_mode mode, const char* path, const char* name)
 {
@@ -464,7 +490,7 @@ uint8 YMGUI_FileDialog_Show(GYOBJ fd, GYfiledialog_mode mode, const char* path, 
 	copyText(d->old_path, d->path_cap + 1, d->path); copyText(d->path, d->path_cap + 1, path);
 	if (!YMGUI_FileDialog_Refresh(fd)) { copyText(d->path, d->path_cap + 1, d->old_path); return 0; }
 	YMGUI_TextInput_SetText(d->path_input, d->path); YMGUI_TextInput_SetText(d->name_input, name ? name : "");
-	YMGUI_Button_SetText(d->btn_ok, mode == GY_FILE_DIALOG_OPEN_FILE ? "Open" : mode == GY_FILE_DIALOG_SAVE_FILE ? "Save" : "Select");
+	translateButtons(d);
 	setStatus(fd, ""); YMGUI_Obj_SetHidden(fd, 0); YMGUI_SetFocus(fd->ctx, d->path_input); return 1;
 }
 

@@ -14,10 +14,10 @@ build/
       alarm_clock/alarm_clock      应用与其资源、库、中间文件在各自目录
       chinese_ime/chinese_ime
       video_stidio/video_stidio
-      ...                          共 12 个独立应用
+      ...                          共 13 个独立应用
   rgb888/
     Demo/                          RGB888 的同一套 Demo / 测试 / 核心库
-    project_Demo/                  11 个支持 RGB888 的应用
+    project_Demo/                  12 个支持 RGB888 的应用
   depth1/Demo/                     可选 1bpp 验证
   depth8/Demo/                     可选 8bpp 验证
   _ymgui_sdk/                      SDK 构建中间文件

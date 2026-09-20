@@ -263,6 +263,8 @@ void  YMGUI_FileDialog_SetFS(GYOBJ fd, const GYfiledialog_fs* fs, void* fs_user)
 void  YMGUI_FileDialog_SetResultCb(GYOBJ fd, GYfiledialog_result_cb cb, void* user);
 void  YMGUI_FileDialog_SetOverwriteCb(GYOBJ fd, GYfiledialog_overwrite_cb cb);
 void  YMGUI_FileDialog_SetFilterCb(GYOBJ fd, GYfiledialog_filter_cb cb, void* user);
+typedef const char* (*GYfiledialog_translate_cb)(const char* key, void* user);
+void  YMGUI_FileDialog_SetTranslator(GYOBJ fd, GYfiledialog_translate_cb cb, void* user);
 uint8 YMGUI_FileDialog_Show(GYOBJ fd, GYfiledialog_mode mode,
         const char* initial_path, const char* initial_name);
 void  YMGUI_FileDialog_Close(GYOBJ fd);
@@ -286,6 +288,8 @@ SDL/POSIX 适配示例见 `Demo/demo_filedialog.c`。`read_dir` 返回 `1=读到
 顶部手工路径；路径编辑态按 Enter 也会先退出编辑再跳转。三种模式的结果回调都返回完整路径，
 语义分别为已有文件、保存目标和目录。宽高在创建时按实例指定，当前要求不小于 `280x220` 且不超过屏幕。
 编译期可用 `YMGUI_FILEDIALOG=0` 裁掉；
+`SetTranslator` 可按实例翻译按钮和屏幕状态文案。回调接收默认英文键，返回当前调用期间有效的 UTF-8 文本；返回 `NULL` 或移除翻译器时回退英文。文件名、路径、结果回调与 `GetStatus` 返回的原始状态键不翻译。翻译器的 user 数据由应用管理；实例销毁前需保持有效，或先传 `NULL` 解除回调。源码构建已包含此接口，本轮没有重新生成 `releases/` 中的旧 SDK。
+
 FileDialog 复用 TreeView，因此 `YMGUI_TREEVIEW=0` 时会自动一并裁掉 FileDialog。
 
 ### EditView 可编辑多行文本框（光标 + 换行 + 中文）

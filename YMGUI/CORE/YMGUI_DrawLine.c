@@ -63,8 +63,8 @@ void YMGUI_Draw_Line(GYSURFACE s, GYcoord x1, GYcoord y1, GYcoord x2, GYcoord y2
 	}
 	int32 ddx = ax2 - ax1;             //已排序 → >0;非 h/v 线故必 !=0
 	int32 ddy = ay2 - ay1;
-	int32 grad = (int32)(((int64)ddy << 16) / ddx);//副轴/主轴,16.16
-	int32 fy = (int32)ay1 << 16;      //副轴累加值(16.16)
+	int32 grad = (int32)(((int64)ddy * 65536) / ddx);//负斜率不能左移负数
+	int64 fy = (int64)ay1 * 65536;    //副轴累加值(16.16)，支持负坐标
 	for (GYcoord mx = ax1; mx <= ax2; mx++)
 	{
 		int32  yi = fy >> 16;                       //副轴整数

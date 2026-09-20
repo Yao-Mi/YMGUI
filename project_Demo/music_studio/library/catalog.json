@@ -1,0 +1,167 @@
+[
+  {
+    "title": "01-致爱丽丝-钢琴主题节选",
+    "source": "fur_elise.mid",
+    "end_quarters": 33.75,
+    "tick_scale": 2,
+    "bpm": 144,
+    "beats": 3,
+    "tracks": [
+      {
+        "name": "钢琴双手",
+        "instrument": 0,
+        "midi_tracks": [
+          1,
+          2
+        ],
+        "volume": 0.85,
+        "pan": 0
+      }
+    ]
+  },
+  {
+    "title": "02-土耳其进行曲-钢琴节选",
+    "source": "turkish_march.mid",
+    "end_quarters": 48,
+    "bpm": 112,
+    "beats": 2,
+    "tracks": [
+      {
+        "name": "钢琴右手",
+        "instrument": 0,
+        "midi_tracks": [
+          1
+        ],
+        "volume": 0.9,
+        "pan": -0.08
+      },
+      {
+        "name": "钢琴左手",
+        "instrument": 0,
+        "midi_tracks": [
+          2
+        ],
+        "volume": 0.7,
+        "pan": 0.08
+      }
+    ]
+  },
+  {
+    "title": "03-G大调小步舞曲-钢琴全曲",
+    "source": "minuet.mid",
+    "end_quarters": 96,
+    "bpm": 120,
+    "beats": 3,
+    "tracks": [
+      {
+        "name": "钢琴双手",
+        "instrument": 0,
+        "midi_tracks": [
+          1,
+          2
+        ],
+        "volume": 0.85,
+        "pan": 0
+      }
+    ]
+  },
+  {
+    "title": "04-G大调小步舞曲-室内乐节选",
+    "source": "minuet.mid",
+    "end_quarters": 48,
+    "bpm": 120,
+    "beats": 3,
+    "tracks": [
+      {
+        "name": "长笛旋律",
+        "instrument": 6,
+        "midi_tracks": [
+          1
+        ],
+        "volume": 1,
+        "pan": -0.18
+      },
+      {
+        "name": "弦乐伴奏",
+        "instrument": 4,
+        "midi_tracks": [
+          2
+        ],
+        "volume": 0.65,
+        "pan": 0.18
+      }
+    ]
+  },
+  {
+    "title": "05-绿袖子-吉他全曲",
+    "source": "greensleeves.mid",
+    "end_quarters": 97,
+    "bpm": 120,
+    "beats": 3,
+    "tracks": [
+      {
+        "name": "吉他旋律与和声",
+        "instrument": 3,
+        "midi_tracks": [
+          1
+        ],
+        "volume": 1,
+        "pan": 0
+      }
+    ]
+  },
+  {
+    "title": "06-欢乐颂-合唱全曲",
+    "source": "ode_to_joy.mid",
+    "end_quarters": 64,
+    "bpm": 100,
+    "beats": 4,
+    "tracks": [
+      {
+        "name": "合唱高声部",
+        "instrument": 12,
+        "midi_tracks": [
+          1
+        ],
+        "volume": 0.82,
+        "pan": -0.2
+      },
+      {
+        "name": "合唱低声部",
+        "instrument": 12,
+        "midi_tracks": [
+          2
+        ],
+        "volume": 0.7,
+        "pan": 0.2
+      }
+    ]
+  },
+  {
+    "title": "07-欢乐颂-铜管全曲",
+    "source": "ode_to_joy.mid",
+    "end_quarters": 64,
+    "bpm": 108,
+    "beats": 4,
+    "tracks": [
+      {
+        "name": "铜管高声部",
+        "instrument": 9,
+        "midi_tracks": [
+          1
+        ],
+        "volume": 0.7,
+        "pan": -0.2
+      },
+      {
+        "name": "圆号低声部",
+        "instrument": 8,
+        "midi_tracks": [
+          2
+        ],
+        "volume": 0.85,
+        "pan": 0.2
+      }
+    ]
+  }
+]

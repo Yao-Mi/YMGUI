@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:mp="http://www.mutopiaproject.org/piece-data/0.1/">
+
+<rdf:Description rdf:about=".">
+    <mp:title>Für Elise</mp:title>
+    <mp:composer>BeethovenLv</mp:composer>
+    <mp:opus>WoO 59</mp:opus>
+    <mp:lyricist/>
+    <mp:for>Piano</mp:for>
+    <mp:date>1810</mp:date>
+    <mp:style>Classical</mp:style>
+    <mp:metre/>
+    <mp:arranger/>
+    <mp:source>Breitkopf &amp;amp; Härtel, 1888</mp:source>
+    <mp:licence>Public Domain</mp:licence>
+
+    <mp:lyFile>fur_Elise_WoO59.ly</mp:lyFile>
+    <mp:midFile>fur_Elise_WoO59.mid</mp:midFile>
+    <mp:psFileA4>fur_Elise_WoO59-a4.ps.gz</mp:psFileA4>
+    <mp:pdfFileA4>fur_Elise_WoO59-a4.pdf</mp:pdfFileA4>
+    <mp:psFileLet>fur_Elise_WoO59-let.ps.gz</mp:psFileLet>
+    <mp:pdfFileLet>fur_Elise_WoO59-let.pdf</mp:pdfFileLet>
+    <mp:pngFile>fur_Elise_WoO59-preview.png</mp:pngFile>
+    <mp:pngHeight>120</mp:pngHeight>
+    <mp:pngWidth>503</mp:pngWidth>
+
+    <mp:id>Mutopia-2015/08/18-931</mp:id>
+    <mp:maintainer>Stelios Samelis</mp:maintainer>
+    <mp:maintainerEmail/>
+    <mp:maintainerWeb/>
+    <mp:moreInfo>keywords: fur elise, bagatelle no.25</mp:moreInfo>
+    <mp:lilypondVersion>2.18.2</mp:lilypondVersion>
+</rdf:Description>
+
+</rdf:RDF>

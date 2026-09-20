@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:mp="http://www.mutopiaproject.org/piece-data/0.1/">
+
+<rdf:Description rdf:about=".">
+    <mp:title>Ode to Joy</mp:title>
+    <mp:composer>BeethovenLv</mp:composer>
+    <mp:opus/>
+    <mp:lyricist/>
+    <mp:for>Voice (SATB)</mp:for>
+    <mp:date>c. 1800</mp:date>
+    <mp:style>Hymn</mp:style>
+    <mp:metre>8 7 8 7 D</mp:metre>
+    <mp:arranger/>
+    <mp:source>Various</mp:source>
+    <mp:licence>Public Domain</mp:licence>
+
+    <mp:lyFile>ode.ly</mp:lyFile>
+    <mp:midFile>ode.mid</mp:midFile>
+    <mp:psFileA4>ode-a4.ps.gz</mp:psFileA4>
+    <mp:pdfFileA4>ode-a4.pdf</mp:pdfFileA4>
+    <mp:psFileLet>ode-let.ps.gz</mp:psFileLet>
+    <mp:pdfFileLet>ode-let.pdf</mp:pdfFileLet>
+    <mp:pngFile>ode-preview.png</mp:pngFile>
+    <mp:pngHeight>111</mp:pngHeight>
+    <mp:pngWidth>540</mp:pngWidth>
+
+    <mp:id>Mutopia-2009/08/05-528</mp:id>
+    <mp:maintainer>Peter Chubb</mp:maintainer>
+    <mp:maintainerEmail>mutopia@chubb.wattle.id.au</mp:maintainerEmail>
+    <mp:maintainerWeb/>
+    <mp:moreInfo/>
+    <mp:lilypondVersion>2.12.2</mp:lilypondVersion>
+</rdf:Description>
+
+</rdf:RDF>

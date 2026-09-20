@@ -56,7 +56,7 @@ YMGUI 是嵌入式 / 裸机优先的保留模式 GUI：C99 + GNU 扩展、软件
 | 趋势 / 柱状图 | Chart、BarChart | 应用侧提供数据；BarChart 支持峰值顶标 |
 | 图片 / 视频帧 | Image | `GY_IMG_NONE` 原尺寸；`GY_IMG_FIT` 保持比例；`GY_IMG_FILL` 拉伸铺满 |
 | 画布和取色 | Canvas、ColorPicker | Canvas 自持像素、整数缩放 / 平移；图层与绘画工具在应用侧 |
-| 消息确认 / 文件选择 | MsgBox、FileDialog | 使用异步结果回调；FileDialog 需注入文件系统实现 |
+| 消息确认 / 文件选择 | MsgBox、FileDialog | 使用异步结果回调；FileDialog 需注入文件系统实现；可用 SetTranslator 翻译界面文案 |
 | 特殊视图 / 时间线 | base + `draw_cb` / `event_cb` | 复用图元和事件捕获，应用自己保存模型 |
 | 多控件同步 | subject / bind | Label、Bar、Arc、Meter 单向；Slider、Switch、Checkbox、TextInput 双向 |
 | 扩展模块 | PLUGIN | 静态注册适合固件；动态插件通过宿主函数表使用 UI |
@@ -219,6 +219,9 @@ ctest --test-dir build/rgb565/Demo --output-on-failure
 应用特例：
 
 - `chinese_ime` 的字词库有独立 EXTERNAL / EMBEDDED / OFF 等选项和自测，具体以其 [README](../project_Demo/chinese_ime/README.md) 与 CMake 为准。
+- `music_studio` 是中文音乐制作应用，仅桌面 Linux / RGB565 / RGB888；模型、音频与界面分层，导入需 FFmpeg CLI，内置播放和 WAV 导出仅用 SDL / libm。独立构建目录中运行 2 项 CTest 或 `--selftest`，详见其 [架构与 AI 说明](../project_Demo/music_studio/ARCHITECTURE.md)。
+- 修改音乐工坊钢琴/轨道交互前，先读 [编辑操作指南](../project_Demo/music_studio/docs/编辑操作.md)：Ctrl＋滚轮只缩放显示，步长/音长才影响时值；保持缩放后的绘制、命中、放置、拉长、框选和鼓机点击使用同一坐标映射。视口与选择不写工程历史，相关输入注入回归在 `project_Demo/music_studio/tests/ui_test.c`。
+- 音乐工坊的可编辑曲库由 [离线转换脚本](../project_Demo/music_studio/tools/build_library.py) 和 `library/catalog.json` 维护，仅需 Python 3 标准库；运行 `python3 project_Demo/music_studio/tests/test_library.py` 检查转换回归。新增曲目、源文件校验、配置字段及能力边界先读 [曲库说明](../project_Demo/music_studio/library/README.md)，不要把它当作应用内通用 MIDI 导入器。
 - `video_stidio` 名称按现有目录拼写保留；仅桌面 Linux、C11、RGB565，不能套用所有应用的双色深或 Android 构建。默认源码依赖为 `extern_lib/FFmpeg`，代理 / 编码另用 FFmpeg CLI。其 [README](../project_Demo/video_stidio/README.md) 提供 5 项独立 CTest，有限帧启动使用 `--frames 120`。
 - 共享 CMake 支持 Windows / Android 不代表每个应用均完成移植。先读应用依赖和 [跨平台移植](CROSS_PLATFORM_PORTING.md)，特别是 POSIX 文件系统、子进程、资源路径和插件动态加载部分。
 
