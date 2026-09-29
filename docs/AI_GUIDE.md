@@ -29,7 +29,7 @@ YMGUI 是嵌入式 / 裸机优先的保留模式 GUI：C99 + GNU 扩展、软件
 | `YMGUI/STATE/` | subject、observer 和控件绑定 |
 | `YMGUI/PLUGIN/` | 静态插件注册、生命周期和可选动态加载 |
 | `SDL_LCD/` | 桌面 / Android 的显示和输入桥接 |
-| `sdk/` | 独立 lib 包的构建、CMake 接入、最小示例与手册；产物在 `build/YMGUI_libs/` |
+| `sdk/` | 独立 lib 包的构建、CMake 接入、最小示例与手册；产物在 `build/sdk/YMGUI_libs/` |
 | `releases/` | 随仓库提交的压缩包和校验文件；用 `./sdk/build.sh --release` 更新，勿误认为 `build/` 产物已经入库 |
 | `Demo/` | 单控件和机制的用法示例，由根 CMake 构建 |
 | `project_Demo/` | 独立应用，每个子目录单独配置 / 构建 |

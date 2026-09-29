@@ -13,7 +13,7 @@
 #     ./capture_shots.sh          # 用现有二进制截图(缺了会提示先 build)
 #     ./capture_shots.sh -b        # 先 ./build_all.sh 再截
 #     ./capture_shots.sh --depth 24 # RGB888,跳过 video_stidio
-#     ./capture_shots.sh --output build/shots-check # 指定验证输出目录
+#     ./capture_shots.sh --output build/checks/shots/rgb565 # 指定验证输出目录
 #
 #   判定成败以 exit code 为准;任一截图失败 → 末尾汇总 + 退出码非 0。
 # ==============================================================================

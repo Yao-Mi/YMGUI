@@ -3,7 +3,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-build_dir="${1:-$repo_root/build/rgb565/anim-off}"
+build_dir="${1:-$repo_root/build/checks/anim-off}"
 
 cmake -S "$repo_root" -B "$build_dir" -DYMGUI_COLOR_DEPTH=16 -DYMGUI_ANIM=OFF
 cmake --build "$build_dir" --target ymgui demo_button test_event -j8

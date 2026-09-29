@@ -76,7 +76,7 @@ YMGRE 和 YMGUI 保持各自的库包及许可；不将另一套引擎的库和�
 
 ## 验收和完整性
 
-生成器会把包复制到仓库外的临时位置，分别对两种色深执行纯核心 / SDL 示例构建和 CTest，检查核心 archive 无 SDL 未解析符号，并验证非法色深和 ABI 定义被拒绝。提供 `--ymgre-dir` 时额外构建运行该包的 index16 / index32 示例。只有通过的包才发布到 `build/YMGUI_libs`，原输出目录需带生成器标记才可覆盖。
+生成器会把包复制到仓库外的临时位置，分别对两种色深执行纯核心 / SDL 示例构建和 CTest，检查核心 archive 无 SDL 未解析符号，并验证非法色深和 ABI 定义被拒绝。提供 `--ymgre-dir` 时额外构建运行该包的 index16 / index32 示例。只有通过的包才发布到 `build/sdk/YMGUI_libs`，原输出目录需带生成器标记才可覆盖。
 
 `verification/` 保存执行结果；`BUILD_INFO.json` 记录本次配置和是否实际执行 YMGRE 验证，不承诺所有平台通过。解压后运行 `sha256sum -c checksums.sha256` 检查包内文件。文件哈希用于完整性检查，不代表发布者身份签名。
 

@@ -92,7 +92,7 @@ SDL_VIDEODRIVER=dummy build/rgb565/project_Demo/phone_shell/phone_shell --selfte
 输入法和动效独立裁剪：
 
 ```sh
-cmake -S project_Demo/phone_shell -B build/phone-noime -DYAOMI_IME=OFF
+cmake -S project_Demo/phone_shell -B build/checks/phone-noime -DYAOMI_IME=OFF
 # 可再加 -DYMGUI_ANIM=OFF；两个开关互不依赖
 ```
 

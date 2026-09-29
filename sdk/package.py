@@ -13,8 +13,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-WORK = ROOT / "build/_ymgui_sdk"
-OUT = ROOT / "build/YMGUI_libs"
+WORK = ROOT / "build/sdk/work"
+OUT = ROOT / "build/sdk/YMGUI_libs"
+LOGS = ROOT / "build/logs/sdk"
 
 
 def run(args, log, cwd=ROOT, env=None, expect_failure=False):
@@ -75,8 +76,8 @@ def main():
                  "-DCMAKE_BUILD_TYPE=Release", f"-DYMGUI_COLOR_DEPTH={depth}",
                  "-DYMGUI_ANIM=ON",
                  f"-DYMGUI_SDK_BUILD_SDL={'OFF' if args.without_sdl else 'ON'}"],
-                WORK / f"configure{depth}.log", env=env)
-            run(["cmake", "--build", build, f"-j{args.jobs}"], WORK / f"build{depth}.log", env=env)
+                LOGS / f"configure{depth}.log", env=env)
+            run(["cmake", "--build", build, f"-j{args.jobs}"], LOGS / f"build{depth}.log", env=env)
             copy(build / "libymgui.a", stage / f"lib/libymgui_rgb{depth}.a")
             if not args.without_sdl:
                 copy(build / "libymgui_sdl.a", stage / f"lib/libymgui_sdl_rgb{depth}.a")
@@ -111,8 +112,8 @@ def main():
                     consumer = Path(relocated) / tag
                     run(["cmake", "-S", standalone / "examples", "-B", consumer,
                          f"-DYMGUI_COLOR_DEPTH={depth}", f"-DYMGUI_WITH_SDL={'ON' if windowed else 'OFF'}",
-                         "-DCMAKE_BUILD_TYPE=Release"], WORK / f"consumer-{tag}.log")
-                    run(["cmake", "--build", consumer, f"-j{args.jobs}"], WORK / f"consumer-build-{tag}.log")
+                         "-DCMAKE_BUILD_TYPE=Release"], LOGS / f"consumer-{tag}.log")
+                    run(["cmake", "--build", consumer, f"-j{args.jobs}"], LOGS / f"consumer-build-{tag}.log")
                     run(["ctest", "--test-dir", consumer, "--output-on-failure"], stage / f"verification/{tag}.log")
                     for name in ("demo_sdk_minimal", "demo_sdk_window"):
                         if (consumer / name).is_file():
@@ -134,8 +135,8 @@ def main():
                     run(["cmake", "-S", ymgre_dir.parent / "examples", "-B", consumer,
                          f"-DYMGRE_DIR={ymgre_dir}", f"-DYMGUI_DIR={standalone / 'cmake'}",
                          "-DYMGRE_WINDOWED_DEMOS=ON", f"-DYMGRE_INDEX_BITS={bits}",
-                         "-DYMGUI_COLOR_DEPTH=16", "-DCMAKE_BUILD_TYPE=Release"], WORK / f"ymgre-configure{bits}.log")
-                    run(["cmake", "--build", consumer, f"-j{args.jobs}"], WORK / f"ymgre-build{bits}.log")
+                         "-DYMGUI_COLOR_DEPTH=16", "-DCMAKE_BUILD_TYPE=Release"], LOGS / f"ymgre-configure{bits}.log")
+                    run(["cmake", "--build", consumer, f"-j{args.jobs}"], LOGS / f"ymgre-build{bits}.log")
                     run(["ctest", "--test-dir", consumer, "--output-on-failure"], stage / f"verification/ymgre-index{bits}.log")
         sources = [p for folder in ("YMGUI", "SDL_LCD", "sdk") for p in (ROOT / folder).rglob("*")
                    if p.is_file() and p.suffix in (".c", ".h", ".cmake", ".txt", ".py", ".md", ".sh")]

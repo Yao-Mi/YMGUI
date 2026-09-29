@@ -16,7 +16,9 @@
 
 需要 Python 3、CMake、C 编译器、binutils、make，以及 SDL2 开发包和 pkg-config。`--jobs 8` 调整并行数；`--without-sdl` 生成纯核心包，此时不需要 SDL2 或 pkg-config。当前打包器支持原生 Linux 构建，默认 Release、PIC、16 位坐标、完整默认控件配置。
 
-生成位置为 `build/YMGUI_libs/`，压缩包为 `build/YMGUI_libs-linux-<架构>.tar.gz`，附带压缩包 SHA-256 文件。构建中间文件在 `build/_ymgui_sdk/`；包内不包含库实现、FFmpeg、SDL2 库或 project_Demo 应用。
+生成位置为 `build/sdk/YMGUI_libs/`，压缩包为 `build/sdk/YMGUI_libs-linux-<架构>.tar.gz`，附带压缩包 SHA-256 文件。构建中间文件在 `build/sdk/work/`；包内不包含库实现、FFmpeg、SDL2 库或 project_Demo 应用。
+
+构建与接入日志集中到 `build/logs/sdk/`。发布后可在仓库执行 `./sdk/verify.sh` 再验实际压缩包：检查 SHA-256、两种色深的包内示例和动效接口运行。临时解压/编译目录位于 `build/checks/`，退出自动清理，只保留 `build/logs/sdk/verify-archive.log`；也可传入普通打包生成的压缩包路径。该复验脚本属于源码仓库工具，不包含在分发包内；拿到包后的接入方式见下文。
 
 `build/` 属于 Git 忽略目录，本地生成不等于已提交。加 `--release` 后，压缩包及校验文件输出到仓库可跟踪的 `releases/`；将这两个文件与相关改动一起提交，其他人才能直接取得预编译包。普通构建不更新该分发目录。
 

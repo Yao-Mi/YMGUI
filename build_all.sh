@@ -13,6 +13,7 @@
 #     ./build_all.sh -c         # 仅清空当前色深的 Demo 和各应用构建目录
 #     ./build_all.sh -t         # 顶层建完顺带跑 ctest
 #     ./build_all.sh -c -t      # 全新重建 + 跑单测;不会删除 SDK 或其他色深
+#   日志自动保存到 build/logs/build-rgb565.log（或 build-rgb888.log）。
 #
 #   判定成败以命令 exit code 为准(工程铁律,不看 stdout 文字)。
 #   任一单元失败 → 脚本最终退出码非 0,末尾汇总列出。
@@ -56,6 +57,8 @@ case "$DEPTH" in
 	*) echo "--depth must be 16 or 24" >&2; exit 2 ;;
 esac
 DEMO_BUILD="$BUILD_BASE/Demo"
+mkdir -p "$REPO_ROOT/build/logs" || exit 1
+exec > >(tee "$REPO_ROOT/build/logs/build-${BUILD_BASE##*/}.log") 2>&1
 
 # 颜色(非终端时禁用)
 if [ -t 1 ]; then
