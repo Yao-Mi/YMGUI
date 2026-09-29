@@ -1,6 +1,10 @@
 #include "YMGUI_Hal.h"
 #include "YMGUI_Debug.h"
 #include "YMGUI_Event.h"
+#include "YMGUI_PubDefine.h"
+#if YMGUI_ANIM
+#include "YMGUI_Anim.h"
+#endif
 
 /**
   ***************************************************************************************************************************
@@ -129,7 +133,12 @@ void YMGUI_Inject_Wheel(GYcoord x, GYcoord y, int32 delta_x, int32 delta_y)
 void YMGUI_Inject_Tick(uint32 elapsed_ms)
 {
 	if (s_inject_ctx != NULL)
+	{
+		#if YMGUI_ANIM
+		YMGUI_Anim_Tick(s_inject_ctx, elapsed_ms);
+		#endif
 		YMGUI_Event_Tick(s_inject_ctx, elapsed_ms);
+	}
 }
 
 /**

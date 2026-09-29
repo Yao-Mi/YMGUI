@@ -1,0 +1,11 @@
+/* 复制为 quick_example.c，再在 phone_quick_catalog.def 添加：
+ * PHONE_QUICK(example, quick_example)
+ * 即会编译、注册、自动排位/分页，无需改 phone_shade.c。 */
+#include "phone_quick.h"
+static int enabled;
+static int active(void) { return enabled; }
+static void activate(void) { enabled = !enabled; }
+const PhoneQuick PhoneQuick_example = {
+    .key = "example", .title = "示例", .active = active,
+    .activate = activate, .draw_icon = NULL
+};

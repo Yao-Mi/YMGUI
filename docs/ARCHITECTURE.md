@@ -15,20 +15,24 @@ OPOBJ    ← 对象生命周期(Creat/Free,统一内存出入口,★树级联)
    ↑
 CORE     ← 软件光栅化层(碰 GYsurface/framebuffer 的全在这:fill/line/glyph/img/arc)
    ↑
-GUI      ← ★GUI 机器(失效·脏矩形·事件分发·焦点)—— 保留模式发动机
+  GUI      ← ★GUI 机器(失效·脏矩形·事件分发·焦点)—— 保留模式发动机
    ↑
-WIDGET   ← button/label/checkbox/slider/list...
+  ANIM     ← context 级属性补间(定点缓动、生命周期、旧/新区域失效)
+   ↑
+  WIDGET   ← button/label/checkbox/slider/list...
    ↑
 SDL_LCD  ← HAL 的具体实现(Linux 假 LCD → 换成真实 LCD)
    ↑
 DEBUG    ← 横切层(assert/log),被所有层调用
 ```
 
-上面 CONFIG/COMMON/OPOBJ/CORE/GUI/WIDGET/HAL/DEBUG/STATE/PLUGIN 十层都在库根 **`YMGUI/`** 下（对齐 YMCV 的 `OpenSrc-YMCV/YMCV/`），自包含、移植时整个拷走；`SDL_LCD/`、`Demo/` 是 PC 演示外壳，留在顶层不带走。
+上面 CONFIG/COMMON/OPOBJ/CORE/GUI/ANIM/WIDGET/HAL/DEBUG/STATE/PLUGIN 十一层都在库根 **`YMGUI/`** 下（对齐 YMCV 的 `OpenSrc-YMCV/YMCV/`），自包含、移植时整个拷走；`SDL_LCD/`、`Demo/` 是 PC 演示外壳，留在顶层不带走。
 
 **归位判据**（决定新文件放哪）：
 - 是否直接读写 `GYsurface`/framebuffer 像素 → 碰像素进 `YMGUI/CORE/`；纯几何/数据结构进 `YMGUI/COMMON/`。
 - 是否是 GUI 交互机制（失效/事件/焦点/滚动）→ 进 `YMGUI/GUI/`。
+- 跨控件帧时序、属性补间和取消/完成生命周期 → 进 `YMGUI/ANIM/`。
+- `ANIM` 是可裁减层：`YMGUI_ANIM=0` 时源码不纳入目标，HAL 的普通事件 Tick 保留但不触发补间，对象/上下文不保留动画管理钩子。根工程和 `project_Demo/ymgui_app.cmake` 的 `-DYMGUI_ANIM=OFF` 会连同动画 Demo/测试目标（根工程）一起关闭；预编译 SDK 的开关属于库 ABI，必须随包固定。
 - 控件 → `YMGUI/WIDGET/`；平台实现 → `SDL_LCD/` 或用户自建 LCD port。
 
 ## 二、最窄腰部：显示 HAL

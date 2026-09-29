@@ -6,18 +6,18 @@
 build/
   rgb565/
     Demo/                          根工程的统一构建目录
-      demo_*                       28 个控件 / 机制演示
-      test_*                       35 个核心测试
+      demo_*                       49 个控件 / 机制演示
+      test_*                       36 个核心测试
       libymgui.a                   核心库
       CMakeFiles/                  编译中间文件
     project_Demo/
       alarm_clock/alarm_clock      应用与其资源、库、中间文件在各自目录
       chinese_ime/chinese_ime
       video_stidio/video_stidio
-      ...                          共 13 个独立应用
+      ...                          共 15 个独立应用
   rgb888/
     Demo/                          RGB888 的同一套 Demo / 测试 / 核心库
-    project_Demo/                  12 个支持 RGB888 的应用
+    project_Demo/                  14 个支持 RGB888 的应用
   depth1/Demo/                     可选 1bpp 验证
   depth8/Demo/                     可选 8bpp 验证
   _ymgui_sdk/                      SDK 构建中间文件
@@ -34,8 +34,8 @@ releases/
 以下命令从仓库根运行，脚本自身也支持从其他目录调用。
 
 ```bash
-./build_all.sh -t                   # RGB565 Demo + 12 应用，运行根工程 35 项测试
-./build_all.sh --depth 24 -t        # RGB888 Demo + 11 应用，跳过 video_stidio
+./build_all.sh -t                   # RGB565 Demo + 15 应用，运行根工程 36 项测试
+./build_all.sh --depth 24 -t        # RGB888 Demo + 14 应用，跳过 video_stidio
 tools/test.sh --depth 16            # 只构建并测试根工程，复用 rgb565/Demo
 tools/test_matrix.sh                # 仓库检查与两种色深的根工程测试
 ./build/rgb565/Demo/demo_button

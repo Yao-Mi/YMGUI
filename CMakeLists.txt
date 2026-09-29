@@ -13,12 +13,18 @@ if(NOT YMGUI_COLOR_DEPTH MATCHES "^(1|8|16|24)$")
 endif()
 # GYpx is part of the public ABI, so every library and executable must use the same depth.
 add_compile_definitions(YMGUI_COLOR_DEPTH=${YMGUI_COLOR_DEPTH})
+option(YMGUI_ANIM "Build the optional UI animation module and animation demos" ON)
+if(YMGUI_ANIM)
+	add_compile_definitions(YMGUI_ANIM=1)
+else()
+	add_compile_definitions(YMGUI_ANIM=0)
+endif()
 
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-# 库本体根目录:10 个可移植层全收在 YMGUI/ 下(对齐 YMCV 的 OpenSrc-YMCV/YMCV/)。
+# 库本体根目录:11 个可移植层全收在 YMGUI/ 下(对齐 YMCV 的 OpenSrc-YMCV/YMCV/)。
 #   移植 = 把 YMGUI/ 整个拷进你的工程 + 改 CONFIG/ + 照 SDL_LCD/ 写真实 LCD 的 flush。
 #   SDL_LCD/、Demo/ 是 PC 演示外壳,留在顶层,移植时不带走。
 set(YMGUI_ROOT ${CMAKE_SOURCE_DIR}/YMGUI)
@@ -32,6 +38,7 @@ include_directories(
 	${YMGUI_ROOT}/OPOBJ
 	${YMGUI_ROOT}/CORE
 	${YMGUI_ROOT}/GUI
+	${YMGUI_ROOT}/ANIM
 	${YMGUI_ROOT}/WIDGET
 	${YMGUI_ROOT}/STATE
 	${YMGUI_ROOT}/PLUGIN
@@ -48,11 +55,15 @@ file(GLOB YMGUI_SRC
 	${YMGUI_ROOT}/OPOBJ/*.c
 	${YMGUI_ROOT}/CORE/*.c
 	${YMGUI_ROOT}/GUI/*.c
+	${YMGUI_ROOT}/ANIM/*.c
 	${YMGUI_ROOT}/WIDGET/*.c
 	${YMGUI_ROOT}/STATE/*.c
 	${YMGUI_ROOT}/PLUGIN/*.c
 	${YMGUI_ROOT}/HAL/*.c
 )
+if(NOT YMGUI_ANIM)
+	list(FILTER YMGUI_SRC EXCLUDE REGEX "/ANIM/")
+endif()
 add_library(ymgui STATIC ${YMGUI_SRC})
 
 # SDL_LCD port + demo(Linux 假 LCD)
@@ -175,6 +186,11 @@ target_link_libraries(test_async ymgui m)
 
 add_executable(test_layout ${CMAKE_SOURCE_DIR}/tests/test_layout.c)
 target_link_libraries(test_layout ymgui m)
+
+if(YMGUI_ANIM)
+	add_executable(test_anim ${CMAKE_SOURCE_DIR}/tests/test_anim.c)
+	target_link_libraries(test_anim ymgui m)
+endif()
 
 # 无 SDL 的多行文本视图单测(断行/折行/滚动钳制/宽度重排)
 add_executable(test_textview ${CMAKE_SOURCE_DIR}/tests/test_textview.c)
@@ -339,6 +355,25 @@ add_executable(demo_layout
 target_include_directories(demo_layout PRIVATE ${SDL2_INCLUDE_DIRS})
 target_link_libraries(demo_layout ymgui ${SDL2_LIBRARIES} m)
 
+if(YMGUI_ANIM)
+	add_executable(demo_anim
+		${CMAKE_SOURCE_DIR}/SDL_LCD/SDL_LCD.c
+		${CMAKE_SOURCE_DIR}/Demo/demo_anim.c
+	)
+	target_include_directories(demo_anim PRIVATE ${SDL2_INCLUDE_DIRS})
+	target_link_libraries(demo_anim ymgui ${SDL2_LIBRARIES} m)
+
+	# 动效场景:标准 UI 模式 + 一个 Canvas 播放头
+	foreach(anim_scene drawer dialog cards progress canvas tabs accordion toast scroll theme focus validation batch list_ops drag_snap submit loading detail pull_refresh carousel)
+		add_executable(demo_anim_${anim_scene}
+			${CMAKE_SOURCE_DIR}/SDL_LCD/SDL_LCD.c
+			${CMAKE_SOURCE_DIR}/Demo/demo_anim_${anim_scene}.c
+		)
+		target_include_directories(demo_anim_${anim_scene} PRIVATE ${SDL2_INCLUDE_DIRS})
+		target_link_libraries(demo_anim_${anim_scene} ymgui ${SDL2_LIBRARIES} m)
+	endforeach()
+endif()
+
 # 多行文本视图 demo(拖动滚动 + Wrap 开关)
 add_executable(demo_textview
 	${CMAKE_SOURCE_DIR}/SDL_LCD/SDL_LCD.c
@@ -448,6 +483,9 @@ add_test(NAME test_bind COMMAND test_bind)
 add_test(NAME test_aa COMMAND test_aa)
 add_test(NAME test_async COMMAND test_async)
 add_test(NAME test_layout COMMAND test_layout)
+if(YMGUI_ANIM)
+	add_test(NAME test_anim COMMAND test_anim)
+endif()
 add_test(NAME test_textview COMMAND test_textview)
 add_test(NAME test_editview COMMAND test_editview)
 add_test(NAME test_treeview COMMAND test_treeview)

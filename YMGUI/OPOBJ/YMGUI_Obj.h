@@ -108,6 +108,13 @@ typedef struct GYctx
 	uint8  destroying;            //上下文销毁中:不再累计无下一帧可消费的脏区
 	int32  wheel_x, wheel_y;       //最近一次滚轮横/纵增量(对象在 GY_EVENT_Wheel 里读)
 	uint32 tick_elapsed;           //最近一次 Tick 的经过毫秒数
+	#if YMGUI_ANIM
+	//可选运行时扩展槽。当前由 ANIM 使用；OPOBJ 只负责在对象/上下文销毁时通知，
+	//不依赖上层动画实现。未创建动画时三者均为 NULL，不产生堆分配。
+	void* runtime_data;
+	void (*runtime_obj_free_cb)(void* data, struct GYobj* obj);
+	void (*runtime_ctx_free_cb)(void* data);
+	#endif
 }GYctx;
 
 //---- 生命周期(Creat/Free 成对,Free 树级联) ----

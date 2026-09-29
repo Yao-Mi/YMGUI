@@ -8,10 +8,10 @@
 
 ## 状态
 
-27 个具名控件 + base 容器 · 5 类图元 · 35 个 CTest · 28 个独立 demo · 13 个完整应用。
+27 个具名控件 + base 容器 · 5 类图元 · 36 个 CTest · 49 个独立 demo · 15 个完整应用。
 （Button/Label/Checkbox/Switch/Slider/Bar/Image/Arc/Spinner/Meter/TextInput/TextView/EditView/List/Chart/Dropdown/Table/Tabview/TreeView/Grid/Canvas/ColorPicker/Roller/BarChart/MsgBox/FileDialog/Joystick + base 容器）
 
-抗锯齿(4bpp 灰度字体 + Wu 斜线 + 距离场圆弧，`YMGUI_ANTIALIAS` 可裁)、中文/CJK(UTF-8 回退链 + 稀疏字模 + 外部 flash 回调，`YMGUI_FONT_CJK` 可裁)、状态/数据绑定地基均已落地。
+抗锯齿(4bpp 灰度字体 + Wu 斜线 + 距离场圆弧，`YMGUI_ANTIALIAS` 可裁)、中文/CJK(UTF-8 回退链 + 稀疏字模 + 外部 flash 回调，`YMGUI_FONT_CJK` 可裁)、状态/数据绑定和 context 级 UI 属性动画均已落地。
 
 ## 效果预览
 
@@ -28,6 +28,7 @@
 | **图层画板** Canvas + ColorPicker + 图层融合/工具<br><img src="docs/shots/image_edit.png" width="420"> | **音乐播放器** BarChart 频谱 + Roller 歌词 + ffmpeg 解码<br><img src="docs/shots/music_player.png" width="420"> |
 | **多行编辑器** EditView 选区/剪贴板/撤销/查找替换 + 菜单栏<br><img src="docs/shots/txt_edit.png" width="420"> | **视频播放器** Image 缩放模式 + 流式解码 + A/V 同步<br><img src="docs/shots/video_player.png" width="420"> |
 | **上下文手势实验室** 右键/触摸长按菜单 + 捕获式卡片拖动<br><img src="docs/shots/context_gesture.png" width="420"> | **插件管理器** 动态加载/卸载 + 插件自建 UI + 生命周期日志<br><img src="docs/shots/plugin_host.png" width="420"> |
+| **Pocket Tasks** 320×480 竖屏任务应用，完成进度与底部详情面板动效<br><img src="docs/shots/pocket_tasks.png" width="320"> | **Yaomi Phone** 320×480 中文手机界面：三页桌面、16 个模块化应用、统一输入法、双列后台与开关机<br><img src="docs/shots/phone_shell.png" width="320"> |
 
 **视频剪辑器** · `卖瓜.mp4` 已加入 V1 轨道，显示项目预览、片段属性和入出点缩略图。
 
@@ -76,7 +77,42 @@
 <td align="center"><img src="docs/shots/demo_font_gb2312.png" width="200"><br>font_gb2312</td>
 <td align="center"><img src="docs/shots/demo_flush_band.png" width="200"><br>flush_band（分块刷新）</td>
 </tr>
+<tr>
+<td align="center"><img src="docs/shots/demo_anim.png" width="200"><br>anim（属性补间）</td>
+<td align="center"><img src="docs/shots/demo_anim_drawer.png" width="200"><br>anim_drawer（抽屉导航）</td>
+<td align="center"><img src="docs/shots/demo_anim_dialog.png" width="200"><br>anim_dialog（模态弹窗）</td>
+<td align="center"><img src="docs/shots/demo_anim_cards.png" width="200"><br>anim_cards（错峰卡片）</td>
+</tr>
+<tr>
+<td align="center"><img src="docs/shots/demo_anim_progress.png" width="200"><br>anim_progress（进度反馈）</td>
+<td align="center"><img src="docs/shots/demo_anim_canvas.png" width="200"><br>anim_canvas（播放头画布）</td>
+<td align="center"><img src="docs/shots/demo_anim_tabs.png" width="200"><br>anim_tabs（页签切换）</td>
+<td align="center"><img src="docs/shots/demo_anim_accordion.png" width="200"><br>anim_accordion（折叠面板）</td>
+</tr>
+<tr>
+<td align="center"><img src="docs/shots/demo_anim_toast.png" width="200"><br>anim_toast（通知入场）</td>
+<td align="center"><img src="docs/shots/demo_anim_scroll.png" width="200"><br>anim_scroll（滚动视口）</td>
+<td align="center"><img src="docs/shots/demo_anim_theme.png" width="200"><br>anim_theme（主题过渡）</td>
+</tr>
+<tr>
+<td align="center"><img src="docs/shots/demo_anim_focus.png" width="200"><br>anim_focus（焦点跟随）</td>
+<td align="center"><img src="docs/shots/demo_anim_validation.png" width="200"><br>anim_validation（表单校验）</td>
+<td align="center"><img src="docs/shots/demo_anim_batch.png" width="200"><br>anim_batch（批量操作栏）</td>
+</tr>
+<tr>
+<td align="center"><img src="docs/shots/demo_anim_list_ops.png" width="200"><br>anim_list_ops（列表增删重排）</td>
+<td align="center"><img src="docs/shots/demo_anim_drag_snap.png" width="200"><br>anim_drag_snap（拖拽吸附）</td>
+<td align="center"><img src="docs/shots/demo_anim_submit.png" width="200"><br>anim_submit（提交反馈）</td>
+<td align="center"><img src="docs/shots/demo_anim_loading.png" width="200"><br>anim_loading（加载切换）</td>
+</tr>
+<tr>
+<td align="center"><img src="docs/shots/demo_anim_detail.png" width="200"><br>anim_detail（侧边详情）</td>
+<td align="center"><img src="docs/shots/demo_anim_pull_refresh.png" width="200"><br>anim_pull_refresh（下拉刷新）</td>
+<td align="center"><img src="docs/shots/demo_anim_carousel.png" width="200"><br>anim_carousel（轮播吸附）</td>
+</tr>
 </table>
+
+二十个动效场景的操作和代码入口见 [动效 Demo 说明](Demo/ANIM_DEMOS.md)；其中只有播放头示例使用 Canvas，其余均是 YMGUI 标准控件的动效。动效模块可用 `-DYMGUI_ANIM=OFF` 整体裁剪；动效 Demo 桌面窗口使用 SDL 原生 1:1 像素显示，不再将 480×272 画面放大两倍。
 
 ## 构建 & 运行
 
@@ -89,11 +125,11 @@ ctest --test-dir build/rgb565/Demo --output-on-failure # 跑全部单测
 ./build/rgb565/Demo/demo_font_gb2312              # 中文字体(GB2312 全集走外部 flash 回调)
 SDL_VIDEODRIVER=dummy ./build/rgb565/Demo/demo_plugin 120 # 插件系统宿主 demo（无头跑 120 帧）
 
-./build_all.sh                        # 一键建库 + 全部 Demo + 13 个 project_Demo 项目
+./build_all.sh                        # 一键建库 + 全部 Demo + 15 个 project_Demo 项目
 ./capture_shots.sh -b                 # 先构建再批量截图到 docs/shots/(无头,需 ffmpeg)
 ./build/rgb565/project_Demo/video_stidio/video_stidio # 视频剪辑器（build_all 后）
 tools/check_repo.sh                   # 文档/字库/计数/路径快速检查
-tools/test_matrix.sh                  # RGB565 + RGB888 构建和 35 个 CTest
+tools/test_matrix.sh                  # RGB565 + RGB888 构建和 36 个 CTest
 ```
 
 默认构建按色深和类型归档：`build/rgb565/Demo/` 集中放控件演示、核心库和根工程测试；`build/rgb565/project_Demo/<项目名>/` 分别放完整应用。RGB888 对应 `build/rgb888/`，用 `./build_all.sh --depth 24` 构建（跳过仅支持 RGB565 的视频剪辑器）。详见 [构建目录说明](docs/BUILD_LAYOUT.md)。
@@ -157,7 +193,7 @@ library，适合由 Gradle/SDL Activity 打包进 APK/AAB。
 | **写代码，查控件怎么用** | [`docs/API.md`](docs/API.md) |
 | **写代码，守规范** | [`docs/代码风格.md`](docs/代码风格.md) |
 | **移植到 Windows、Android 或真机** | [`docs/CROSS_PLATFORM_PORTING.md`](docs/CROSS_PLATFORM_PORTING.md) |
-| **了解当前开发进程** | [`docs/DEVLOG_V2.md`](docs/DEVLOG_V2.md) |
+| **了解当前开发进程** | [`docs/DEVLOG_V3.md`](docs/DEVLOG_V3.md) |
 | **查看全部文档的分层与归档** | [`docs/README.md`](docs/README.md) |
 
 ## 一分钟理解设计
@@ -167,7 +203,7 @@ library，适合由 Gradle/SDL Activity 打包进 APK/AAB。
 - **保留模式 + 脏矩形**：控件树持久存在，只重绘变化区域，空闲不耗 —— LCD 的 blit 是最贵操作，这样降到最低。
 - **无 FPU 友好**：几何用 int16，三角/渐变查表(Q15 定点)，不走 float 必经路径。
 - **中文三轴可裁**：CJK 开关是编译期宏(轴1)，字集范围(精简/GB2312)是字模生成期参数(轴2)，字模存放(内部/外部 flash)是运行期 `glyph_read` 回调(轴3)——各归其位，方案切换不改控件代码。
-- **目录对齐前作 YMCV**：可移植的 10 层全收在 `YMGUI/` 库根下（对齐 YMCV 的 `OpenSrc-YMCV/YMCV/`，拷一个文件夹即移植）；CONFIG/DEBUG/COMMON/OPOBJ/CORE 与 YMCV 同名，GUI/HAL/WIDGET/STATE/PLUGIN 为 GUI 新增。
+- **目录对齐前作 YMCV**：可移植的 11 层全收在 `YMGUI/` 库根下（对齐 YMCV 的 `OpenSrc-YMCV/YMCV/`，拷一个文件夹即移植）；CONFIG/DEBUG/COMMON/OPOBJ/CORE 与 YMCV 同名，GUI/HAL/WIDGET/STATE/ANIM/PLUGIN 为 GUI 新增。
 
 ## 开源许可
 
@@ -177,6 +213,6 @@ YMGUI 采用 **Apache License 2.0（Apache-2.0）**，完整条款见 [LICENSE](
 
 ## 维护约定（重要）
 
-当前事实统一维护在 `docs/当前状态.md`，每轮开发过程续写到 `docs/DEVLOG_V2.md`。公开 API、架构、移植或规范变化时，再更新对应专题文档。`docs/history/` 只保留冻结的 V1 和旧快照，需要追溯决策或排查回归时才阅读。具体规则见 [`AGENTS.md`](AGENTS.md)。
+当前事实统一维护在 `docs/当前状态.md`，每轮开发过程续写到 `docs/DEVLOG_V3.md`。公开 API、架构、移植或规范变化时，再更新对应专题文档。`docs/history/` 只保留冻结的 V1/V2 和旧快照，需要追溯决策或排查回归时才阅读。具体规则见 [`AGENTS.md`](AGENTS.md)。
 
 `tests/test_*.c` 里的断言即行为规格 —— 改机制先看对应测试，改完让它继续过。

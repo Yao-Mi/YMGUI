@@ -2,7 +2,7 @@
 
 ## 范围与模块
 
-YMGUI 是 C99 + GNU 扩展的嵌入式 GUI：保留模式对象树、脏矩形和 band 分块刷新，支持控件、输入事件、状态绑定和插件。SDK 将这些实现预编译为静态库；SDL 适配单独链接。几何 / 字体 / 渲染 / 控件不需要窗口系统。
+YMGUI 是 C99 + GNU 扩展的嵌入式 GUI：保留模式对象树、脏矩形和 band 分块刷新，支持控件、输入事件、状态绑定、UI 属性动画和插件。SDK 将这些实现预编译为静态库；SDL 适配单独链接。几何 / 字体 / 渲染 / 控件不需要窗口系统。
 
 核心包含 Button、Label、Checkbox、Switch、Slider、Bar、Image、Arc、Spinner、Meter、TextInput、TextView、EditView、List、Chart、Dropdown、Table、Tabview、TreeView、Grid、Canvas、ColorPicker、Roller、BarChart、MsgBox、FileDialog、Joystick，以及 base 容器。应用负责图片 / 音视频解码、文件系统后端、电子表格公式、图层和业务线程。
 
@@ -29,7 +29,7 @@ cmake --build build16
 ## 配置与 ABI
 
 - `YMGUI_COLOR_DEPTH=16` 为 RGB565；`24` 为 RGB888（三字节 GYpx）。CMake 自动选择相应核心 / SDL archive 并传递编译宏。
-- 预编译包为默认完整配置、16 位 GYcoord、`GY_INV_MAX=16`、Release/PIC。包内 `YMGUI_SDK_Config.h` 会拒绝常见的色深、坐标宽度和脏区数组 ABI 冲突。
+- 预编译包为默认完整配置（`YMGUI_ANIM=1`）、16 位 GYcoord、`GY_INV_MAX=16`、Release/PIC。包内 `YMGUI_SDK_Config.h` 会拒绝常见的色深、坐标宽度、脏区数组和动画开关 ABI 冲突。源码工程可设 `-DYMGUI_ANIM=OFF` 裁掉动效模块；不能只在预编译包的消费端关闭它。
 - 不要只修改包内头文件、`GY_INV_MAX`、结构定义或功能宏来定制预编译库。裁减功能、替换内存分配器、改变 ABI 或移植平台需从源码重建，再同时更新二进制和头文件。
 - 当前发布器只验证原生 Linux；架构、指针位宽与构建系统记录在 `cmake/platform.cmake` / `BUILD_INFO.json`，CMake 会拒绝不匹配的目标。相同架构的旧系统仍可能因 glibc / SDL2 版本不兼容而需要重新构建。
 - 动态插件也必须使用兼容的头文件与色深；通过宿主函数表访问 UI，卸载动态库前释放所有指向其回调的对象。
@@ -55,6 +55,7 @@ cmake --build build16
 - subject 和字符串缓冲需活得比绑定久；原地修改字符串后 `YMGUI_State_Touch`。双向绑定占用 changed 回调，额外逻辑用 subject observer。应用观察者要显式解除。
 - 自绘的图元使用屏幕坐标，surface 仅包含当前 band。不要按全屏大小直接访问 band buffer。
 - SDL 自动注入 Tick；裸机调用 `YMGUI_Inject_Tick` 并传实际经过毫秒。控件更新集中在 UI 线程。
+- `YMGUI_Anim_MoveTo/ResizeTo/BgColorTo/ScrollTo/ValueTo` 由同一次 Tick 推进；对象销毁会自动取消关联动画。完整接口及外部缓动后端约定见仓库 `docs/API.md`。
 - 内建 CJK 是精简字集。需要外部字模时读取 `resources/gb2312_glyphs.bin`，参照 `include/YMGUI/CORE/YMGUI_Font.h` 构造带 `glyph_read` 的 GYfont，使用库中的 `YMGUI_GB2312_cps` 索引与 `YMGUI_Font_SetFallback`。当前 blob 为 7672 字形，每字 128 字节；应用自己管理资源位置，SDK 不把构建机器路径写入库。
 - 文件选择器需注入文件系统回调；SDK 不携带 FFmpeg、词典、project_Demo 或其他业务资源。
 

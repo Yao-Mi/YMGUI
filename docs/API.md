@@ -538,6 +538,41 @@ app 自造 GYfont(`bitmap=NULL`,填 `glyph_read` 回调)引用固件内的码点
 生成的 `YMGUI_GB2312_cps[]`),`YMGUI_Font_SetFallback(&it)` 一句即让所有控件遇任意 GB2312
 汉字自动走外部 flash。代价仅 `.bss` 一个指针,字体数据本身全 const。见 `demo_font_gb2312.c`。
 
+## UI 属性动画（ANIM）
+
+动画调度器按需挂到 `GYCTX`，由 `YMGUI_Inject_Tick` 自动推进；无活跃动画时不分配动画节点，也不会产生重绘。位置与尺寸动画会同时标脏旧区域和新区域。模块默认开启；源码构建可设 `-DYMGUI_ANIM=OFF`（或移植工程在配置头设 `YMGUI_ANIM=0`）整体裁掉实现、Tick 调用和 context 专用管理指针，动画 API/目标也不提供。预编译 SDK 的开关由打包时固定，消费端不可单独切换。
+
+```c
+typedef uint32 GYANIM; // 0 表示创建失败
+
+GYANIM YMGUI_Anim_MoveTo(GYOBJ obj, GYcoord x, GYcoord y,
+                         uint32 duration_ms, GYAnimEase ease);
+GYANIM YMGUI_Anim_ResizeTo(GYOBJ obj, GYcoord w, GYcoord h,
+                           uint32 duration_ms, GYAnimEase ease);
+GYANIM YMGUI_Anim_BgColorTo(GYOBJ obj, GYcolor color,
+                            uint32 duration_ms, GYAnimEase ease);
+GYANIM YMGUI_Anim_ScrollTo(GYOBJ obj, GYcoord x, GYcoord y,
+                           uint32 duration_ms, GYAnimEase ease);
+GYANIM YMGUI_Anim_ValueTo(GYCTX ctx, GYOBJ owner, int32 from, int32 to,
+                          uint32 duration_ms, GYAnimEase ease,
+                          GYanim_value_cb callback, void* user_data);
+
+uint8 YMGUI_Anim_SetDelay(GYCTX ctx, GYANIM animation, uint32 delay_ms);
+uint8 YMGUI_Anim_SetDone(GYCTX ctx, GYANIM animation,
+                         GYanim_done_cb callback, void* user_data);
+uint8 YMGUI_Anim_Cancel(GYCTX ctx, GYANIM animation);
+void  YMGUI_Anim_CancelObject(GYOBJ obj);
+void  YMGUI_Anim_CancelAll(GYCTX ctx);
+uint16 YMGUI_Anim_ActiveCount(GYCTX ctx);
+void  YMGUI_Anim_SetRateCallback(GYCTX ctx, GYanim_rate_cb callback, void* user_data);
+```
+
+内建 `LINEAR/SMOOTH/EASE_IN/EASE_OUT/OVERSHOOT/THERE_AND_BACK` 均使用 16.16 定点。`THERE_AND_BACK` 结束时回到起值，不适合作为“最终停在目标”的过渡。同一对象新建同类内建属性动画会取消旧动画并从当前值继续；取消回调的 `cancelled=1`。`ValueTo` 是独立通道，不会隐式替换其他 ValueTo。对象析构自动静默取消关联动画。`ValueTo` 需要调用方在回调中应用数值；若回调触碰某个控件，应将它作为 `owner` 传入以获得析构保护。
+
+整数补间使用更宽的中间值计算，极端 `int32` 起止值以及 overshoot 超调会钳制到目标属性的整数范围，不会因窄化转换绕回；外部 rate callback 仍应返回有界的 16.16 比例。
+
+`SetRateCallback` 可把缓动采样交给应用自选的外部实现；YMGUI 核心不依赖外部动画库，仓库不附带 YMANIM 接入示例。
+
 ## 插件系统（PLUGIN）
 
 插件描述符包含 `id/name/api_version` 和 `init/tick/deinit` 生命周期回调。宿主填充
@@ -590,6 +625,8 @@ int16 GY_Sin(int32 deg);   int16 GY_Cos(int32 deg);      // Q15(值=实际*32768
 | 按钮 + 点击回调 + 计数标签 | Demo/demo_button.c |
 | 表单四件套联动 | Demo/demo_form.c |
 | 仪表盘/环形/转圈动画 | Demo/demo_dashboard.c |
+| UI 移动/尺寸/颜色/数值补间 | Demo/demo_anim.c |
+| 抽屉、弹窗、卡片、进度、页签、折叠、通知、滚动、主题、焦点、校验、批量操作及 Canvas 播放头 | Demo/ANIM_DEMOS.md |
 | 自绘 draw_cb 里用图元 | Demo/demo_draw.c |
 | 文本输入 + 焦点 | Demo/demo_textinput.c |
 | 可滚动列表 | Demo/demo_list.c |

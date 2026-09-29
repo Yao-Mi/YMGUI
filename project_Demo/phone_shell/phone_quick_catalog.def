@@ -1,0 +1,8 @@
+PHONE_QUICK(wifi, phone_quick_builtin)
+PHONE_QUICK(data, phone_quick_builtin)
+PHONE_QUICK(flight, phone_quick_builtin)
+PHONE_QUICK(bluetooth, phone_quick_builtin)
+PHONE_QUICK(hotspot, phone_quick_builtin)
+PHONE_QUICK(sound, phone_quick_builtin)
+PHONE_QUICK(capture, phone_quick_builtin)
+PHONE_QUICK(quiet, phone_quick_builtin)

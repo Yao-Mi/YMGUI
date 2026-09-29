@@ -28,6 +28,12 @@ if(NOT YMGUI_COLOR_DEPTH MATCHES "^(1|8|16|24)$")
 	message(FATAL_ERROR "YMGUI_COLOR_DEPTH must be 1, 8, 16 or 24")
 endif()
 add_compile_definitions(YMGUI_COLOR_DEPTH=${YMGUI_COLOR_DEPTH})
+option(YMGUI_ANIM "Build the optional UI animation module" ON)
+if(YMGUI_ANIM)
+	add_compile_definitions(YMGUI_ANIM=1)
+else()
+	add_compile_definitions(YMGUI_ANIM=0)
+endif()
 
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Debug)
@@ -38,7 +44,7 @@ get_filename_component(YMGUI_REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
 set(YMGUI_ROOT   ${YMGUI_REPO_ROOT}/YMGUI)
 set(YMGUI_SDLDIR ${YMGUI_REPO_ROOT}/SDL_LCD)
 
-# 裸头式 include:10 个可移植层 + SDL_LCD 外壳(全库头文件无重名)
+# 裸头式 include:11 个可移植层 + SDL_LCD 外壳(全库头文件无重名)
 include_directories(
 	${YMGUI_ROOT}/CONFIG
 	${YMGUI_ROOT}/DEBUG
@@ -47,6 +53,7 @@ include_directories(
 	${YMGUI_ROOT}/OPOBJ
 	${YMGUI_ROOT}/CORE
 	${YMGUI_ROOT}/GUI
+	${YMGUI_ROOT}/ANIM
 	${YMGUI_ROOT}/WIDGET
 	${YMGUI_ROOT}/STATE
 	${YMGUI_ROOT}/PLUGIN
@@ -63,11 +70,15 @@ file(GLOB YMGUI_SRC
 	${YMGUI_ROOT}/OPOBJ/*.c
 	${YMGUI_ROOT}/CORE/*.c
 	${YMGUI_ROOT}/GUI/*.c
+	${YMGUI_ROOT}/ANIM/*.c
 	${YMGUI_ROOT}/WIDGET/*.c
 	${YMGUI_ROOT}/STATE/*.c
 	${YMGUI_ROOT}/PLUGIN/*.c
 	${YMGUI_ROOT}/HAL/*.c
 )
+if(NOT YMGUI_ANIM)
+	list(FILTER YMGUI_SRC EXCLUDE REGEX "/ANIM/")
+endif()
 
 # 目标可能被多个 include 重复定义?本脚本每个独立工程各自 configure 一次,不会重入。
 add_library(ymgui STATIC ${YMGUI_SRC})

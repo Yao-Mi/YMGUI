@@ -7,7 +7,7 @@
 1. 阅读根 [README](../README.md) 和 [当前状态](当前状态.md)，再用本文定位相关模块。先检查 `git status --short`，识别已有改动。
 2. 明确任务属于库核心、平台适配还是具体应用。只读对应头文件、实现和示例，不必通读所有源码或第三方依赖。
 3. 查到真实函数再调用。YMGUI 使用 `Creat` 的既有拼写，例如 `YMGUI_Creat_Button_Creat`；不要按其他 GUI 框架的习惯猜 API。
-4. 按改动范围构建、运行和验证，最后同步文档。需要承接开发背景时读 [DEVLOG V2](DEVLOG_V2.md)；`docs/history/` 只在追溯历史或回归时读。
+4. 按改动范围构建、运行和验证，最后同步文档。需要承接开发背景时读 [DEVLOG V3](DEVLOG_V3.md)；`docs/history/` 只在追溯历史或回归时读。
 
 事实优先级：代码 / 测试 / CMake → 当前状态 → 专题文档（含本文）→ DEVLOG → 历史归档。遇到冲突先核对实现，再修正文档。
 
@@ -23,6 +23,7 @@ YMGUI 是嵌入式 / 裸机优先的保留模式 GUI：C99 + GNU 扩展、软件
 | `YMGUI/OPOBJ/` | 对象树、上下文、创建 / 释放、顶层容器 |
 | `YMGUI/CORE/` | 对 surface 画填充、文字、线、图片、圆弧；字体数据 |
 | `YMGUI/GUI/` | 失效、刷新、事件、焦点、一次性布局 |
+| `YMGUI/ANIM/` | context 级属性补间；移动、尺寸、颜色、滚动、通用整数值与外部缓动后端 |
 | `YMGUI/HAL/` | 显示、输入、Tick、剪贴板的接口 |
 | `YMGUI/WIDGET/` | 控件及其私有数据和回调 |
 | `YMGUI/STATE/` | subject、observer 和控件绑定 |
@@ -59,6 +60,7 @@ YMGUI 是嵌入式 / 裸机优先的保留模式 GUI：C99 + GNU 扩展、软件
 | 消息确认 / 文件选择 | MsgBox、FileDialog | 使用异步结果回调；FileDialog 需注入文件系统实现；可用 SetTranslator 翻译界面文案 |
 | 特殊视图 / 时间线 | base + `draw_cb` / `event_cb` | 复用图元和事件捕获，应用自己保存模型 |
 | 多控件同步 | subject / bind | Label、Bar、Arc、Meter 单向；Slider、Switch、Checkbox、TextInput 双向 |
+| UI 过渡和反馈 | ANIM | 用 MoveTo/ResizeTo/BgColorTo/ValueTo；同属性新动画会替换旧动画；不用时可设 `YMGUI_ANIM=OFF` 裁剪 |
 | 扩展模块 | PLUGIN | 静态注册适合固件；动态插件通过宿主函数表使用 UI |
 
 暂未提供持续约束布局、通用 flex/grid 布局引擎、Dropdown / Table 索引绑定、FileDialog 内建复制粘贴或删除。不要把应用已经实现的能力误写成核心控件 API。
@@ -181,6 +183,8 @@ SDL_VIDEODRIVER=dummy ./build/rgb565/project_Demo/my_app/my_app 30
 
 先 `YMGUI_Inject_SetCtx(ctx)` 再注入输入。SDL 事件泵会注入 Tick，裸机循环调用 `YMGUI_Inject_Tick(elapsed_ms)`，传实际经过的毫秒数；重复注入会加速动画。HAL 注入上下文、按键过滤器和全局字体回退等接口有全局状态，多窗口 / 多上下文不能直接假定隔离。
 
+ANIM 由同一次 Tick 自动推进，不要再手动调用 `YMGUI_Anim_Tick`，除非测试或宿主完全绕过 HAL 注入。对象销毁会自动取消以它为 owner 的动画；通用 `ValueTo` 若操作控件，应传对应 owner。YMGUI 核心不依赖外部动画场景库，仓库也不再附带 YMANIM 接入示例。
+
 普通拖动捕获起点对象，移出后仍收到 Pressing；取消通过 `YMGUI_Inject_PointerCancel` 清理，走 ReleasedOff 而不是 Clicked。右键 / 触摸长按另有 ContextRequested / Dragging / Released / Cancelled 链。读 [事件头文件](../YMGUI/GUI/YMGUI_Event.h) 和 [HAL](../YMGUI/HAL/YMGUI_Hal.h)，不要自行伪造一串左键点击。
 
 TextInput / EditView 有聚焦和编辑两种状态；程序设置焦点不一定等于进入编辑态。MsgBox / FileDialog 用回调续接动作，不要阻塞主循环等待用户选择，否则界面无法继续处理输入。
@@ -208,6 +212,7 @@ ctest --test-dir build/rgb565/Demo --output-on-failure
 | `tools/check_repo.sh` | 文档链接、资源一致性、计数和 diff 空白检查；不编译 |
 | `tools/test.sh --depth 16` | 根工程单色深构建与测试，默认 `build/rgb565/Demo` |
 | `tools/test_matrix.sh` | 根工程 RGB565 + RGB888；`--all-depths` 加入 1 / 8 bpp |
+| `tools/test_anim_interactions.sh` | RGB565 / RGB888 动画核心和七个交互场景的重复操作/手势自检 |
 | `./sdk/build.sh` | 原生 Linux 二进制 SDK，双色深核心 / 可选 SDL 库及脱离源码的接入验证 |
 | `./build_all.sh` | 按色深分组构建 Demo 和完整应用；默认 RGB565，`--depth 24` 跳过 video_stidio；`-t` 跑根工程 CTest |
 | `./capture_shots.sh` | 从统一构建目录批量截图；`--depth` 选择色深，`--output` 指定验证输出目录 |
@@ -249,6 +254,7 @@ ctest --test-dir build/rgb565/Demo --output-on-failure
 | band 刷新与显示闭环 | [demo_flush_band.c](../Demo/demo_flush_band.c)、[test_band.c](../tests/test_band.c)、[test_async.c](../tests/test_async.c) |
 | 表单 / 状态联动 | [demo_form.c](../Demo/demo_form.c)、[demo_bind.c](../Demo/demo_bind.c)、[test_bind.c](../tests/test_bind.c) |
 | 自绘 / 布局 | [demo_draw.c](../Demo/demo_draw.c)、[demo_layout.c](../Demo/demo_layout.c) |
+| UI 属性补间 / 动效场景 | [demo_anim.c](../Demo/demo_anim.c)、[二十个交互 Demo](../Demo/ANIM_DEMOS.md) |
 | 多行文本 / 编辑器 | [demo_textview.c](../Demo/demo_textview.c)、[txt_edit](../project_Demo/txt_edit/README.md) |
 | 右键 / 触摸长按 / 拖动取消 | [context_gesture](../project_Demo/context_gesture/README.md)、[test_event.c](../tests/test_event.c) |
 | 文件系统回调与对话框 | [FileDialog 头文件](../YMGUI/WIDGET/YMGUI_FileDialog.h)、[test_filedialog.c](../tests/test_filedialog.c) |
@@ -256,7 +262,9 @@ ctest --test-dir build/rgb565/Demo --output-on-failure
 | 后台媒体任务与 UI 分离 | [video_stidio 架构](../project_Demo/video_stidio/ARCHITECTURE.md) |
 | 实体 / 虚拟键盘与 CJK | [chinese_ime](../project_Demo/chinese_ime/README.md)、[test_sdl_context.c](../tests/test_sdl_context.c) |
 | 插件宿主与生命周期 | [plugin_host](../project_Demo/plugin_host/README.md)、[test_plugin.c](../tests/test_plugin.c) |
+| 竖屏应用与可裁剪 UI 动效 | [pocket_tasks](../project_Demo/pocket_tasks/README.md)、[动效示例](../Demo/ANIM_DEMOS.md) |
+| 手机界面流程与应用级皮肤 | [phone_shell](../project_Demo/phone_shell/README.md) |
 
 ## 9. 完成修改后维护哪些文档
 
-遵守 [AGENTS.md](../AGENTS.md)：功能、边界、构建或计数变化同步到当前状态；每轮实质开发续写 DEVLOG V2；公开 API 变化更新 API，架构 / 移植变化更新专题文档。本文维护“选型与用法”，无需复制全部函数签名或每轮测试计数；README 保持简短入口。增加应用、测试或控件时还需核对 `tools/check_repo.sh` 中的计数约束。
+遵守 [AGENTS.md](../AGENTS.md)：功能、边界、构建或计数变化同步到当前状态；每轮实质开发续写 DEVLOG V3；公开 API 变化更新 API，架构 / 移植变化更新专题文档。本文维护“选型与用法”，无需复制全部函数签名或每轮测试计数；README 保持简短入口。增加应用、测试或控件时还需核对 `tools/check_repo.sh` 中的计数约束。

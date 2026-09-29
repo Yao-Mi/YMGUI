@@ -196,6 +196,10 @@ void YMGUI_Free_ObjFree(GYOBJ obj)
 	//3.清理上下文里对本对象的引用
 	if (obj->ctx != NULL)
 	{
+		#if YMGUI_ANIM
+		if (obj->ctx->runtime_obj_free_cb != NULL)
+			obj->ctx->runtime_obj_free_cb(obj->ctx->runtime_data, obj);
+		#endif
 		if (obj->ctx->pressed_obj == obj) obj->ctx->pressed_obj = NULL;
 		if (obj->ctx->context_obj == obj) obj->ctx->context_obj = NULL;
 		if (obj->ctx->focus_obj == obj)   obj->ctx->focus_obj = NULL;
@@ -261,6 +265,10 @@ void YMGUI_Free_CtxFree(GYCTX ctx)
 	}
 	if (ctx->root != NULL)
 		GY_free0(ctx->root);
+	#if YMGUI_ANIM
+	if (ctx->runtime_ctx_free_cb != NULL)
+		ctx->runtime_ctx_free_cb(ctx->runtime_data);
+	#endif
 	GY_free0(ctx);
 }
 

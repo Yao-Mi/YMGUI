@@ -19,4 +19,13 @@
 #if defined(GY_INV_MAX) && GY_INV_MAX != 16
 #error "YMGUI SDK uses GY_INV_MAX=16"
 #endif
+#ifndef YMGUI_SDK_ANIM
+#define YMGUI_SDK_ANIM 1
+#endif
+#ifndef YMGUI_ANIM
+#define YMGUI_ANIM YMGUI_SDK_ANIM
+#endif
+#if YMGUI_ANIM != YMGUI_SDK_ANIM
+#error "YMGUI SDK animation configuration does not match the imported library"
+#endif
 #endif

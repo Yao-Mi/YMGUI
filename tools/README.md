@@ -42,10 +42,12 @@ python3 tools/gen_ime_dict.py --rime-dict /tmp/pinyin_simp.dict.yaml \
 
 ```bash
 tools/check_repo.sh                 # 快速静态检查，不编译
-tools/test.sh                       # 默认 RGB565 构建 + 35 个 CTest
+tools/test.sh                       # 默认 RGB565 构建 + 36 个 CTest
 tools/test.sh --depth 24            # RGB888
 tools/test_matrix.sh                # 仓库检查 + RGB565/RGB888
 tools/test_matrix.sh --all-depths   # 1/8/16/24 全像素格式
+tools/test_anim_trim.sh             # 动画模块关闭时的构建、符号和普通控件验收
+tools/test_anim_interactions.sh     # 双色深动效核心及七个交互场景的输入回归
 ```
 
 `test.sh` 默认复用 `build_all.sh` 的 Demo 构建目录：RGB565 为 `build/rgb565/Demo/`，RGB888 为 `build/rgb888/Demo/`；1/8bpp 分别为 `build/depth1/Demo/`、`build/depth8/Demo/`。可用 `--build-dir` 指定独立实验目录，详见 [构建目录说明](../docs/BUILD_LAYOUT.md)。构建并发默认不超过 8，可通过 `YMGUI_TEST_JOBS=4 tools/test.sh` 覆盖。脚本均以自身位置解析仓库根目录，可从任意工作目录调用。

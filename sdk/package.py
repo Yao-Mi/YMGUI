@@ -73,6 +73,7 @@ def main():
             build = WORK / f"rgb{depth}"
             run(["cmake", "-S", ROOT / "sdk/library", "-B", build,
                  "-DCMAKE_BUILD_TYPE=Release", f"-DYMGUI_COLOR_DEPTH={depth}",
+                 "-DYMGUI_ANIM=ON",
                  f"-DYMGUI_SDK_BUILD_SDL={'OFF' if args.without_sdl else 'ON'}"],
                 WORK / f"configure{depth}.log", env=env)
             run(["cmake", "--build", build, f"-j{args.jobs}"], WORK / f"build{depth}.log", env=env)
@@ -118,8 +119,10 @@ def main():
                             copy(consumer / name, stage / f"bin/rgb{depth}" / name)
             run(["cmake", "-S", standalone / "examples", "-B", Path(relocated) / "invalid-depth",
                  "-DYMGUI_COLOR_DEPTH=8"], stage / "verification/reject-depth.log", expect_failure=True)
+            run(["cmake", "-S", standalone / "examples", "-B", Path(relocated) / "invalid-anim",
+                 "-DYMGUI_ANIM=OFF"], stage / "verification/reject-anim-option.log", expect_failure=True)
             # The SDK must reject coordinate/layout ABI mismatch at compile time.
-            for flag in ("-DYMGUI_COORD_32=1", "-DGY_INV_MAX=32", "-DYMGUI_COLOR_DEPTH=24"):
+            for flag in ("-DYMGUI_COORD_32=1", "-DGY_INV_MAX=32", "-DYMGUI_COLOR_DEPTH=24", "-DYMGUI_ANIM=0"):
                 run(["cc", "-x", "c", "-c", "/dev/null", "-include",
                      standalone / "include/YMGUI/CONFIG/YMGUI_PubType.h", flag,
                      "-o", Path(relocated) / "invalid.o"],
@@ -141,7 +144,7 @@ def main():
             "system": platform.system(), "machine": platform.machine(),
             "compiler": subprocess.check_output(["cc", "--version"], text=True).splitlines()[0],
             "build_type": "Release", "position_independent": True,
-            "color_depths": [16, 24], "coordinate_bits": 16, "GY_INV_MAX": 16,
+            "color_depths": [16, 24], "coordinate_bits": 16, "GY_INV_MAX": 16, "YMGUI_ANIM": 1,
             "bundled_sdl_adapter": not args.without_sdl, "bundled_sdl2": False,
             "external_ymgre_validated": bool(args.ymgre_dir),
             "source_sha256": digest_files(sources),
