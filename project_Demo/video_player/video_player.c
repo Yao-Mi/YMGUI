@@ -371,7 +371,7 @@ int main(int argc, char** argv)
 		vp_video_read_tick(g_video);          //补读解码帧
 		if (vp_video_update(g_video, pos))    //按主钟选帧 → display_buf
 		{
-			YMGUI_Obj_Invalidate(g_video_pane); //帧变了才重绘视频窗
+			YMGUI_Image_InvalidateContent(g_video_pane); //仅像素变更：保留不变的 FIT 黑边
 			frames_shown++;
 		}
 		syncClock();

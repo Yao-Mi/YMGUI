@@ -23,3 +23,20 @@ int YMGUI_StagedFlush(GYbus* bus, const GYrect* a, const GYpx* pixels, GYpx* sta
 	}
 	return 1;
 }
+
+int YMGUI_StagedFlushAuto(GYbus* bus, const GYrect* a, const GYpx* pixels,
+						  GYpx* staging, size_t capacity, GYstaged_access_cb accessible,
+						  GYstaged_send_cb send, void* user)
+{
+	if (!bus || bus->owner != GY_BUS_GUI || !a || a->w <= 0 || a->h <= 0 || !pixels || !send)
+		return 0;
+	if (bus->io.in_isr && bus->io.in_isr(bus->io.user))
+		return 0;
+	if (!accessible || !accessible(a, pixels, user))
+		return YMGUI_StagedFlush(bus, a, pixels, staging, capacity, send, user);
+	if (!YMGUI_Bus_BeginLCD(bus))
+		return 0;
+	int ok = send(a, pixels, 1, user);
+	int ended = YMGUI_Bus_EndLCD(bus);
+	return ended && ok;
+}

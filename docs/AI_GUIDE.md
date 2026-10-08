@@ -276,3 +276,9 @@ ctest --test-dir build/rgb565/Demo --output-on-failure
 真机多点输入按完整帧使用 Touch 和稳定 ID，监听器卸载前注销；SDL 已适配完整多点帧，可通过 SDL_FINGER 事件在 PC 验证通用触摸交互。需要节省静态剪贴板 RAM 时设 `-DYMGUI_CLIPBOARD_DYNAMIC=ON`，退出调用 `YMGUI_Clipboard_Clear`。新回归在 `test_port`，开启/关闭优化都需验收；配置、原移植经验和验证命令见 [AT32 回流说明](AT32_PORT_REVIEW.md)。
 
 移植共用 phone 时使用 `phone_runtime.h` 和 `YMGUI_PORTABLE_APP=ON`，不要复制 phone_shell 并分别修改桌面/MCU UI。wallpaper/preview/固定状态栏/相册缩放/输入法工作区已合并；手机默认启用遮挡及动态剪贴板。新平台直接选 Arena、Resource、FontCache、Bus、StagedFlush 和通用 Touch 接口，具体型号解包由目标项目实现，不进入本仓库；按 [跨平台移植](CROSS_PLATFORM_PORTING.md) 接入回调。TextActions 需 Update 显式启用并提供可用底边，覆盖层/模态出现时禁用；销毁编辑器会自动解绑。新回归 `test_port_support` 及无 SDL `phone_portable` 分别检查通用资源和共用应用生命周期；原硬件验证资料留在来源工程。
+
+## 视频回流的新入口
+
+只更新Image原像素时使用`YMGUI_Image_InvalidateContent`，保留FIT黑边；改变尺寸/模式/背景仍完整失效。同步发送可接入`YMGUI_StagedFlushAuto`，后端能力回调选择直发或中转，错误返回前也须停止传输。黑色遮罩在16/24色深自动查表，可用`YMGUI_BlackLutEnabled`作对照，小区域及RGB565均匀样本保留原路径。
+
+`./tools/benchmark_video.sh`验证逐像素/传输一致性，并逐项测遮罩、发送中转、内容刷新、帧分配/拷贝/seek；计时不是CTest通过阈值，也不是板端验收。PC播放器保留音频主钟及稳定显示地址，少一份帧缓冲和入队复制。具体契约见[API](API.md)和[视频基准](../tools/benchmarks/README.md)。

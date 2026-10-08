@@ -6,41 +6,88 @@
 #include "YMGUI_PubDefine.h"
 
 /**
-  ***************************************************************************************************************************
-  *	@FileName:    YMGUI_Image.c
-  *	@Author:      yaomimaoren
-  *	@Date:        2026-07-01
-  *	@Description: 图片控件。背景填充后在控件区居中 blit GYimg。不复制像素数据
-  *	@Version:     1.0
-  *
-  ***************************************************************************************************************************
-  * Copyright (C), 2026-2036, YAOMI Tech. Co., Ltd.
-  ***************************************************************************************************************************/
+ ***************************************************************************************************************************
+ *	@FileName:    YMGUI_Image.c
+ *	@Author:      yaomimaoren
+ *	@Date:        2026-07-01
+ *	@Description: 图片控件。背景填充后在控件区居中 blit GYimg。不复制像素数据
+ *	@Version:     1.0
+ *
+ ***************************************************************************************************************************
+ * Copyright (C), 2026-2036, YAOMI Tech. Co., Ltd.
+ ***************************************************************************************************************************/
 
 typedef struct
 {
-	GYIMG src;      //图片源(不拥有)
-	uint8 draw_bg;  //是否填背景
-	uint8 mode;     //缩放模式 GYimg_scale_mode
-}GYimg_data;
+	GYIMG src;	   // 图片源(不拥有)
+	uint8 draw_bg; // 是否填背景
+	uint8 mode;	   // 缩放模式 GYimg_scale_mode
+} GYimg_data;
+
+static void imageDestination(const GYimg_data* d, const GYrect* abs, GYrect* dst)
+{
+	if (d->mode == GY_IMG_NONE)
+	{
+		*dst = (GYrect){abs->x + (abs->w > d->src->w ? (abs->w - d->src->w) / 2 : 0),
+						abs->y + (abs->h > d->src->h ? (abs->h - d->src->h) / 2 : 0),
+						d->src->w, d->src->h};
+		return;
+	}
+
+	if (d->mode == GY_IMG_FILL)
+	{
+		// 拉伸铺满内容盒
+		*dst = *abs;
+	}
+	else // GY_IMG_FIT:等比缩放到刚好放进内容盒,居中留黑边
+	{
+		// 按较小比例定缩放尺寸(定点:sw = img_w * min(box_w/img_w, box_h/img_h))
+		//   用整数比较 img_w*box_h 与 img_h*box_w 判定哪个方向受限,避免浮点
+		int32 iw = d->src->w, ih = d->src->h;
+		int32 bw = abs->w, bh = abs->h;
+		int32 dw, dh;
+		if ((int64)iw * bh <= (int64)ih * bw)
+		{
+			// 高度受限:铺满高,宽按比例
+			dh = bh;
+			dw = (int32)((int64)iw * bh / ih);
+		}
+		else
+		{
+			// 宽度受限:铺满宽,高按比例
+			dw = bw;
+			dh = (int32)((int64)ih * bw / iw);
+		}
+		if (dw < 1)
+			dw = 1;
+		if (dh < 1)
+			dh = 1;
+		dst->x = abs->x + (bw - dw) / 2;
+		dst->y = abs->y + (bh - dh) / 2;
+		dst->w = (GYcoord)dw;
+		dst->h = (GYcoord)dh;
+	}
+}
 
 /**
-  * @brief 绘制:可选背景 + 按缩放模式显示
-  *   NONE 居中原尺寸(旧行为);FIT 等比适配留黑边;FILL 拉伸铺满
-  */
+ * @brief 绘制:可选背景 + 按缩放模式显示
+ *   NONE 居中原尺寸(旧行为);FIT 等比适配留黑边;FILL 拉伸铺满
+ */
 static void imgDrawCb(GYOBJ obj, GYSURFACE s, const GYrect* abs)
 {
 	GYimg_data* d = (GYimg_data*)obj->user_data;
 	if (d->src == NULL || d->src->data == NULL || d->src->w <= 0 || d->src->h <= 0)
 	{
-		if(d->draw_bg) YMGUI_Draw_Fill(s,abs,obj->bg_color,GY_OPA_COVER);
+		if (d->draw_bg)
+			YMGUI_Draw_Fill(s, abs, obj->bg_color, GY_OPA_COVER);
 		return;
 	}
 
 	if (d->mode == GY_IMG_NONE)
 	{
-		if(d->draw_bg) YMGUI_Draw_Fill(s,abs,obj->bg_color,GY_OPA_COVER);
-		//原尺寸居中(大图溢出由裁剪挡住)
+		if (d->draw_bg)
+			YMGUI_Draw_Fill(s, abs, obj->bg_color, GY_OPA_COVER);
+		// 原尺寸居中(大图溢出由裁剪挡住)
 		GYcoord ix = abs->x + ((abs->w > d->src->w) ? (abs->w - d->src->w) / 2 : 0);
 		GYcoord iy = abs->y + ((abs->h > d->src->h) ? (abs->h - d->src->h) / 2 : 0);
 		YMGUI_Draw_Img(s, d->src, ix, iy);
@@ -48,47 +95,21 @@ static void imgDrawCb(GYOBJ obj, GYSURFACE s, const GYrect* abs)
 	}
 
 	GYrect dst;
-	if (d->mode == GY_IMG_FILL)
+	imageDestination(d, abs, &dst);
+	if (d->draw_bg)
 	{
-		//拉伸铺满内容盒
-		dst = *abs;
-	}
-	else //GY_IMG_FIT:等比缩放到刚好放进内容盒,居中留黑边
-	{
-		//按较小比例定缩放尺寸(定点:sw = img_w * min(box_w/img_w, box_h/img_h))
-		//  用整数比较 img_w*box_h 与 img_h*box_w 判定哪个方向受限,避免浮点
-		int32 iw = d->src->w, ih = d->src->h;
-		int32 bw = abs->w, bh = abs->h;
-		int32 dw, dh;
-		if ((int64)iw * bh <= (int64)ih * bw)
-		{
-			//高度受限:铺满高,宽按比例
-			dh = bh;
-			dw = (int32)((int64)iw * bh / ih);
-		}
+		if (d->src->use_key)
+			YMGUI_Draw_Fill(s, abs, obj->bg_color, GY_OPA_COVER);
 		else
 		{
-			//宽度受限:铺满宽,高按比例
-			dw = bw;
-			dh = (int32)((int64)ih * bw / iw);
-		}
-		if (dw < 1) dw = 1;
-		if (dh < 1) dh = 1;
-		dst.x = abs->x + (bw - dw) / 2;
-		dst.y = abs->y + (bh - dh) / 2;
-		dst.w = (GYcoord)dw;
-		dst.h = (GYcoord)dh;
-	}
-	if(d->draw_bg) {
-		if(d->src->use_key) YMGUI_Draw_Fill(s,abs,obj->bg_color,GY_OPA_COVER);
-		else {
 			/* Opaque image replaces its destination. Only fill the letterbox. */
-			GYrect strips[4]={{abs->x,abs->y,abs->w,dst.y-abs->y},
-				{abs->x,dst.y+dst.h,abs->w,abs->y+abs->h-dst.y-dst.h},
-				{abs->x,dst.y,dst.x-abs->x,dst.h},
-				{dst.x+dst.w,dst.y,abs->x+abs->w-dst.x-dst.w,dst.h}};
-			for(unsigned i=0;i<4;++i) if(strips[i].w>0 && strips[i].h>0)
-				YMGUI_Draw_Fill(s,&strips[i],obj->bg_color,GY_OPA_COVER);
+			GYrect strips[4] = {{abs->x, abs->y, abs->w, dst.y - abs->y},
+								{abs->x, dst.y + dst.h, abs->w, abs->y + abs->h - dst.y - dst.h},
+								{abs->x, dst.y, dst.x - abs->x, dst.h},
+								{dst.x + dst.w, dst.y, abs->x + abs->w - dst.x - dst.w, dst.h}};
+			for (unsigned i = 0; i < 4; ++i)
+				if (strips[i].w > 0 && strips[i].h > 0)
+					YMGUI_Draw_Fill(s, &strips[i], obj->bg_color, GY_OPA_COVER);
 		}
 	}
 	YMGUI_Draw_ImgScaled(s, d->src, dst);
@@ -104,8 +125,8 @@ static void imgFreeCb(GYOBJ obj)
 }
 
 /**
-  * @brief 创建图片控件
-  */
+ * @brief 创建图片控件
+ */
 GYOBJ YMGUI_Creat_Image_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, GYcoord h)
 {
 	GYOBJ obj = YMGUI_Creat_Obj_Creat(parent, x, y, w, h);
@@ -115,7 +136,11 @@ GYOBJ YMGUI_Creat_Image_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, GYc
 	GYimg_data* d = (GYimg_data*)GY_malloc0(sizeof(GYimg_data));
 	gy_assert(d);
 	gy_log_explain(d == NULL, GY_LOG_Mem0, "图片控件数据内存申请失败");
-	if (d == NULL) { YMGUI_Free_ObjFree(obj); return NULL; }
+	if (d == NULL)
+	{
+		YMGUI_Free_ObjFree(obj);
+		return NULL;
+	}
 	GY_memset(d, 0, sizeof(GYimg_data));
 	d->src = NULL;
 	d->draw_bg = 1;
@@ -132,8 +157,8 @@ GYOBJ YMGUI_Creat_Image_Creat(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, GYc
 }
 
 /**
-  * @brief 设图片源
-  */
+ * @brief 设图片源
+ */
 void YMGUI_Image_SetSrc(GYOBJ img, GYIMG src)
 {
 	gy_assert(img && img->user_data);
@@ -143,23 +168,43 @@ void YMGUI_Image_SetSrc(GYOBJ img, GYIMG src)
 }
 
 /**
-  * @brief 设缩放模式(标脏)
-  */
+ * @brief 设缩放模式(标脏)
+ */
 void YMGUI_Image_SetScaleMode(GYOBJ img, GYimg_scale_mode mode)
 {
 	gy_assert(img && img->user_data);
 	gy_log_explain((img == NULL) || (img->user_data == NULL), GY_LOG_PtrI, "图片控件或数据不存在");
-	if (img == NULL || img->user_data == NULL) return;
+	if (img == NULL || img->user_data == NULL)
+		return;
 	((GYimg_data*)img->user_data)->mode = (uint8)mode;
 	YMGUI_Obj_Invalidate(img);
 }
 
 /**
-  * @brief 取缩放模式
-  */
+ * @brief 取缩放模式
+ */
 GYimg_scale_mode YMGUI_Image_GetScaleMode(GYOBJ img)
 {
 	gy_assert(img && img->user_data);
-	if (img == NULL || img->user_data == NULL) return GY_IMG_NONE;
+	if (img == NULL || img->user_data == NULL)
+		return GY_IMG_NONE;
 	return (GYimg_scale_mode)((GYimg_data*)img->user_data)->mode;
+}
+
+void YMGUI_Image_InvalidateContent(GYOBJ img)
+{
+	if (!img || !img->user_data)
+		return;
+	GYimg_data* d = img->user_data;
+	if (!d->src || !d->src->data || d->src->w <= 0 || d->src->h <= 0)
+	{
+		YMGUI_Obj_Invalidate(img);
+		return;
+	}
+	GYrect abs, content;
+	YMGUI_Obj_GetAbsArea(img, &abs);
+	if (abs.w <= 0 || abs.h <= 0)
+		return;
+	imageDestination(d, &abs, &content);
+	YMGUI_Obj_InvalidateVisibleArea(img, &content);
 }

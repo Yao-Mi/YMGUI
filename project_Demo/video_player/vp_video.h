@@ -8,8 +8,9 @@
 // vp_video —— 视频解码引擎(全部视频/解码语义,app 侧,绝不进 GUI 库)。
 //   解码:ffmpeg CLI(popen)把视频流式解成与 GYpx 匹配的原生裸帧(rgb565le/rgb24),
 //         缩放到不超过 max_w×max_h 的偶数尺寸(保宽高比);ffprobe 探尺寸/帧率/时长。
-//         管道 fd 设 O_NONBLOCK,单线程非阻塞读进帧环形缓冲(满则停读 → ffmpeg 写阻塞
+//         管道 fd 设 O_NONBLOCK,单线程非阻塞直接读进帧环形缓冲的空闲尾槽(满则停读 → ffmpeg 写阻塞
 //         形成天然背压)。无 ffmpeg/ffprobe 或文件不可解 → 合成动画测试图兜底(仍可跑)。
+//   缓冲:省去独立读取帧缓冲与入队整帧拷贝；seek 复用已分配槽。
 //   显示:模块持有一块稳定 display_buf(out_w×out_h GYpx);vp_video_update(now_ms) 按
 //         音频主时钟把"当前应显示帧"拷进 display_buf(丢过期帧/持未来帧),返回是否有更新。
 //         app 把 GYimg.data 指向 vp_video_pixels() 一次,更新时只 Invalidate。

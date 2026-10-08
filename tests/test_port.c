@@ -14,8 +14,10 @@
 #define W 96
 #define H 64
 static GYpx output[W * H], reference[W * H], buffer[W * H + 2];
+static unsigned flushed_pixels;
 static void flush(GYdisp* d, const GYrect* a, const GYpx* pixels)
 {
+	flushed_pixels += (unsigned)a->w * a->h;
 	for (int y = 0; y < a->h; ++y)
 		memcpy(output + (a->y + y) * W + a->x, pixels + y * a->w, a->w * sizeof(GYpx));
 	YMGUI_Disp_FlushReady(d);
@@ -471,10 +473,75 @@ static void testDirtyAndBands(void)
 	YMGUI_Free_CtxFree(c);
 	free(d.buf1);
 }
+
+#include "YMGUI_Image.h"
+static void testBlackLookup(void)
+{
+#if YMGUI_COLOR_DEPTH == 16 || YMGUI_COLOR_DEPTH == 24
+    const unsigned n = 65536;
+    GYpx* source = malloc(n * sizeof(GYpx));
+    GYpx* pixels = malloc((n + 2) * sizeof(GYpx));
+    assert(source && pixels);
+    for (unsigned i=0;i<n;++i) {
+#if YMGUI_COLOR_DEPTH == 16
+        source[i]=(GYpx)i;
+#else
+        source[i]=(GYpx){i%256,(i*97+11)%256,(i*53+137)%256};
+#endif
+    }
+    GYpx guard=GY_ColorToPx(0xffa55a31);
+    GYsurface surface={pixels+1,{0,0,512,128},{0,0,512,128},512};
+    for(unsigned opacity=0;opacity<256;++opacity) {
+        memcpy(pixels+1,source,n*sizeof(GYpx)); pixels[0]=pixels[n+1]=guard;
+        YMGUI_Draw_Fill(&surface,&surface.clip,GY_ARGB(37,0,0,0),(GYopa)opacity);
+        for(unsigned i=0;i<n;++i)
+            assert(GY_PxEqual(pixels[i+1],GY_MixPx(source[i],GY_ARGB(255,0,0,0),(GYopa)opacity)));
+        assert(GY_PxEqual(pixels[0],guard) && GY_PxEqual(pixels[n+1],guard));
+    }
+    /* Odd stride/offset; clipped edges; change opacity without stale tables. */
+    surface=(GYsurface){pixels+1,{10,20,17,40},{12,23,14,29},19};
+    for(unsigned opacity=1;opacity<255;opacity+=17) {
+        memcpy(pixels+1,source,n*sizeof(GYpx));
+        YMGUI_Draw_Fill(&surface,&surface.buf_area,GY_ARGB(255,0,0,0),(GYopa)opacity);
+        for(unsigned i=0;i<n;++i) {
+            unsigned y=i/19,x=i%19;
+            GYpx expected=(x>=2 && x<16 && y>=3 && y<32) ?
+                GY_MixPx(source[i],GY_ARGB(255,0,0,0),(GYopa)opacity):source[i];
+            assert(GY_PxEqual(pixels[i+1],expected));
+        }
+    }
+    free(source);free(pixels);
+#endif
+}
+static void testImageContent(void)
+{
+    GYCTX ctx=scene();
+    GYpx* pixels=malloc(64*32*sizeof(GYpx)); assert(pixels);
+    for(unsigned i=0;i<64*32;++i) pixels[i]=GY_ColorToPx(0xff113355u+i*6739);
+    GYimg source={pixels,64,32,0,GY_PX_ZERO};
+    GYOBJ image=YMGUI_Creat_Image_Creat(ctx->root,16,4,64,56);
+    YMGUI_Image_SetSrc(image,&source);YMGUI_Image_SetScaleMode(image,GY_IMG_FIT);
+    YMGUI_Obj_Invalidate(ctx->root);YMGUI_Refresh(ctx);
+    for(unsigned mode=0;mode<3;++mode) {
+        YMGUI_Image_SetScaleMode(image,(GYimg_scale_mode)mode);YMGUI_Refresh(ctx);
+        for(unsigned i=0;i<64*32;++i) pixels[i]=GY_ColorToPx(0xff337755u+i*3769+mode*117);
+        flushed_pixels=0;YMGUI_Image_InvalidateContent(image);YMGUI_Refresh(ctx);
+        unsigned reduced=flushed_pixels;memcpy(reference,output,sizeof(output));
+        flushed_pixels=0;YMGUI_Obj_Invalidate(image);YMGUI_Refresh(ctx);
+        assert(!memcmp(reference,output,sizeof(output)));
+        assert(reduced==(mode==GY_IMG_FILL ? 64u*56 : 64u*32));
+        assert(flushed_pixels==64u*56);
+    }
+    YMGUI_Obj_SetHidden(image,1);YMGUI_Refresh(ctx);
+    YMGUI_Image_InvalidateContent(image);assert(!ctx->inv_cnt);
+    YMGUI_Free_CtxFree(previous_scene);previous_scene=NULL;free(pixels);
+}
 int main(void)
 {
 	testOcclusion();
 	testRaster();
+	testBlackLookup();
+	testImageContent();
 	testInput();
 	testDirtyAndBands();
 	puts("test_port: ALL PASS");

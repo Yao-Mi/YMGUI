@@ -51,9 +51,8 @@ struct VPvideo
 	int   fd;             //管道读端 fd(非阻塞)
 	char  path[1024];     //源路径(seek 重启用)
 
-	uint8* fillbuf;       //当前帧累积区(out_w*out_h*2 字节)
 	int64  frame_bytes;   //一帧字节数(out_w*out_h*2)
-	int64  fill_bytes;    //fillbuf 已填字节
+	int64  fill_bytes;    //队列尾槽已填字节
 	int64  pipe_frame_i;  //本管道自启动起已读出的完整帧数
 	int32  pipe_base_ms;  //本管道对应的起始时间(seek 目标)
 
@@ -96,15 +95,14 @@ static void freeRing(VPvideo* v)
 	v->ring_head = v->ring_count = 0;
 }
 
-//分配所有随尺寸变化的缓冲(display_buf / fillbuf / ring 各槽)
+//分配稳定显示缓冲和队列槽；未完成帧直接填入空闲尾槽。
 static uint8 allocBuffers(VPvideo* v)
 {
 	int i;
 	int64 npx = (int64)v->out_w * v->out_h;
 	v->frame_bytes = npx * (int64)sizeof(GYpx); //rgb565: 2 字节/px
 	v->display_buf = (GYpx*)calloc((size_t)npx, sizeof(GYpx));
-	v->fillbuf     = (uint8*)malloc((size_t)v->frame_bytes);
-	if (v->display_buf == NULL || v->fillbuf == NULL) return 0;
+	if (v->display_buf == NULL) return 0;
 	for (i = 0; i < VP_RING; i++)
 	{
 		v->ring[i].px = (GYpx*)malloc((size_t)npx * sizeof(GYpx));
@@ -235,7 +233,6 @@ void vp_video_destroy(VPvideo* v)
 	closePipe(v);
 	freeRing(v);
 	if (v->display_buf) free(v->display_buf);
-	if (v->fillbuf)     free(v->fillbuf);
 	free(v);
 }
 
@@ -318,7 +315,7 @@ static int32 frameToMs(const VPvideo* v, int64 i)
 	return v->pipe_base_ms + (int32)(i * (int64)v->fps_den * 1000 / v->fps_num);
 }
 
-//把 fillbuf 里攒满的一整帧提交进环形缓冲(满则丢最旧——update 会追时钟,预读多的直接覆盖)
+//发布已填满的队列尾槽；未完成帧不参与按音频时钟选帧。
 static void pushFrame(VPvideo* v)
 {
 	int32 slot;
@@ -333,7 +330,6 @@ static void pushFrame(VPvideo* v)
 		slot = v->ring_head;
 		v->ring_head = (v->ring_head + 1) % VP_RING;
 	}
-	memcpy(v->ring[slot].px, v->fillbuf, (size_t)v->frame_bytes);
 	v->ring[slot].pts_ms = frameToMs(v, v->pipe_frame_i);
 	v->ring[slot].valid = 1;
 	v->pipe_frame_i++;
@@ -347,7 +343,8 @@ void vp_video_read_tick(VPvideo* v)
 	while (v->ring_count < VP_RING)
 	{
 		int64 need = v->frame_bytes - v->fill_bytes;
-		ssize_t n = read(v->fd, v->fillbuf + v->fill_bytes, (size_t)need);
+		int32 tail = (v->ring_head + v->ring_count) % VP_RING;
+		ssize_t n = read(v->fd, (uint8*)v->ring[tail].px + v->fill_bytes, (size_t)need);
 		if (n > 0)
 		{
 			v->fill_bytes += n;
@@ -443,16 +440,9 @@ void vp_video_seek_ms(VPvideo* v, int32 ms)
 	}
 	//REAL:清环形缓冲 + 以 -ss 重启管道
 	closePipe(v);
-	freeRing(v);
-	//freeRing 释放了 ring[].px,重新分配
-	{
-		int i; int64 npx = (int64)v->out_w * v->out_h;
-		for (i = 0; i < VP_RING; i++)
-		{
-			v->ring[i].px = (GYpx*)malloc((size_t)npx * sizeof(GYpx));
-			v->ring[i].valid = 0;
-		}
-	}
+	for (int i = 0; i < VP_RING; ++i)
+		v->ring[i].valid = 0;
+	v->ring_head = v->ring_count = 0;
 	startPipe(v, ms);
 }
 

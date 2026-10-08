@@ -19,3 +19,10 @@ ymgui_add_app(video_player
 target_compile_definitions(video_player PRIVATE
 	GB2312_BIN_PATH="${YMGUI_REPO_ROOT}/tools/gb2312_glyphs.bin"
 	VP_DEFAULT_VIDEO="${CMAKE_CURRENT_LIST_DIR}/卖瓜.mp4")
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    enable_testing()
+    add_executable(video_buffers_test tests/test_buffers.c)
+    target_link_libraries(video_buffers_test PRIVATE ymgui sdl_lcd)
+    add_test(NAME video_buffers COMMAND video_buffers_test)
+endif()

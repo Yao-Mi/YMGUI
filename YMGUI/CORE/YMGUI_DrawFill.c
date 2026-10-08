@@ -4,6 +4,7 @@
 #include "YMGUI_Debug.h"
 #include <string.h>
 volatile uint8 YMGUI_BlendOptimizeEnabled = 1;
+volatile uint8 YMGUI_BlackLutEnabled = 1;
 
 /**
  ***************************************************************************************************************************
@@ -21,6 +22,24 @@ volatile uint8 YMGUI_BlendOptimizeEnabled = 1;
  ***************************************************************************************************************************
  * Copyright (C), 2026-2036, YAOMI Tech. Co., Ltd.
  ***************************************************************************************************************************/
+
+#if YMGUI_COLOR_DEPTH == 16
+/* The scalar path caches runs of equal pixels. Uniform samples should retain
+ * that path; a missed nonuniform region merely forgoes lookup acceleration. */
+static int blackLookupVaried(const GYpx* pixels, const GYrect* a, const GYsurface* s)
+{
+	const GYpx* first = pixels + (int32)(a->y - s->buf_area.y) * s->stride + a->x - s->buf_area.x;
+	GYpx value = first[0];
+	unsigned samples = a->w < 8 ? (unsigned)a->w : 8u;
+	for (unsigned x = 1; x < samples; ++x)
+		if (first[x] != value)
+			return 1;
+	if (first[a->w / 2] != value || first[a->w - 1] != value)
+		return 1;
+	const GYpx* last = first + (int32)(a->h - 1) * s->stride;
+	return last[0] != value || last[a->w / 2] != value || last[a->w - 1] != value;
+}
+#endif
 
 /**
  * @brief 在表面填充矩形区域(带裁剪与混合)
@@ -69,6 +88,47 @@ void YMGUI_Draw_Fill(GYSURFACE s, const GYrect* area, GYcolor color, GYopa opa)
 			}
 			if (n)
 				memcpy(row, pixels, n * sizeof(GYpx));
+		}
+		return;
+	}
+#endif
+#if YMGUI_COLOR_DEPTH == 16 || YMGUI_COLOR_DEPTH == 24
+	/* Local tables keep different contexts/threads independent. Small fills
+	   retain the scalar path because table construction costs more than it saves. */
+	if (YMGUI_BlendOptimizeEnabled && YMGUI_BlackLutEnabled &&
+		(color & 0x00ffffffu) == 0 && opa != GY_OPA_COVER &&
+		(uint32)draw_area.w * draw_area.h >= 256u
+#if YMGUI_COLOR_DEPTH == 16
+		&& blackLookupVaried(bufp, &draw_area, s)
+#endif
+	)
+	{
+		uint32 inv = 255u - opa;
+#if YMGUI_COLOR_DEPTH == 16
+		uint8 rb[32], green[64];
+		for (unsigned i = 0; i < 32; ++i)
+			rb[i] = (uint8)(i * inv / 255u);
+		for (unsigned i = 0; i < 64; ++i)
+			green[i] = (uint8)(i * inv / 255u);
+#else
+		uint8 component[256];
+		for (unsigned i = 0; i < 256; ++i)
+			component[i] = (uint8)(i * inv / 255u);
+#endif
+		for (y = 0; y < draw_area.h; ++y)
+		{
+			GYpx* row = bufp + (int32)(draw_area.y + y - s->buf_area.y) * s->stride + draw_area.x - s->buf_area.x;
+			for (x = 0; x < draw_area.w; ++x)
+			{
+#if YMGUI_COLOR_DEPTH == 16
+				GYpx px = row[x];
+				row[x] = (GYpx)((rb[px >> 11] << 11) | (green[(px >> 5) & 63] << 5) | rb[px & 31]);
+#else
+				row[x].r = component[row[x].r];
+				row[x].g = component[row[x].g];
+				row[x].b = component[row[x].b];
+#endif
+			}
 		}
 		return;
 	}

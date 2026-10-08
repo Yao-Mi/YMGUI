@@ -679,3 +679,15 @@ Touch ID 是适配层分配的通用 ID，不是某个芯片的寄存器字段�
 | `YMGUI_TouchGesture.h` | `GY_TouchISqrt` 与 `GY_TouchDistance`；距离坐标差须在 signed16 范围。 |
 
 `project_Demo/phone_shell/phone_runtime.h` 属于共用 phone 应用接口：`Init(display,config)` 使用调用方显示和缓冲；`Step(ms)` 注入一次 Tick 后推进/刷新，`Pump()` 用已注入的 ctx.tick_elapsed；`Key(1/2,long_press)` 处理选择/点击/返回/桌面，`Context()` 读当前上下文，`Shutdown()` 注销输入并回收资源/恢复显示 flush，但不释放 display 或其 buffer。应用为单实例、单 UI 线程，并占用 HAL 当前 context 和 Touch listener；Shutdown 后不恢复之前其他应用的注入目标。资源后端先注册，外存安全所有权覆盖生命周期/输入/逻辑/刷新。构建和平台接入见 [跨平台移植](CROSS_PLATFORM_PORTING.md)。
+
+## 视频工程回流：少拷贝与遮罩
+
+黑色半透明矩形填充在RGB565/RGB888中自动使用局部分量表，支持任意opa并保持原混合舍入。表空间分别96/256字节，不申请堆或保留全局大表；裁剪后少于256像素保留原路径，RGB565均匀采样时保留重复像素缓存。`YMGUI_BlackLutEnabled`默认1，可关闭该路径作对照；`YMGUI_BlendOptimizeEnabled=0`关闭全部填充混合优化。诊断开关由同一UI线程设置。
+
+`YMGUI_Image_InvalidateContent(img)`用于源尺寸/布局/模式不变、只在原像素存储上更新内容：按NONE/FIT/FILL实际绘制范围并结合祖先可见性标脏，FIT黑边不重复发送。源几何、布局、背景或缩放模式改变时使用原setter/完整失效；无有效源时完整标脏。对象仍借用GYimg及像素，调用方保证它们在刷新期间有效且不被解码器覆盖。
+
+`YMGUI_StagedFlushAuto(bus,area,pixels,staging,capacity,accessible,send,user)`提供同步直发优先路径。accessible在GUI持有资源、非ISR时判断后端是否能发送整个紧凑源区域；接受时允许staging=NULL/capacity=0，并一次调用send；拒绝或回调NULL时保持原分块中转。send返回前必须完成或中止传输，包括错误，之后资源归还GUI。回调只表达后端能力，不依据固定地址，也不自动承诺异步零拷贝。
+
+播放器现在直接将部分读入积累到空闲队列尾槽，完整后发布；移除一份整帧缓冲和入队复制，保留稳定显示缓冲及音频主钟选帧，seek复用队列。解码器输出与GUI合成之间必要的拷贝仍保留。JPEG/FEDC表复用尚未回流：当前来源缺失解码依赖，不能重新验证；旧应用按钮缓存正常SetText失效不完整，未直接复制为通用缓存。
+
+效率验证入口为 [视频基准](../tools/benchmarks/README.md)。四步均有像素/数据一致性及时间、流量或内存对照，主机结果不能当作板上帧率。

@@ -7,7 +7,7 @@
 
 ## 当前版本
 
-2026-10-08 更新，库源码基线为 `c08fef4`，同时包含本次 SDK 配置与验证工具更新；精确源码摘要及构建状态见包内 `BUILD_INFO.json`。包括回流后的渲染与脏区修复、Arena、FontCache、Resource、Bus、StagedFlush、TextActions、完整 Touch 接口，以及 SDL 多点适配。提供 RGB565 / RGB888 核心和 SDL 静态库及匹配头文件。
+2026-10-08 更新，库源码基线为 `4b78c7a`，同时包含本轮视频回流优化；精确源码摘要及构建状态见包内 `BUILD_INFO.json`。包括回流后的渲染与脏区修复、Arena、FontCache、Resource、Bus、StagedFlush、TextActions、完整 Touch 接口，以及 SDL 多点适配；新增黑色遮罩分量查表、Image内容区域失效、StagedFlush同步直发能力判定。提供 RGB565 / RGB888 核心和 SDL 静态库及匹配头文件。
 
 固定配置为 `YMGUI_ANIM=1`、16位坐标、`GY_INV_MAX=16`、`GY_TOUCH_MAX=5`、`YMGUI_OCCLUSION=0`、`YMGUI_CLIPBOARD_DYNAMIC=0`、`YMGUI_RESOURCE_STDIO=1`。可选遮挡/动态剪贴板沿用通用库默认关闭配置；更改功能配置或平台时从源码重建，不能只改消费端宏。
 

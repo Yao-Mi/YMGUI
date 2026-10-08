@@ -64,10 +64,18 @@ static int in_isr(void* u)
 	(void)u;
 	return isr;
 }
+static const GYpx* direct_pixels;
+static int access_calls;
+static int accessible(const GYrect* a,const GYpx* p,void* u)
+{
+    (void)a;(void)u;assert(bus.owner==GY_BUS_GUI);++access_calls;
+    return p==direct_pixels;
+}
 static int send(const GYrect* a, const GYpx* p, int first, void* u)
 {
 	(void)u;
 	assert(bus.owner == GY_BUS_LCD);
+    if(direct_pixels) assert(p==direct_pixels);
 	assert(!YMGUI_Bus_Try(&bus, GY_BUS_WORKER));
 	assert(first == (chunks == 0));
 	memcpy(copied + (a->y - 2) * 3, p, a->w * a->h * sizeof(GYpx));
@@ -92,6 +100,20 @@ static void bus_test(void)
 	GYrect a = {1, 2, 3, 7};
 	assert(YMGUI_StagedFlush(&bus, &a, pixels, stage, 6, send, NULL));
 	assert(chunks == 4 && !memcmp(pixels, copied, sizeof(pixels)) && bus.owner == GY_BUS_GUI);
+    GYpx saved_stage[6];memcpy(saved_stage,stage,sizeof(stage));
+    chunks=0;direct_pixels=pixels;
+    assert(YMGUI_StagedFlushAuto(&bus,&a,pixels,NULL,0,accessible,send,NULL));
+    assert(chunks==1 && !memcmp(copied,pixels,sizeof(pixels)) && bus.owner==GY_BUS_GUI);
+    assert(!memcmp(saved_stage,stage,sizeof(stage)));
+    direct_pixels=NULL;chunks=0;
+    assert(YMGUI_StagedFlushAuto(&bus,&a,pixels,stage,6,accessible,send,NULL));
+    assert(chunks==4 && !memcmp(copied,pixels,sizeof(pixels)));
+    isr=1;int accesses=access_calls;
+    assert(!YMGUI_StagedFlushAuto(&bus,&a,pixels,NULL,0,accessible,send,NULL));
+    assert(access_calls==accesses);isr=0;
+    direct_pixels=pixels;chunks=0;fail_send=1;
+    assert(!YMGUI_StagedFlushAuto(&bus,&a,pixels,NULL,0,accessible,send,NULL));
+    assert(bus.owner==GY_BUS_GUI);direct_pixels=NULL;fail_send=0;
 	isr = 1;
 	GYpx preserved = stage[0];
 	assert(!YMGUI_StagedFlush(&bus, &a, pixels, stage, 6, send, NULL));

@@ -26,5 +26,8 @@ void  YMGUI_Image_SetSrc(GYOBJ img, GYIMG src);//设图片源(标脏)
 //设缩放模式(标脏)。默认 GY_IMG_NONE(居中原尺寸)
 void  YMGUI_Image_SetScaleMode(GYOBJ img, GYimg_scale_mode mode);
 GYimg_scale_mode YMGUI_Image_GetScaleMode(GYOBJ img);
+// Only pixels changed in place: invalidate the destination, preserving unchanged FIT bars.
+// Source geometry, mode, layout or background changes must use their setters/full invalidation.
+void YMGUI_Image_InvalidateContent(GYOBJ img);
 
 #endif // !YMGUI_IMAGE_H
