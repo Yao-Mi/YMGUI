@@ -5,7 +5,13 @@
 #include "phone_launcher.h"
 #include "phone_shade.h"
 #include "phone_desktop.h"
+#ifndef PHONE_PORTABLE_BUILD
 #include "SDL_LCD.h"
+#endif
+#include "phone_runtime.h"
+#include "YMGUI_TextActions.h"
+#include "phone_quick.h"
+#include "YMGUI_ScaleBilinear.h"
 
 #define HOME_PAGES PHONE_LAUNCHER_PAGE_COUNT(APP_COUNT)
 #define APP_OPEN_MS 330
@@ -24,12 +30,12 @@ static GYOBJ home_page, app_page, recent_page, boot_page, power_page;
 static GYOBJ app_views[APP_COUNT], app_splash, app_title;
 static GYOBJ boot_logo, boot_bar, power_bar, power_title, restart_button;
 static GYOBJ recent_cards[APP_COUNT], home_buttons[APP_COUNT];
-static GYOBJ recent_empty, recent_count, home_count;
+static GYOBJ recent_empty, recent_count;
 static int scene = BOOT, current_app = -1, busy = 0, clearing = 0, splash_elapsed = 0;
 static int phase_elapsed = 0, display_brightness = 100;
-static int theme_alt = 0, running[APP_COUNT] = {0}, failures = 0;
-static GYcoord card_home_y[APP_COUNT];
-static GYOBJ navigation, power_dialog, app_demo_dialog, dock_buttons[APP_COUNT];
+static int theme_alt = 0, running[APP_COUNT] = {0}, failures;
+
+static GYOBJ navigation, fixed_status, power_dialog, app_demo_dialog, dock_buttons[APP_COUNT];
 static GYOBJ mini_music_button, home_music_status;
 static GYpx* dim_buffer;
 static GYpx* capture_target;
@@ -38,11 +44,117 @@ static GYOBJ recent_viewport, home_strip, home_dots, home_dock;
 static int home_index = 0, home_start_x, home_start_y, home_origin, home_dragged, home_pressed_app = -1;
 static int drag_scroll, drag_axis;
 static int drag_x, drag_y, drag_dx, drag_dy, dragging, dismiss_id = -1;
-static GYcoord drag_origins[APP_COUNT];
+static GYcoord drag_origins[APP_COUNT], card_home_y[APP_COUNT];
 static GYcoord drag_origin_y;
+/* Per-app previews only; one full-size capture shared by the active app. */
+#define PREVIEW_W 120
+#define PREVIEW_H 168
+#ifndef PHONE_PREVIEW_BILINEAR
+#define PHONE_PREVIEW_BILINEAR 1
+#endif
 static GYpx* snapshots[APP_COUNT];
+static GYpx* snapshot_work;
+static int snapshot_owner = -1, snapshot_dirty;
+#if PHONE_PREVIEW_BILINEAR
+typedef struct
+{
+	GYScaleAxis x[PREVIEW_W], y[PREVIEW_H];
+} PhonePreviewPlan;
+#else
+typedef struct
+{
+	uint32 x[PREVIEW_W], y[PREVIEW_H];
+} PhonePreviewPlan;
+#endif
+static uint8 snapshot_valid[APP_COUNT];
+static PhonePreviewPlan* preview_plan;
+volatile uint32 phone_preview_stats[3]; /* commits, pixels, missing buffers */
+static void snapshot_commit(void)
+{
+	if (!snapshot_dirty || snapshot_owner < 0 || !snapshot_work)
+		return;
+	int id = snapshot_owner;
+	if (!snapshots[id])
+	{
+		++phone_preview_stats[2];
+		return;
+	}
+	if (!preview_plan)
+	{
+		preview_plan = (PhonePreviewPlan*)GY_malloc1(sizeof(*preview_plan));
+		if (preview_plan)
+		{
+#if PHONE_PREVIEW_BILINEAR
+			GY_ScaleAxisInit(preview_plan->x, W, PREVIEW_W, 1);
+			GY_ScaleAxisInit(preview_plan->y, 448, PREVIEW_H, W);
+#else
+			GY_ScaleNearestInit(preview_plan->x, W, PREVIEW_W, 1);
+			GY_ScaleNearestInit(preview_plan->y, 448, PREVIEW_H, W);
+#endif
+		}
+	}
+	for (int y = 0; y < PREVIEW_H; ++y)
+	{
+#if PHONE_PREVIEW_BILINEAR
+		GYScaleAxis row = preview_plan ? preview_plan->y[y] : GY_ScaleAxisAt(y, 448, PREVIEW_H, W);
+		for (int x = 0; x < PREVIEW_W; ++x)
+		{
+			GYScaleAxis col = preview_plan ? preview_plan->x[x] : GY_ScaleAxisAt(x, W, PREVIEW_W, 1);
+			snapshots[id][y * PREVIEW_W + x] = GY_ScaleBilinearPx(snapshot_work, &col, &row);
+		}
+#else
+		uint32 row = preview_plan ? preview_plan->y[y] : GY_ScaleNearestAt(y, 448, PREVIEW_H, W);
+		for (int x = 0; x < PREVIEW_W; ++x)
+		{
+			uint32 col = preview_plan ? preview_plan->x[x] : GY_ScaleNearestAt(x, W, PREVIEW_W, 1);
+			snapshots[id][y * PREVIEW_W + x] = snapshot_work[row + col];
+		}
+#endif
+	}
+	snapshot_valid[id] = 1;
+	snapshot_dirty = 0;
+	++phone_preview_stats[0];
+	phone_preview_stats[1] += PREVIEW_W * PREVIEW_H;
+}
+static void snapshot_release(int id)
+{
+	GY_free1(snapshots[id]);
+	snapshots[id] = NULL;
+	snapshot_valid[id] = 0;
+	if (snapshot_owner == id)
+	{
+		snapshot_owner = -1;
+		snapshot_dirty = 0;
+	}
+	for (int i = 0; i < APP_COUNT; ++i)
+		if (snapshots[i])
+			return;
+	GY_free1(snapshot_work);
+	snapshot_work = NULL;
+	GY_free1(preview_plan);
+	preview_plan = NULL;
+}
 static GYpx *test_frame, *test_reference;
 static void (*display_flush)(struct GYdisp*, const GYrect*, const GYpx*);
+
+static PhoneRuntimeConfig runtime_config;
+static GYDISP runtime_display;
+static void splash_draw_policy(void);
+static void phone_refresh(void)
+{
+	if (!ctx || !ctx->inv_cnt)
+		return;
+	if (app_splash)
+		splash_draw_policy();
+	if (runtime_config.transition)
+		runtime_config.transition(busy && (scene == APP || scene == HOME), runtime_config.user);
+	if (runtime_config.merge_transitions && busy && (scene == APP || scene == HOME))
+		YMGUI_Ctx_MergeDirtyAreas(ctx);
+	if (runtime_config.refresh)
+		runtime_config.refresh(ctx, runtime_config.user);
+	else
+		YMGUI_Refresh(ctx);
+}
 
 static void show_power_dialog(void);
 static void recent_layout(int animate);
@@ -105,9 +217,19 @@ static void splash_draw(GYOBJ obj, GYSURFACE surface, const GYrect* area)
 	PhoneUI_icon_draw(surface, PhoneApps_Get(id)->icon, tile.x + tile.w / 2, tile.y + tile.h / 2, PhoneApps_Get(id)->color);
 }
 
+/* The splash fills its clipped parent window before painting its icon. */
+volatile uint32 phone_splash_occlusion_enabled = 1;
+static void splash_draw_policy(void)
+{
+	if (phone_splash_occlusion_enabled)
+		app_splash->state |= GY_STATE_OpaqueRect;
+	else
+		app_splash->state &= ~GY_STATE_OpaqueRect;
+}
 
 
-static void wallpaper(GYOBJ obj, GYSURFACE surface, const GYrect* area)
+
+static void wallpaper_render(GYOBJ obj, GYSURFACE surface, const GYrect* area)
 {
 	(void)obj;
 	for (int yy = 0; yy < area->h; ++yy)
@@ -148,6 +270,50 @@ static void wallpaper(GYOBJ obj, GYSURFACE surface, const GYrect* area)
 
 
 
+/* Kept writable for an on-board comparison using the same firmware. */
+volatile uint32 phone_wallpaper_cache_enabled = 1;
+static GYpx* wallpaper_pixels;
+static int wallpaper_theme = -1;
+static void wallpaper(GYOBJ obj, GYSURFACE surface, const GYrect* area)
+{
+	GYrect hit;
+	if (!phone_wallpaper_cache_enabled || area->w != W || area->h != H)
+	{
+		wallpaper_render(obj, surface, area);
+		return;
+	}
+	if (!wallpaper_pixels)
+		wallpaper_pixels = (GYpx*)GY_malloc1(W * H * sizeof(GYpx));
+	if (!wallpaper_pixels)
+	{
+		wallpaper_render(obj, surface, area);
+		return;
+	}
+	if (wallpaper_theme != theme_alt)
+	{
+		GYrect full = {0, 0, W, H};
+		GYsurface cache = {wallpaper_pixels, full, full, W};
+		wallpaper_render(obj, &cache, &full);
+		wallpaper_theme = theme_alt;
+	}
+	if (!GY_Rect_Intersect(&hit, area, &surface->clip) ||
+		!GY_Rect_Intersect(&hit, &hit, &surface->buf_area))
+		return;
+	for (int y = hit.y; y < hit.y + hit.h; ++y)
+		memcpy((GYpx*)surface->buf + (y - surface->buf_area.y) * surface->stride + hit.x - surface->buf_area.x,
+			   wallpaper_pixels + (y - area->y) * W + hit.x - area->x, hit.w * sizeof(GYpx));
+}
+
+/* HOME and RECENTS share one stationary bar above their page animations. */
+static void fixed_status_draw(GYOBJ obj, GYSURFACE surface, const GYrect* area)
+{
+	GYsurface clipped = *surface;
+	GYrect full = {0, 0, W, H};
+	if (!GY_Rect_Intersect(&clipped.clip, area, &surface->clip))
+		return;
+	wallpaper(obj, &clipped, &full);
+}
+
 static void logo_draw(GYOBJ obj, GYSURFACE surface, const GYrect* area)
 {
 	(void)obj;
@@ -161,6 +327,8 @@ static void show_home(void)
 {
 	PhoneApps_Hide();
 	scene = HOME;
+	if (fixed_status)
+		YMGUI_Obj_SetHidden(fixed_status, 0);
 	busy = 0;
 	clearing = 0;
 	YMGUI_Obj_SetHidden(boot_page, 1);
@@ -183,12 +351,13 @@ static void begin_boot(void)
 	for (int i = 0; i < APP_COUNT; ++i)
 	{
 		running[i] = 0;
-		GY_free1(snapshots[i]);
-		snapshots[i] = NULL;
+		snapshot_release(i);
 	}
 	if (navigation)
 		YMGUI_Obj_SetHidden(navigation, 1);
 	scene = BOOT;
+	if (fixed_status)
+		YMGUI_Obj_SetHidden(fixed_status, 1);
 	phase_elapsed = 0;
 	busy = 0;
 	current_app = -1;
@@ -215,6 +384,7 @@ static void begin_shutdown(void)
 	PhoneDesktop_Close();
 	PhoneApps_CloseAll();
 	scene = SHUTDOWN;
+	YMGUI_Obj_SetHidden(fixed_status, 1);
 	phase_elapsed = 0;
 	busy = 0;
 	YMGUI_Obj_SetHidden(power_dialog, 1);
@@ -260,12 +430,21 @@ static void update_running(void)
 
 static void prepare_app(int id, int splash, const char* argument)
 {
+	snapshot_commit();
 	current_app = id;
 	running[id] = 1;
 	if (!snapshots[id])
-		snapshots[id] = (GYpx*)GY_malloc1(W * 448 * sizeof(GYpx));
-	if (snapshots[id])
-		memset(snapshots[id], 0, W * 448 * sizeof(GYpx));
+	{
+		snapshots[id] = (GYpx*)GY_malloc1(PREVIEW_W * PREVIEW_H * sizeof(GYpx));
+		if (snapshots[id])
+			memset(snapshots[id], 0, PREVIEW_W * PREVIEW_H * sizeof(GYpx));
+	}
+	if (!snapshot_work)
+		snapshot_work = (GYpx*)GY_malloc1(W * 448 * sizeof(GYpx));
+	snapshot_owner = snapshot_work ? id : -1;
+	snapshot_dirty = 0;
+	if (snapshot_work)
+		memset(snapshot_work, 0, W * 448 * sizeof(GYpx));
 	update_running();
 	PhoneApps_Show(id, argument);
 	PhoneUI_text_set(app_title, PhoneApps_Get(id)->title);
@@ -280,7 +459,8 @@ static int open_app_from(int id, const char* argument, GYOBJ source)
 	if (busy || id < 0 || id >= APP_COUNT || scene == BOOT || scene == OFF || scene == SHUTDOWN)
 		return 0;
 	int desktop_index = PhoneDesktop_Index(id);
-	if (desktop_index < 0) return 0;
+	if (desktop_index < 0)
+		return 0;
 	PhoneDesktop_Close();
 	PhoneShade_Close(0);
 	PhoneIME_Hide();
@@ -296,6 +476,7 @@ static int open_app_from(int id, const char* argument, GYOBJ source)
 	app_page->area.w = origin.w;
 	app_page->area.h = origin.h;
 	scene = APP;
+	YMGUI_Obj_SetHidden(fixed_status, 1);
 	busy = 1;
 	PhoneUI_move(app_page, 0, 0, APP_OPEN_MS);
 #if YMGUI_ANIM
@@ -335,8 +516,9 @@ static void open_recent(void)
 	if (scene == APP)
 	{
 		YMGUI_Obj_Invalidate(app_page);
-		YMGUI_Refresh(ctx);
+		phone_refresh();
 	}
+	snapshot_commit();
 	YMGUI_Obj_SetHidden(app_page, 1);
 	PhoneUI_set_pos(app_page, 0, H);
 	update_running();
@@ -345,6 +527,7 @@ static void open_recent(void)
 	PhoneUI_set_pos(recent_page, 0, H);
 	YMGUI_Obj_SetHidden(recent_page, 0);
 	scene = RECENTS;
+	YMGUI_Obj_SetHidden(fixed_status, 0);
 	busy = 1;
 	PhoneUI_move(recent_page, 0, 0, 280);
 #if !YMGUI_ANIM
@@ -361,10 +544,12 @@ static void go_home(void)
 	if (scene == APP)
 	{
 		YMGUI_Obj_Invalidate(app_page);
-		YMGUI_Refresh(ctx);
+		phone_refresh();
 	}
+	snapshot_commit();
 	GYOBJ leaving = scene == APP ? app_page : recent_page;
 	scene = HOME;
+	YMGUI_Obj_SetHidden(fixed_status, 0);
 	busy = 1;
 	phase_elapsed = 0;
 	if (leaving == app_page && current_app >= 0)
@@ -407,8 +592,7 @@ static void clear_recent(void)
 	for (int i = 0; i < APP_COUNT; ++i)
 	{
 		running[i] = 0;
-		GY_free1(snapshots[i]);
-		snapshots[i] = NULL;
+		snapshot_release(i);
 	}
 	current_app = -1;
 	update_running();
@@ -419,7 +603,7 @@ static void advance(uint32 elapsed)
 {
 	PhoneDesktop_Tick(elapsed);
 	PhoneShade_Update((scene == HOME || scene == APP || scene == RECENTS) && !busy && !PhoneDesktop_Busy() &&
-		(power_dialog->state & GY_STATE_Hidden) && !YMGUI_MsgBox_IsShown(app_demo_dialog));
+					  (power_dialog->state & GY_STATE_Hidden) && !YMGUI_MsgBox_IsShown(app_demo_dialog));
 	PhoneIME_Update(scene == APP && !busy && !PhoneShade_Visible() && (power_dialog->state & GY_STATE_Hidden));
 	if (elapsed > 100)
 		elapsed = 100;
@@ -481,8 +665,7 @@ static void advance(uint32 elapsed)
 			for (int i = 0; i < APP_COUNT; ++i)
 			{
 				running[i] = 0;
-				GY_free1(snapshots[i]);
-				snapshots[i] = NULL;
+				snapshot_release(i);
 			}
 			current_app = -1;
 			update_running();
@@ -495,8 +678,7 @@ static void advance(uint32 elapsed)
 		if (recent_cards[dismiss_id]->area.x <= -156 || recent_cards[dismiss_id]->area.x >= W)
 		{
 			running[dismiss_id] = 0;
-			GY_free1(snapshots[dismiss_id]);
-			snapshots[dismiss_id] = NULL;
+			snapshot_release(dismiss_id);
 			dismiss_id = -1;
 			busy = 0;
 			update_running();
@@ -520,8 +702,10 @@ static void on_app_icon(GYOBJ btn)
 static void on_home(GYOBJ btn)
 {
 	(void)btn;
-	if (PhoneDesktop_Close()) return;
-	if (PhoneShade_Close(1)) return;
+	if (PhoneDesktop_Close())
+		return;
+	if (PhoneShade_Close(1))
+		return;
 	if (scene == HOME && !busy)
 		home_select(0, 1);
 	else
@@ -549,8 +733,7 @@ static void on_restart(GYOBJ btn)
 
 
 
-/* 在显示回调中保存 App 的真实最终帧，缩略卡片不另造一套假 UI。
- * 每个打开的 App 按需占用 320x448 个 native 像素；清理/退出释放。 */
+/* One shared active frame; per-app previews are committed before leaving. */
 static void phone_flush(struct GYdisp* disp, const GYrect* a, const GYpx* pixels)
 {
 	if (capture_target)
@@ -559,8 +742,9 @@ static void phone_flush(struct GYdisp* disp, const GYrect* a, const GYpx* pixels
 	if (test_frame)
 		for (int y = 0; y < a->h; ++y)
 			memcpy(test_frame + (a->y + y) * W + a->x, pixels + y * a->w, a->w * sizeof(GYpx));
-	if (scene == APP && !busy && !PhoneShade_Visible() && current_app >= 0 && snapshots[current_app])
+	if (scene == APP && !busy && !PhoneShade_Visible() && current_app >= 0 && snapshot_owner == current_app && snapshot_work)
 	{
+		snapshot_dirty = 1;
 		for (int y = a->y; y < a->y + a->h && y < 448; ++y)
 		{
 			if (y < 0)
@@ -568,7 +752,7 @@ static void phone_flush(struct GYdisp* disp, const GYrect* a, const GYpx* pixels
 			int left = a->x < 0 ? 0 : a->x;
 			int right = a->x + a->w > W ? W : a->x + a->w;
 			if (right > left)
-				memcpy(snapshots[current_app] + y * W + left,
+				memcpy(snapshot_work + y * W + left,
 					   pixels + (y - a->y) * a->w + left - a->x,
 					   (right - left) * sizeof(GYpx));
 		}
@@ -596,7 +780,7 @@ static void on_mini_music(GYOBJ obj)
 static void recent_draw(GYOBJ obj, GYSURFACE s, const GYrect* a)
 {
 	int id = (int)(intptr_t)obj->user_data;
-	/* 阴影必须位于对象失效矩形内，否则局部刷新会留下边缘残影。 */
+	/* Keep all card drawing within its invalidation rectangle. */
 	GYsurface clipped = *s;
 	int x0 = a->x > s->clip.x ? a->x : s->clip.x;
 	int y0 = a->y > s->clip.y ? a->y : s->clip.y;
@@ -606,39 +790,22 @@ static void recent_draw(GYOBJ obj, GYSURFACE s, const GYrect* a)
 		return;
 	clipped.clip = (GYrect){x0, y0, x1 - x0, y1 - y0};
 	s = &clipped;
-	GYrect shadow = {a->x - 2, a->y + 4, a->w + 4, a->h + 2};
-	PhoneUI_rounded(s, &shadow, RGB(9, 15, 34), 17, 65);
+	/* An outside shadow clipped to this rectangle leaves square lower corners.
+	 * Leave the rounded corners transparent to the freshly drawn wallpaper. */
 	PhoneUI_rounded(s, a, WHITE, 14, GY_OPA_COVER);
 	YMGUI_Draw_CircleFill(s, a->x + 19, a->y + 15, 6, PhoneApps_Get(id)->color);
 	PhoneUI_draw_text(s, PhoneApps_Get(id)->title, INK, 2, a->x + 33 + PhoneUI_text_width(PhoneApps_Get(id)->title, 2) / 2, a->y + 6);
 	PhoneUI_draw_text(s, "x", MUTED, 0, a->x + a->w - 18, a->y + 2);
-	if (snapshots[id])
+	if (snapshots[id] && snapshot_valid[id])
 	{
 		GYrect target = {a->x + 8, a->y + 30, 120, 168};
-		/* 双线性缩小真实快照，避免小字被最近邻采样丢成虚线。 */
-		int x0 = target.x > s->clip.x ? target.x : s->clip.x;
-		int y0 = target.y > s->clip.y ? target.y : s->clip.y;
-		int x1 = target.x + target.w < s->clip.x + s->clip.w ? target.x + target.w : s->clip.x + s->clip.w;
-		int y1 = target.y + target.h < s->clip.y + s->clip.h ? target.y + target.h : s->clip.y + s->clip.h;
-		for (int y = y0; y < y1; ++y)
-			for (int x = x0; x < x1; ++x)
-			{
-				int sx = ((x - target.x) * 256 + 128) * W / target.w - 128;
-				int sy = ((y - target.y) * 256 + 128) * 448 / target.h - 128;
-				int ix = sx / 256, iy = sy / 256, fx = sx & 255, fy = sy & 255;
-				int nx = ix + 1 < W ? ix + 1 : ix, ny = iy + 1 < 448 ? iy + 1 : iy;
-				GYcolor colors[4] = {GY_PxToColor(snapshots[id][iy * W + ix]), GY_PxToColor(snapshots[id][iy * W + nx]),
-									 GY_PxToColor(snapshots[id][ny * W + ix]), GY_PxToColor(snapshots[id][ny * W + nx])};
-				int weights[4] = {(256 - fx) * (256 - fy), fx * (256 - fy), (256 - fx) * fy, fx * fy};
-				int r = 0, g = 0, b = 0;
-				for (int k = 0; k < 4; ++k)
-				{
-					r += GY_COLOR_R(colors[k]) * weights[k];
-					g += GY_COLOR_G(colors[k]) * weights[k];
-					b += GY_COLOR_B(colors[k]) * weights[k];
-				}
-				GY_PutPx(s, x, y, GY_ColorToPx(RGB(r >> 16, g >> 16, b >> 16)));
-			}
+		/* Preview is scaled once when the app leaves; animation only copies pixels. */
+		GYrect hit;
+		if (GY_Rect_Intersect(&hit, &target, &s->clip) && GY_Rect_Intersect(&hit, &hit, &s->buf_area))
+			for (int y = hit.y; y < hit.y + hit.h; ++y)
+				memcpy(s->buf + (y - s->buf_area.y) * s->stride + hit.x - s->buf_area.x,
+					   snapshots[id] + (y - target.y) * PREVIEW_W + hit.x - target.x,
+					   hit.w * sizeof(GYpx));
 	}
 	else
 	{
@@ -668,6 +835,7 @@ static void recent_layout(int animate)
 		int x = 16 + (i % 2) * 152;
 		int y = 4 + (i / 2) * 222 - recent_scroll;
 		card_home_y[recent_ids[i]] = y;
+
 		if (animate)
 			PhoneUI_move(card, x, y, 240);
 		else
@@ -685,8 +853,7 @@ static void dismiss_recent(int id)
 	PhoneUI_move(recent_cards[id], drag_dx < 0 ? -160 : W + 8, recent_cards[id]->area.y, 260);
 #else
 	running[id] = 0;
-	GY_free1(snapshots[id]);
-	snapshots[id] = NULL;
+	snapshot_release(id);
 	update_running();
 #endif
 }
@@ -791,8 +958,10 @@ static void show_power_dialog(void)
 static void on_back(GYOBJ obj)
 {
 	(void)obj;
-	if (PhoneDesktop_Close()) return;
-	if (PhoneShade_Close(1)) return;
+	if (PhoneDesktop_Close())
+		return;
+	if (PhoneShade_Close(1))
+		return;
 	if (PhoneIME_Hide())
 		return;
 	if (YMGUI_MsgBox_IsShown(app_demo_dialog))
@@ -816,6 +985,11 @@ static void nav_event(GYOBJ obj, GYEvent event)
 }
 static void build_navigation(void)
 {
+	fixed_status = YMGUI_Creat_Obj_Creat(ctx->top_layer, 0, 0, W, 28);
+	fixed_status->draw_cb = fixed_status_draw;
+	fixed_status->state |= GY_STATE_ClipChildren | GY_STATE_OpaqueRect;
+	status_bar(fixed_status);
+	YMGUI_Obj_SetHidden(fixed_status, 1);
 	navigation = YMGUI_Creat_Obj_Creat(ctx->top_layer, 0, 448, W, 32);
 	YMGUI_Obj_SetBgColor(navigation, RGB(28, 32, 49));
 	GYOBJ back = PhoneUI_button(navigation, 34, 0, 60, 32, "", on_back, 0);
@@ -875,7 +1049,8 @@ static void home_event(GYOBJ obj, GYEvent event)
 		PhoneDesktop_Context(event);
 		return;
 	}
-	if (PhoneDesktop_Busy()) return;
+	if (PhoneDesktop_Busy())
+		return;
 	if (event == GY_EVENT_Pressed)
 	{
 #if YMGUI_ANIM
@@ -888,7 +1063,8 @@ static void home_event(GYOBJ obj, GYEvent event)
 		home_pressed_app = -1;
 		for (int i = 0; i < APP_COUNT; ++i)
 		{
-			if (PhoneDesktop_Index(i) < 0) continue;
+			if (PhoneDesktop_Index(i) < 0)
+				continue;
 			GYrect a;
 			YMGUI_Obj_GetAbsArea(home_buttons[i], &a);
 			if (ctx->point_x >= a.x - 5 && ctx->point_x < a.x + a.w + 5 &&
@@ -963,16 +1139,17 @@ static void dots_event(GYOBJ obj, GYEvent event)
 static void desktop_removed(int id)
 {
 	running[id] = 0;
-	GY_free1(snapshots[id]);
-	snapshots[id] = NULL;
-	if (current_app == id) current_app = -1;
+	snapshot_release(id);
+	if (current_app == id)
+		current_app = -1;
 	update_running();
 }
 static void build_home(void)
 {
 	home_page = YMGUI_Creat_Obj_Creat(ctx->root, 0, 0, W, H);
 	home_page->draw_cb = wallpaper;
-	status_bar(home_page);
+	home_page->state |= GY_STATE_OpaqueRect;
+	/* Status bar is shared with RECENTS in the stationary top layer. */
 	GYOBJ viewport = YMGUI_Creat_Obj_Creat(home_page, 0, 28, W, 408);
 	viewport->state |= GY_STATE_ClipChildren;
 	viewport->draw_cb = NULL;
@@ -989,12 +1166,13 @@ static void build_home(void)
 	GYOBJ widget = PhoneUI_panel(pages[0], 22, 123, 276, 79, RGB(68, 71, 110));
 	widget->draw_cb = PhoneUI_glass_draw;
 	PhoneUI_left_label(widget, 16, 11, 170, "给生活留一点空白", WHITE, 0);
-	home_count = PhoneUI_left_label(widget, 16, 40, 178, "多云 / 22 C", RGB(224, 224, 240), 2);
+	PhoneUI_left_label(widget, 16, 40, 178, "多云 / 22 C", RGB(224, 224, 240), 2);
 	GYOBJ weather = YMGUI_Creat_Obj_Creat(widget, 210, 12, 52, 52);
 	weather->draw_cb = PhoneUI_weather_draw;
 
 	PhoneDesktop_Init(ctx, home_strip, home_buttons, &home_index, home_select, desktop_removed);
-	for (int i = 0; i < APP_COUNT; ++i) dock_buttons[i] = home_buttons[i];
+	for (int i = 0; i < APP_COUNT; ++i)
+		dock_buttons[i] = home_buttons[i];
 	GYOBJ touch = YMGUI_Creat_Obj_Creat(home_page, 0, 28, W, 408);
 	touch->draw_cb = NULL;
 	touch->event_cb = home_event;
@@ -1032,6 +1210,7 @@ static void build_app_views(void)
 
 	app_splash = YMGUI_Creat_Obj_Creat(app_page, 0, 0, W, H);
 	app_splash->draw_cb = splash_draw;
+	app_splash->state |= GY_STATE_OpaqueRect;
 	YMGUI_Obj_SetHidden(app_page, 1);
 }
 
@@ -1039,8 +1218,9 @@ static void build_recent(void)
 {
 	recent_page = YMGUI_Creat_Obj_Creat(ctx->root, 0, H, W, H);
 	recent_page->draw_cb = wallpaper;
+	recent_page->state |= GY_STATE_OpaqueRect;
 	recent_page->state |= GY_STATE_ClipChildren;
-	status_bar(recent_page);
+	/* No moving status-bar copy inside this animated page. */
 	PhoneUI_left_label(recent_page, 22, 31, 260, "最近应用", WHITE, 3);
 	recent_count = PhoneUI_left_label(recent_page, 24, 66, 264, "", RGB(217, 221, 239), 2);
 	recent_viewport = YMGUI_Creat_Obj_Creat(recent_page, 0, 86, W, 312);
@@ -1085,7 +1265,7 @@ static void build_boot_power(void)
 	YMGUI_Obj_SetHidden(power_page, 1);
 }
 
-static void build_ui(void)
+static int build_ui(void)
 {
 	YMGUI_Obj_SetBgColor(ctx->root, RGB(9, 23, 40));
 	build_home();
@@ -1093,7 +1273,8 @@ static void build_ui(void)
 	build_recent();
 	build_boot_power();
 	build_navigation();
-	PhoneIME_Init(ctx);
+	if (!PhoneIME_Init(ctx))
+		return 0;
 	PhoneShade_Init(ctx);
 	PhoneDesktop_BuildOverlay();
 	/* 模态最后创建，盖住导航与键盘；不能让底层按钮穿透。 */
@@ -1101,6 +1282,7 @@ static void build_ui(void)
 	YMGUI_MsgBox_SetColors(app_demo_dialog, GY_ARGB(140, 15, 20, 35), WHITE, RGB(215, 219, 231), INK, MUTED);
 	update_running();
 	begin_boot();
+	return 1;
 }
 
 
@@ -1108,6 +1290,8 @@ void PhoneHost_SetTheme(int alternate)
 {
 	theme_alt = !!alternate;
 	YMGUI_Obj_Invalidate(home_page);
+	if (fixed_status)
+		YMGUI_Obj_Invalidate(fixed_status);
 }
 void PhoneHost_SetBrightness(int value)
 {
@@ -1117,19 +1301,25 @@ void PhoneHost_SetBrightness(int value)
 	PhoneShade_Sync();
 	PhoneApps_Command(SETTINGS, "sync", NULL);
 }
-int PhoneHost_GetBrightness(void) { return display_brightness; }
+int PhoneHost_GetBrightness(void)
+{
+	return display_brightness;
+}
 void PhoneHost_SetWifi(int on)
 {
 	PhoneShade_SetWifi(on);
 	PhoneApps_Command(SETTINGS, "sync", NULL);
 }
-int PhoneHost_GetWifi(void) { return PhoneShade_GetWifi(); }
+int PhoneHost_GetWifi(void)
+{
+	return PhoneShade_GetWifi();
+}
 void PhoneHost_Capture(GYpx* pixels)
 {
 	capture_target = pixels;
 	YMGUI_Obj_Invalidate(ctx->root);
 	YMGUI_Obj_Invalidate(ctx->top_layer);
-	YMGUI_Refresh(ctx);
+	phone_refresh();
 	capture_target = NULL;
 }
 void PhoneHost_MusicChanged(int playing)
@@ -1150,8 +1340,7 @@ void PhoneHost_Close(void)
 	int id = current_app;
 	go_home();
 	running[id] = 0;
-	GY_free1(snapshots[id]);
-	snapshots[id] = NULL;
+	snapshot_release(id);
 	current_app = -1;
 	update_running();
 }
@@ -1174,6 +1363,260 @@ void PhoneHost_Notice(const char* title, const char* message)
 	YMGUI_MsgBox_Show(app_demo_dialog);
 }
 
+/* Board key navigation: short KEY1 selects, short KEY2 clicks;
+   long KEY1 is Back, long KEY2 is Home. */
+static int key_app = -1, key_control = -1, key_recent = -1, focus_count;
+
+
+static GYpoint focus_points[96];
+static GYOBJ focus_objects[96], key_focus;
+static void collect_controls(GYOBJ obj, int x, int y)
+{
+	if (!obj || (obj->state & GY_STATE_Hidden))
+		return;
+	x += obj->area.x;
+	y += obj->area.y;
+	if (obj->event_cb && (!PhoneIME_Visible() || PhoneIME_IsKey(obj)) && obj->area.w > 0 && obj->area.h > 0 && focus_count < 96)
+	{
+		int cx = x + obj->area.w / 2, cy = y + obj->area.h / 2;
+		if (cx >= 0 && cx < W && cy >= 28 && cy < H)
+		{
+			focus_objects[focus_count] = obj;
+			focus_points[focus_count].x = cx;
+			focus_points[focus_count++].y = cy;
+		}
+	}
+	for (GYOBJ child = obj->child_head; child; child = child->sibling)
+		collect_controls(child, x - obj->scroll_x, y - obj->scroll_y);
+}
+static void phone_cursor(int x, int y)
+{
+	if (runtime_config.cursor)
+		runtime_config.cursor(x, y, runtime_config.user);
+}
+static void board_cursor_refresh(void)
+{
+	YMGUI_Obj_Invalidate(ctx->root);
+	YMGUI_Obj_Invalidate(ctx->top_layer);
+}
+void PhoneShell_Key(int key, int long_press)
+{
+	if (!ctx || busy || scene == BOOT || (key != 1 && key != 2))
+		return;
+	if (long_press)
+	{
+		if (key == 1)
+			on_back(NULL);
+		else
+			on_home(NULL);
+		key_control = -1;
+		key_focus = NULL;
+		phone_cursor(-1, -1);
+		board_cursor_refresh();
+		return;
+	}
+	if (scene == RECENTS && !PhoneShade_Visible())
+	{
+		if (key == 1 || key_recent < 0)
+			key_recent = (key_recent + 1) % (recent_total + 1);
+		if (key_recent >= recent_total)
+		{
+			phone_cursor(160, 424);
+			board_cursor_refresh();
+			if (key == 2)
+				on_clear(NULL);
+		}
+		else
+		{
+			recent_scroll = (key_recent / 2) * 222;
+			recent_layout(0);
+			GYrect a;
+			YMGUI_Obj_GetAbsArea(recent_cards[recent_ids[key_recent]], &a);
+			phone_cursor(a.x + a.w / 2, a.y + a.h / 2);
+			board_cursor_refresh();
+			if (key == 2)
+			{
+				phone_cursor(-1, -1);
+				PhoneHost_Open(recent_ids[key_recent], NULL);
+			}
+		}
+		return;
+	}
+	if (scene == HOME && !PhoneShade_Visible())
+	{
+		if (key == 1)
+		{
+			key_app = (key_app + 1) % (APP_COUNT + 1);
+			if (key_app == APP_COUNT)
+				phone_cursor(256, 464);
+			else
+			{
+				PhoneLauncherSlot slot;
+				PhoneLauncher_Place(PhoneDesktop_Index(key_app), APP_COUNT, &slot);
+				home_select(slot.page, 0);
+				phone_cursor(slot.x + 24, slot.y + 28 + 24);
+			}
+			board_cursor_refresh();
+		}
+		else
+		{
+			if (key_app < 0)
+				key_app = 0;
+			phone_cursor(-1, -1);
+			key_control = -1;
+			key_focus = NULL;
+			if (key_app == APP_COUNT)
+				on_recent(NULL);
+			else
+				PhoneHost_Open(key_app, NULL);
+		}
+	}
+	else
+	{
+		focus_count = 0;
+		if (PhoneIME_Visible())
+			collect_controls(PhoneIME_Keyboard(), 0, 0);
+		else if (YMGUI_MsgBox_IsShown(app_demo_dialog) || !(power_dialog->state & GY_STATE_Hidden))
+			collect_controls(ctx->top_layer, 0, 0);
+		else
+		{
+			collect_controls(ctx->root, 0, 0);
+			collect_controls(ctx->top_layer, 0, 0);
+		}
+		if (!focus_count)
+			return;
+		key_control = -1;
+		for (int i = 0; i < focus_count; ++i)
+			if (focus_objects[i] == key_focus)
+			{
+				key_control = i;
+				break;
+			}
+		if (key == 1 || key_control < 0)
+			key_control = (key_control + 1) % focus_count;
+		if (key_control >= focus_count)
+			key_control = 0;
+		key_focus = focus_objects[key_control];
+		int x = focus_points[key_control].x, y = focus_points[key_control].y;
+		phone_cursor(x, y);
+		board_cursor_refresh();
+		if (key == 2)
+		{
+			YMGUI_Inject_Pointer(x, y, 1);
+			YMGUI_Inject_Pointer(x, y, 0);
+		}
+	}
+}
+static void phone_touch_frame(const GYtouchpoint* points, uint8 count, void* user)
+{
+	(void)user;
+	if (scene == APP && !busy && !PhoneShade_Visible() && !PhoneIME_Visible() &&
+		(power_dialog->state & GY_STATE_Hidden) && !YMGUI_MsgBox_IsShown(app_demo_dialog))
+		PhoneApps_Touch(points, count);
+	else
+		PhoneApps_Touch(NULL, 0);
+}
+int PhoneShell_Init(GYDISP display, const PhoneRuntimeConfig* config)
+{
+	if (ctx || !display || !display->buf1 || !display->flush_cb ||
+		display->hor_res != W || display->ver_res != H || display->buf_px_cnt < W)
+		return 0;
+	memset(&runtime_config, 0, sizeof(runtime_config));
+	if (config)
+		runtime_config = *config;
+	runtime_display = display;
+	dim_buffer = GY_malloc1(display->buf_px_cnt * sizeof(GYpx));
+	if (!dim_buffer)
+	{
+		runtime_display = NULL;
+		return 0;
+	}
+	display_flush = display->flush_cb;
+	display->flush_cb = phone_flush;
+	ctx = YMGUI_Creat_Ctx_Creat(display, W, H);
+	if (!ctx || !PhoneApps_Validate())
+	{
+		PhoneShell_Shutdown();
+		return 0;
+	}
+	key_app = key_control = key_recent = -1;
+	key_focus = NULL;
+	focus_count = 0;
+	scene = BOOT;
+	current_app = -1;
+	busy = clearing = splash_elapsed = phase_elapsed = 0;
+	display_brightness = 100;
+	theme_alt = 0;
+	recent_scroll = recent_total = home_index = 0;
+	home_dragged = dragging = drag_axis = 0;
+	dismiss_id = home_pressed_app = -1;
+	memset(running, 0, sizeof(running));
+	PhoneLocale_Init();
+	YMGUI_Inject_SetCtx(ctx);
+	if (!PhoneQuick_RegisterDefaults())
+	{
+		PhoneShell_Shutdown();
+		return 0;
+	}
+	if (!build_ui())
+	{
+		PhoneShell_Shutdown();
+		return 0;
+	}
+	YMGUI_Inject_SetTouchListener(phone_touch_frame, NULL);
+	return 1;
+}
+void PhoneShell_Step(uint32 elapsed_ms)
+{
+	if (!ctx)
+		return;
+	ctx->tick_elapsed = elapsed_ms;
+	YMGUI_Inject_Tick(elapsed_ms);
+	PhoneShell_Pump();
+}
+void PhoneShell_Pump(void)
+{
+	if (!ctx)
+		return;
+	advance(ctx->tick_elapsed);
+	ctx->tick_elapsed = 0;
+	YMGUI_TextActions_Update(ctx, PhoneIME_Visible() ? 226 : 448, scene == APP && !busy && !PhoneShade_Visible() && (power_dialog->state & GY_STATE_Hidden) && !YMGUI_MsgBox_IsShown(app_demo_dialog));
+	phone_refresh();
+}
+GYCTX PhoneShell_Context(void)
+{
+	return ctx;
+}
+void PhoneShell_Shutdown(void)
+{
+	if (ctx)
+	{
+		YMGUI_Inject_SetTouchListener(NULL, NULL);
+		YMGUI_Inject_SetCtx(NULL);
+		PhoneShade_Shutdown();
+		PhoneApps_Destroy();
+		PhoneIME_Shutdown();
+		PhoneLocale_Shutdown();
+		YMGUI_Free_CtxFree(ctx);
+		ctx = NULL;
+	}
+	for (int i = 0; i < APP_COUNT; ++i)
+		snapshot_release(i);
+	GY_free1(wallpaper_pixels);
+	wallpaper_pixels = NULL;
+	wallpaper_theme = -1;
+	GY_free1(dim_buffer);
+	dim_buffer = NULL;
+	if (runtime_display)
+		runtime_display->flush_cb = display_flush;
+	runtime_display = NULL;
+	display_flush = NULL;
+	capture_target = NULL;
+	navigation = fixed_status = power_dialog = app_demo_dialog = mini_music_button = home_music_status = NULL;
+}
+
+
+#ifndef PHONE_PORTABLE_BUILD
 #include "phone_selftest.inc"
 
 static void select_preview(const char* arg)
@@ -1182,8 +1625,9 @@ static void select_preview(const char* arg)
 	{
 		show_home();
 		step_time(400);
-		YMGUI_Inject_ContextBegin(48,289);
-		if (!strcmp(arg, "--home-drag")) YMGUI_Inject_ContextMove(121,292);
+		YMGUI_Inject_ContextBegin(48, 289);
+		if (!strcmp(arg, "--home-drag"))
+			YMGUI_Inject_ContextMove(121, 292);
 		return;
 	}
 	if (!strcmp(arg, "--shade") || !strcmp(arg, "--screenshot") || !strncmp(arg, "--shade-clear-", 14))
@@ -1192,7 +1636,11 @@ static void select_preview(const char* arg)
 		step_time(400);
 		PhoneShade_Open();
 		step_time(260);
-		if (!strcmp(arg, "--screenshot")) { click_at(200, 185); step_time(260); }
+		if (!strcmp(arg, "--screenshot"))
+		{
+			click_at(200, 185);
+			step_time(260);
+		}
 		if (!strncmp(arg, "--shade-clear-", 14))
 		{
 			click_at(270, 282);
@@ -1237,7 +1685,11 @@ static void select_preview(const char* arg)
 		PhoneApps_Command(NOTES, "set-body", "你好，Yaomi。\n记录今天的小想法。");
 		click_at(75, 188);
 		step_time(220);
-		if (!strcmp(arg, "--symbols")) { click_at(25, 421); return; }
+		if (!strcmp(arg, "--symbols"))
+		{
+			click_at(25, 421);
+			return;
+		}
 		if (!strcmp(arg, "--ime-idle"))
 			return;
 		const char* py = "nihao";
@@ -1285,7 +1737,7 @@ static void select_preview(const char* arg)
 			PhoneUI_set_pos(app_page, 0, 0);
 			scene = APP;
 			YMGUI_Obj_Invalidate(ctx->root);
-			YMGUI_Refresh(ctx);
+			phone_refresh();
 		}
 		PhoneApps_Hide();
 		YMGUI_Obj_SetHidden(app_page, 1);
@@ -1333,34 +1785,18 @@ int main(int argc, char** argv)
 	disp.ver_res = H;
 	disp.buf_px_cnt = W * 48;
 	disp.buf1 = (GYpx*)GY_malloc1(disp.buf_px_cnt * sizeof(GYpx));
-	dim_buffer = (GYpx*)GY_malloc1(disp.buf_px_cnt * sizeof(GYpx));
-	if (!disp.buf1 || !dim_buffer || SDL_LCD_Init(&disp, 1) != 0)
-	{
-		failures = 1;
-		goto done;
-	}
-	display_flush = disp.flush_cb;
-	disp.flush_cb = phone_flush;
-	SDL_LCD_SetTitle("Yaomi Phone - YMGUI");
-	ctx = YMGUI_Creat_Ctx_Creat(&disp, W, H);
-	if (!ctx)
-	{
-		failures = 1;
-		goto done;
-	}
-	if (!PhoneApps_Validate())
-	{
-		failures = 1;
-		goto done;
-	}
-	PhoneLocale_Init();
-	YMGUI_Inject_SetCtx(ctx);
-	if (!PhoneQuick_RegisterDefaults()) { failures = 1; goto done; }
 	if (test)
 	{
-		if (!PhoneQuick_Register(&quick_probe)) ++failures;
+		PhoneQuick_RegisterDefaults();
+		if (!PhoneQuick_Register(&quick_probe))
+			++failures;
 	}
-	build_ui();
+	if (!disp.buf1 || SDL_LCD_Init(&disp, 1) != 0 || !PhoneShell_Init(&disp, NULL))
+	{
+		failures = 1;
+		goto done;
+	}
+	SDL_LCD_SetTitle("Yaomi Phone - YMGUI");
 	if (test)
 		selftest();
 	else if (preview)
@@ -1371,23 +1807,16 @@ int main(int argc, char** argv)
 	{
 		if (!test && !preview && !getenv("YMGUI_SHOT"))
 			advance(ctx->tick_elapsed);
-		YMGUI_Refresh(ctx);
+		phone_refresh();
 		SDL_LCD_Delay(16);
 		if (max_frames > 0 && ++frame >= max_frames)
 			break;
 	}
 done:
-	PhoneShade_Shutdown();
-	PhoneApps_Destroy();
-	PhoneIME_Shutdown();
-	PhoneLocale_Shutdown();
-	YMGUI_Inject_SetCtx(NULL);
-	if (ctx)
-		YMGUI_Free_CtxFree(ctx);
-	for (int i = 0; i < APP_COUNT; ++i)
-		GY_free1(snapshots[i]);
+	PhoneShell_Shutdown();
 	SDL_LCD_Destroy();
 	GY_free1(disp.buf1);
-	GY_free1(dim_buffer);
 	return failures ? 1 : 0;
 }
+
+#endif

@@ -4,8 +4,9 @@
 #include "YMGUI_PubType.h"
 
 //内存双档制(对标 YMCV CV_malloc0/1),移植时只改本文件 .c 的函数体,签名不动
-//  malloc0 = 小/快(高速内存 CCM/TCM):对象头、样式、事件、脏矩形表、字形表、渐变LUT
-//  malloc1 = 大/慢(低速大内存 SDRAM/PSRAM):draw buffer、framebuffer、解码图、字形位图
+//  区域由平台映射，PC 可共用 malloc 或绑定不同内存池；不限定任何芯片/物理地址。
+//  malloc0 = 小/快(平台选定的快速内存):对象头、样式、事件、脏矩形表、字形表、渐变LUT
+//  malloc1 = 大/慢(平台选定的大容量内存):draw buffer、framebuffer、解码图、字形位图
 //重要:后缀 0/1 表示内存区域,不表示是否清零。两种申请都返回未初始化内存,
 //     调用方必须显式初始化全部字段(结构体通常先 GY_memset(ptr, 0, sizeof(*ptr)))。
 void* GY_malloc0(size_t size);            //小数据缓冲区申请(高速区)

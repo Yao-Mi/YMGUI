@@ -33,7 +33,7 @@ SDL finger 事件的坐标是 `[0, 1]` 归一化浮点数。`SDL_LCD` 将其转�
 - `SDL_FINGERMOTION`
 - `SDL_FINGERUP`
 
-YMGUI 当前采用单 captured-pointer 模型，因此 SDL 适配层只跟踪第一个活动手指。多指缩放、旋转等手势应通过独立的高层 API 实现，不应改变普通控件的点击和拖动语义。
+普通控件采用单 captured-pointer 模型，SDL 适配层将全部活动手指转换为完整触摸帧。其他平台可使用 `YMGUI_Inject_Touch(points,count)` 传完整五触点帧，以稳定 ID 对应硬件触点；通过 SetTouchListener 注册多指处理器。第二指加入时自动取消普通捕获，全部抬起前不产生普通点击，缩放/旋转由监听器的应用逻辑处理。监听器和 ctx 是全局单实例，退出先注销；不要同时给同一触摸序列注入 Pointer 和 Touch。完整边界见 [API](API.md)。
 
 SDL 在移动平台上可能为一次触摸同时生成 finger 和模拟 mouse 两套事件。鼠标路径必须过滤 `SDL_TOUCH_MOUSEID`，否则一次触摸会被重复注入。应用进入后台或终止时还应释放活动指针，避免恢复后控件一直处于 pressed 状态。
 
@@ -145,3 +145,15 @@ Linux 可以使用 `SDL_VIDEODRIVER=dummy` 做无头启动和截图自检，但�
 - 初始化中途失败直接返回，泄漏已创建的 SDL 资源；
 - 只检查 CMake 配置成功，没有从零编译、运行并检查最终产物；
 - 把应用专属的静态链接开关或资源路径写入通用 YMGUI 构建层。
+
+## AT32 实践吸收与平台边界
+
+已将 AT-SURF-F437 移植中的通用脏区、遮挡、字形裁剪、RGB565 混合、图片 blit、多点输入和编辑修复并回核心，详见 [AT32 回流说明](AT32_PORT_REVIEW.md)。`YMGUI_OCCLUSION` 与 `YMGUI_CLIPBOARD_DYNAMIC` 在根工程/公共应用 CMake 默认 OFF；裸机源码可定义同名宏为 1，其他功能保留默认。遮挡工作区需要额外静态 RAM，动态剪贴板需要可用的内存区 1 和退出 Clear。
+
+SD 字模读取可以在 glyph_read 后端采用小片内缓存加可选外存 LRU，失败回退到小缓存；分配和文件均由后端释放。SDRAM、LCD 和 SD 的 DMA/总线访问是否能并行必须按芯片及板级配置验证；库的双缓冲重叠不构成硬件并行访问安全保证。存在共享资源限制时，port 的 wait_cb/flush_cb 或任务仲裁应保证所有者和传输结束时机，扫描同步保留在 LCD 驱动。本轮没有连接板卡，原项目中的硬件实测不作为当前库的真机验收。
+
+第二轮已将字模两级缓存实现为 `YMGUI_FontCache`，文件后端实现为 `YMGUI_Resource`，分裂/合并堆实现为 `YMGUI_Arena`，总线与片内发送实现为 `YMGUI_Bus` / `YMGUI_StagedFlush`，触摸使用通用 `YMGUI_Inject_Touch/TouchCancel`，具体型号的解包由目标项目的适配层提供，不收录于本仓库。新平台提供存储区、critical/ISR、文件/Flash 和传输回调，可以继续使用这些已回流算法。短读、分配降级、资源释放、ISR延期和 DMA 完成顺序都有主机回归。
+
+phone 使用 `YMGUI_PORTABLE_APP=ON` 可生成无 SDL 静态库；`phone_runtime.h` 避免新平台重做壁纸缓存、后台缩略图、固定状态栏、相册缩放、输入法和两键导航。手机默认开启遮挡/动态剪贴板优化，通用库默认值仍适配小内存项目。`YMGUI_RESOURCE_STDIO=OFF` 后须注册文件后端；不要同时编入默认 Mem 与板级 Mem 实现。新平台将显示、输入、资源和内存实现加入自己的工程，不需要修改通用算法；本仓库不保留硬件工程副本。所有权应覆盖 Tick、输入、应用逻辑、字体/堆及生命周期，LCD DMA 期间不得只依靠 flush 互斥而让其他任务继续访问冲突的 SDRAM。
+
+SDL 适配层通过 SDL_FINGERDOWN/MOTION/UP 的 device/finger 对维护完整帧，将宽 ID 映射为稳定小 ID；坐标归一化转换在适配层完成，通用库不接收 SDL 类型。GY_TOUCH_MAX 是库工作集容量（默认5，可一致配置1–255），与芯片数量无关。多指和超限不恢复普通点击，必须抬起后才开始新单指序列；失焦/后台/退出清理触摸和上下文捕获，SDL合成鼠标被过滤。SDL内部至少跟踪16触点以完成超限序列的释放；内部表彻底耗尽时安全取消，失焦/后台/退出重置。当前验证使用 SDL 事件队列注入，包括实际 phone 相册缩放，未验收物理触摸屏。

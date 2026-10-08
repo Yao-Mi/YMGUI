@@ -58,6 +58,15 @@
 #define YMGUI_ANTIALIAS 0
 #endif
 
+//遮挡绘制计划占用固定工作区，默认关闭以保留小 RAM 移植基线。
+#ifndef YMGUI_OCCLUSION
+#define YMGUI_OCCLUSION 0
+#endif
+//剪贴板可按需从内存区 1 分配；默认保留静态缓冲。
+#ifndef YMGUI_CLIPBOARD_DYNAMIC
+#define YMGUI_CLIPBOARD_DYNAMIC 0
+#endif
+
 //脏矩形列表容量上限(超出则退化为合并包围盒;裸机可按 RAM 调小)
 #ifndef GY_INV_MAX
 #define GY_INV_MAX 16

@@ -73,6 +73,9 @@ void  YMGUI_Obj_SetBgColor(GYOBJ obj, GYcolor color);          // 设背景色(�
 ## 失效 / 刷新（GUI）
 
 ```c
+void YMGUI_Obj_InvalidateVisibleArea(GYOBJ obj, const GYrect* area); // 旧/新屏幕矩形按祖先可见范围标脏
+void YMGUI_Obj_InvalidatePaintScope(GYOBJ obj);          // 越界自绘或子树：最近裁剪祖先/根范围
+void YMGUI_Ctx_MergeDirtyAreas(GYCTX ctx);              // 主动合并现有脏区为包围盒
 void YMGUI_Obj_Invalidate(GYOBJ obj);                    // 标记对象需重绘
 void YMGUI_Ctx_InvalidateArea(GYCTX ctx, const GYrect*); // 标记一块屏幕区域
 void YMGUI_Refresh(GYCTX ctx);                           // 刷新一帧(无脏区则空转返回)
@@ -84,12 +87,17 @@ void YMGUI_Refresh(GYCTX ctx);                           // 刷新一帧(无脏�
 提交的桌面后端使用 `YMGUI_Disp_SetFrameDoneCb()` 注册回调，在所有脏区和 band 完成后
 统一 Present；无脏区的 Refresh 不触发该回调。真实 LCD 不需要整帧动作时可以不注册。
 
+可选遮挡机制和绘制承诺：`GY_STATE_OpaqueRect` 表示 draw_cb 在 abs 内完整不透明覆盖且不绘制 abs 外；`GY_STATE_BoundedDraw` 只承诺不绘制 abs 外，可以半透明。不能给圆角、透明色图片或稀疏内容误设 OpaqueRect。`YMGUI_Obj_DrawIsOpaqueRect/DrawIsBounded(GYOBJ)` 查询承诺，NULL 返回 0。默认 base 回调自动满足两者。
+
+`YMGUI_OCCLUSION=1` 才编译固定绘制计划；`YMGUI_OcclusionEnabled`、`YMGUI_PartialOcclusionEnabled` 可运行期关闭对应优化作像素对照。`YMGUI_DrawStats_GetAndReset(uint32* candidates, uint32* skipped)` 返回并重置候选和完整跳过次数，两参数可 NULL；它们不是像素数。`YMGUI_DirtyClipEnabled` 默认 1，可关闭祖先/离屏脏区优化作诊断。Refresh 和这些全局诊断接口只用于同一 UI 线程。
+
 ## 事件 / 焦点 / 输入注入（GUI + HAL）
 
 ```c
 // 注入（port 调用；裸机把触摸/按键翻译成这些）
 void  YMGUI_Inject_SetCtx(void* ctx);                    // 先注册接收事件的 ctx
 void  YMGUI_Inject_Pointer(GYcoord x, GYcoord y, uint8 pressed);
+void  YMGUI_Inject_TouchCancel(void);                    // 取消触摸序列,等完整空帧后恢复单指
 void  YMGUI_Inject_PointerCancel(void);                  // 取消捕获,不产生 Clicked
 void  YMGUI_Inject_ContextRequest(GYcoord x, GYcoord y); // 一次性右键/上下文操作
 void  YMGUI_Inject_ContextBegin(GYcoord x, GYcoord y);   // 捕获式上下文拖动
@@ -638,3 +646,36 @@ int16 GY_Sin(int32 deg);   int16 GY_Cos(int32 deg);      // Q15(值=实际*32768
 | 类 PS 图层画板(图层/融合/工具全 app 侧) | project_Demo/image_edit/ |
 | 音乐播放器(ffmpeg 解码/SDL2 声卡/歌词/频谱全 app 侧) | project_Demo/music_player/ |
 | 任意机制的精确行为 | 对应 tests/test_*.c（断言即规格） |
+
+## 完整触摸帧与剪贴板配置
+
+```c
+#define GY_TOUCH_MAX 5 // 默认通用容量，可统一配置1–255
+typedef struct { GYcoord x, y; uint8 id; } GYtouchpoint;
+typedef void (*GYtouch_listener_cb)(const GYtouchpoint* points, uint8 count, void* user_data);
+void YMGUI_Inject_SetTouchListener(GYtouch_listener_cb cb, void* user_data);
+void YMGUI_Inject_Touch(const GYtouchpoint* points, uint8 count);
+void YMGUI_Inject_TouchCancel(void);
+void YMGUI_Clipboard_Clear(void);
+```
+
+Touch ID 是适配层分配的通用 ID，不是某个芯片的寄存器字段。TouchCancel 取消捕获并向监听器派空帧，后续单指点击被抑制直到完整空帧；适配层在失焦等彻底取消时可随后注入空帧清理序列。Touch 每次传全部当前触点，ID 在一次接触期间稳定且不重复，坐标已换算到 GUI 屏幕。count=0（points 可 NULL）释放全部触点；超过通用容量 GY_TOUCH_MAX（默认5，可在全部编译单元一致定义为1–255）、重复 ID 或非空帧传 NULL 会取消主指针，监听器收到空帧，等待真正的空帧复位。监听器在普通单指分发前运行，数组仅在回调期间有效，卸载时调用 SetTouchListener(NULL,NULL)；它和注入 ctx 一样是全局单实例。多指序列中普通控件收到取消，全部抬起后下一次单指才恢复。勿同时给同一序列注入 Pointer 和 Touch。切换 ctx 会取消当前 Touch 捕获；监听器切换 ctx 后当前帧不再送到新 ctx。不自动识别缩放/旋转；SDL 后端已接入完整帧，手势由应用监听器处理。
+
+剪贴板默认静态 `GY_CLIP_MAX=32768` 字节；源码配置 `YMGUI_CLIPBOARD_DYNAMIC=1` 改为首次使用从内存区 1 申请，同一缓冲重复复用。Clear 清空系统后端及库内状态，动态模式释放缓冲；之前的 GetText 指针随之失效，应用退出可调用 Clear。SetBackend 不自动转移已有内容；动态模式申请失败保持空串。该配置不改变公开结构体布局。
+
+字体诊断开关 `YMGUI_GlyphClipEnabled` / `YMGUI_GlyphBlendOptimizeEnabled`，以及 Fill 的 `YMGUI_BlendOptimizeEnabled` 默认均为 1；关闭后用于与原裁剪/混合路径对照，后两者只影响 RGB565 快速路径。
+
+## 移植验证工程的共用资源与工具
+
+| 头文件 | 入口与契约 |
+| --- | --- |
+| `YMGUI_TextActions.h` | `Update(ctx,bottom,enabled)` 按需创建/启用菜单，bottom 是可用区域下边界；`SetTranslator(ctx,cb,user)` 翻译按键文案；`GetMenu` 供读取菜单对象。控件原生事件/析构自动接入，任意模态和覆盖层变化由调用方禁用。单 UI 线程；回调中的 user 生命周期由调用方管理。 |
+| `YMGUI_Resource.h` | `SetBackend(io)` 复制 open/read_at/close 回调；`Open/Read/Close` 管理文件，Read 不允许越界；`Load(path,&size)` 整文件分配 memory1，调用方 GY_free1。Open 只用于未打开/已关闭的句柄；文件保留原后端，切换默认后端不改变已有句柄。`YMGUI_RESOURCE_STDIO` 默认 1，无 stdio 平台设 0 并注册后端。 |
+| `YMGUI_FontCache.h` | `Init(cache,description,source,user,small_count,hot_count)` 复制字体描述，小 FIFO 用 memory0、热 LRU 用 memory1；`cache.font` 可接 fallback；分配失败可降级至直接读。source 必须返回完整字形大小；短读清零/不缓存。`Clear` 清条目，`Free` 释放；Free 前撤销字体引用，活动缓存不能重复 Init。stats 计数供诊断；hot_enabled 可切换热缓存。 |
+| `YMGUI_Arena.h` | `Init(arena,storage,size)` / `Alloc` / `Realloc` / `Free` / `LargestFree`；不拥有调用方存储，活动堆不能重新 Init，指针只属其来源 Arena。失败 realloc 保留原块，used/peak 统计对齐后的有效块大小，不含元数据。非线程安全；ISR 禁用。 |
+| `YMGUI_Bus.h` | `Init(bus,io)` / `Try(GUI或WORKER)` / `Release` / `BeginLCD` / `EndLCD`；EndLCD 在 DMA 确认完成后归还 GUI，之后 GUI 才可 Release。enter/leave 成对保存/恢复平台 critical 状态，in_isr 判断中断；无回调只供合作式单线程。调用方必须让所有共享总线使用者遵守所有权。 |
+| `YMGUI_StagedFlush.h` | `StagedFlush(bus,area,pixels,internal,capacity,send,user)`；GUI 已持有资源，像素是紧凑 area.w×area.h，调用方 staging 容量以像素计且至少一行，须放在传输后端可访问的内存，与 source 不重叠。回调接收 chunk 和首次发送标志，返回前完成或中止 DMA，包括超时/错误。函数不释放 GUI，不负责设备窗口/等待超时；设备操作由目标项目的适配层提供。 |
+| `YMGUI_ScaleBilinear.h` | `GY_ScaleAxisInit/At` 与 `GY_ScaleBilinearPx`，`GY_ScaleNearestInit/At`；源/目标尺寸与步长为正且偏移不溢出 uint32，表可跨图片复用，边界 clamp。 |
+| `YMGUI_TouchGesture.h` | `GY_TouchISqrt` 与 `GY_TouchDistance`；距离坐标差须在 signed16 范围。 |
+
+`project_Demo/phone_shell/phone_runtime.h` 属于共用 phone 应用接口：`Init(display,config)` 使用调用方显示和缓冲；`Step(ms)` 注入一次 Tick 后推进/刷新，`Pump()` 用已注入的 ctx.tick_elapsed；`Key(1/2,long_press)` 处理选择/点击/返回/桌面，`Context()` 读当前上下文，`Shutdown()` 注销输入并回收资源/恢复显示 flush，但不释放 display 或其 buffer。应用为单实例、单 UI 线程，并占用 HAL 当前 context 和 Touch listener；Shutdown 后不恢复之前其他应用的注入目标。资源后端先注册，外存安全所有权覆盖生命周期/输入/逻辑/刷新。构建和平台接入见 [跨平台移植](CROSS_PLATFORM_PORTING.md)。

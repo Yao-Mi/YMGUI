@@ -1,3 +1,4 @@
+#include "YMGUI_TextActions.h"
 #include "YMGUI_EditView.h"
 #include "YMGUI_Invalidate.h"
 #include "YMGUI_Event.h"
@@ -304,6 +305,7 @@ static void insertByte(GYev_data* d, char c)
 	d->len++;
 	d->cursor++;
 	d->text[d->len] = '\0';
+	d->sel_anchor = -1;
 }
 
 /**
@@ -317,6 +319,7 @@ static uint8 backspace(GYev_data* d)
 	for (size_t i = d->cursor; i <= d->len; i++)
 		d->text[i - nb] = d->text[i];
 	d->len -= nb;
+	d->sel_anchor = -1;
 	d->cursor -= nb;
 	return 1;
 }
@@ -334,6 +337,7 @@ static uint8 delChar(GYev_data* d)
 	for (size_t i = (size_t)(d->cursor + nb); i <= d->len; i++)
 		d->text[i - nb] = d->text[i];
 	d->len -= nb;
+	d->sel_anchor = -1;
 	return 1;
 }
 
@@ -342,6 +346,10 @@ static uint8 delChar(GYev_data* d)
   */
 static uint8 hasSel(GYev_data* d)
 {
+    /* Stale/collapsed anchors must never delete outside the current text. */
+    if (d->cursor > d->len) d->cursor = d->len;
+    if (d->sel_anchor >= 0 && (size_t)d->sel_anchor > d->len) d->sel_anchor = -1;
+
 	return (d->sel_anchor >= 0 && (size_t)d->sel_anchor != d->cursor);
 }
 
@@ -427,6 +435,7 @@ static void insertBytes(GYev_data* d, const char* buf, size_t n)
 		d->cursor++;
 	}
 	d->text[d->len] = '\0';
+	d->sel_anchor = -1;
 }
 
 /**
@@ -691,6 +700,7 @@ static void evDrawCb(GYOBJ obj, GYSURFACE s, const GYrect* abs)
 
 static void evFreeCb(GYOBJ obj)
 {
+    YMGUI_TextActions_Detach(obj);
 	GYev_data* d = (GYev_data*)obj->user_data;
 	if (d != NULL)
 	{
@@ -722,6 +732,7 @@ static void moveByDisplayLine(GYOBJ obj, GYev_data* d, GYFONT font, int dir, uin
   */
 static void evEventCb(GYOBJ obj, GYEvent e)
 {
+    if (YMGUI_TextActions_Event(obj,e,1)) return;
 	GYev_data* d = (GYev_data*)obj->user_data;
 	GYFONT font = &YMGUI_Font_Default;
 	switch (e)
@@ -744,10 +755,10 @@ static void evEventCb(GYOBJ obj, GYEvent e)
 	case GY_EVENT_Pressing:
 	{
 		//拖动选择:首个 Pressing 时把当前光标(即按下点)设为锚点,之后移光标到指针处
-		if (d->sel_anchor < 0)
-			d->sel_anchor = d->cursor;
-		size_t pos = posFromPoint(obj, obj->ctx->point_x, obj->ctx->point_y);
-		d->cursor = pos;
+        size_t pos = posFromPoint(obj, obj->ctx->point_x, obj->ctx->point_y);
+        if (pos == d->cursor) break;
+        if (d->sel_anchor < 0) d->sel_anchor = (ptrdiff_t)d->cursor;
+        d->cursor = pos;
 		ensureCursorVisible(obj);
 		YMGUI_Obj_Invalidate(obj);
 		break;
@@ -758,6 +769,7 @@ static void evEventCb(GYOBJ obj, GYEvent e)
 		selectWordAt(d, pos);
 		ensureCursorVisible(obj);
 		YMGUI_Obj_Invalidate(obj);
+        YMGUI_TextActions_Event(obj,GY_EVENT_ContextRequested,1);
 		break;
 	}
 	case GY_EVENT_Key:

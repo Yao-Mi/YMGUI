@@ -98,6 +98,12 @@ void PhoneApps_Tick(uint32 elapsed)
 			apps[i]->tick(elapsed);
 }
 
+void PhoneApps_Touch(const GYtouchpoint* points, uint8 count)
+{
+	if (foreground >= 0 && apps[foreground]->touch)
+		apps[foreground]->touch(points, count);
+}
+
 int PhoneApps_Back(void)
 {
 	return foreground >= 0 && apps[foreground]->back ? apps[foreground]->back() : 0;

@@ -51,6 +51,21 @@ typedef uint8 (*GYkey_filter_cb)(uint32 key, uint8 pressed, void* user_data);
 void YMGUI_Inject_SetKeyFilter(GYkey_filter_cb cb, void* user_data);
 //指针(触摸/鼠标):x,y 屏幕坐标,pressed=1 按下/0 抬起
 void YMGUI_Inject_Pointer(GYcoord x, GYcoord y, uint8 pressed);
+/* Complete touch frames, up to GY_TOUCH_MAX stable adapter-assigned IDs. count=0 releases all.
+ * Listener data is valid only during the callback. Existing widgets receive
+ * one primary pointer; a multi-finger sequence cancels it until all lift. */
+#ifndef GY_TOUCH_MAX
+#define GY_TOUCH_MAX 5 /* Generic working-set capacity, independent of hardware. */
+#endif
+#if GY_TOUCH_MAX < 1 || GY_TOUCH_MAX > 255
+#error "GY_TOUCH_MAX must be between 1 and 255"
+#endif
+typedef struct { GYcoord x, y; uint8 id; } GYtouchpoint;
+typedef void (*GYtouch_listener_cb)(const GYtouchpoint* points, uint8 count, void* user_data);
+void YMGUI_Inject_SetTouchListener(GYtouch_listener_cb cb, void* user_data);
+void YMGUI_Inject_Touch(const GYtouchpoint* points, uint8 count);
+/* Cancel a touch sequence without clicks; suppress pointer until empty frame. */
+void YMGUI_Inject_TouchCancel(void);
 //按键:key 键码,pressed=1 按下/0 抬起
 void YMGUI_Inject_Key(uint32 key, uint8 pressed);
 //滚轮:x,y 为当前指针屏幕坐标,delta_x/y 为滚动增量
@@ -84,5 +99,7 @@ void        YMGUI_Clipboard_SetBackend(GYclip_set_cb set_cb, GYclip_get_cb get_c
 void        YMGUI_Clipboard_SetText(const char* text);
 //读剪贴板(返回只读指针;空则返回 "")
 const char* YMGUI_Clipboard_GetText(void);
+//清空剪贴板；动态模式同时释放库内缓冲，已返回的指针随之失效。
+void YMGUI_Clipboard_Clear(void);
 
 #endif // !YMGUI_HAL_H

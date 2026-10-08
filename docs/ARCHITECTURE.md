@@ -107,7 +107,7 @@ typedef struct {
          横向按 tile_w 切列, 纵向按 band_h 切行(块 ≤ buf 容量)
          for 每块:
            surface.buf_area = 这块的屏幕矩形; clip = buf_area
-           drawObjRec(root): 递归重绘与本块相交的对象
+           drawScene: 默认递归绘制；可选遮挡计划按原 painter 顺序绘制 root + top_layer
            flush_cb(块, buf)   ← 唯一碰硬件处
 ```
 
@@ -208,3 +208,19 @@ for 每条 band:
 ## 九、可裁剪性
 
 `CONFIG/` 中的 `YMGUI_LAYOUT`、`YMGUI_TREEVIEW`、`YMGUI_GRID`、`YMGUI_CANVAS` 等开关由 `#if ... #endif` 裁减对应模块，按 Flash/RAM 预算配置，具体名称以头文件为准。`GY_INV_MAX`（脏矩形数）、`YMGUI_COLOR_DEPTH`、`YMGUI_COORD_32`（坐标宽度）是编译期配置；是否支持直接通过 CMake 设置需查看构建脚本。`YMGUI_ANTIALIAS`(抗锯齿，单色屏强制关) / `YMGUI_FONT_CJK`(中文，关掉回退链断开、CJK 字模数据整段 `#if` 编译成空、无悬空符号，回到纯 ASCII 足迹) 是两个大件裁剪开关。
+
+## AT32 回流后的刷新与资源约束
+
+失效区在连通合并前裁到显示边界，对象失效同时尊重祖先 Hidden/ClipChildren。旧位置必须在修改几何前标脏；无边界承诺的自绘和越界子树使用 `InvalidatePaintScope` 的最近裁剪祖先范围，无裁剪祖先时使用 root。动画量化到相同属性值时不标脏，但调度和完成回调继续运行。
+
+`YMGUI_OCCLUSION` 默认 0。开启后，每个 band 构建最多 128 项绘制计划，逆序记录最多 64 个不透明覆盖矩形，以矩形减法计算未覆盖片段；保持 root、top_layer 原 painter 顺序执行。未知自绘按整个继承 clip 作为保守 footprint，只允许明确有边界承诺的回调拆成最多四次绘制。计划/碎片溢出退回原遍历或原 clip，容量限制只减少优化。工作区为全局静态，关闭时不保留，刷新不支持并发/递归；draw_cb 不能修改对象树，且必须只产生绘制结果。基础回调自动承诺不透明矩形；应用为自绘设置状态位时承担承诺正确性。
+
+CORE 的行拷贝/整数混合仍按 clip 与 buf_area 求交，不依赖 CPU 对齐扩展或 AT32 外设。外部字形在解析 fallback 和 advance 后先裁剪再读，文件/flash 缓存和总线访问策略仍由 glyph_read 所属 port 管理。可选动态剪贴板通过现有 GY_malloc1/GY_free1 分配，Clear 结束生命周期。详见 [回流说明](AT32_PORT_REVIEW.md)。
+
+第二轮把验证工程中可复用的资源管理也并回仓库：CORE 的 FontCache 只关心字形回调和 memory0/1 缓存，HAL 的 Resource 隔离文件系统，CONFIG 的 Arena 不绑定地址，HAL 的 Bus 与 StagedFlush 隔离 critical/ISR 和同步传输。具体型号的解包及设备访问全部由目标项目的适配层提供，通用库只接受 Touch 帧。Bus 不会自动保护未经接入的指针访问，所有共享内存使用者须遵守同一资源协议。
+
+phone 应用的 cache、preview、输入法和触摸派发留在共用应用层，由 phone_runtime 显式连接显示/刷新/过渡/光标；SDL 与 MCU 不再各维护一份 UI。TextActions 是 WIDGET 中的共用编辑服务，不增加具名控件计数。仓库只保留通用机制与SDL适配，不收录板级寄存器实现、型号协议或原硬件工程副本。来源工程的验证资料仍可追溯，不能视为当前改版的真机验收。
+
+通用库和适配层以数据/回调隔离：YMGUI 不识别触摸芯片、总线地址或 SDL 类型。SDL_LCD 将 SDL 设备/手指事件转换为通用完整触点帧，其他平台转换各自的输入；phone 和控件使用同一份 Touch/Context 接口。具体型号模块及测试不收录于本仓库，根工程与 SDK 只携带通用接口。
+
+memory0/memory1 表示调用方选定的两个分配区域，不等同固定 MCU 存储器；PC 默认都映射 malloc，也可配置快慢内存或不同池。Arena 是调用方存储区上的通用堆，FontCache 是区域分配与资源回调上的通用缓存。Bus 和 StagedFlush 只表达共享资源所有权及中转过程，具体 critical、DMA、缓冲可访问性和时序由后端决定。

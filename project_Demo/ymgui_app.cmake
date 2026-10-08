@@ -35,6 +35,11 @@ else()
 	add_compile_definitions(YMGUI_ANIM=0)
 endif()
 
+option(YMGUI_OCCLUSION "Build the optional opaque coverage draw planner" OFF)
+option(YMGUI_CLIPBOARD_DYNAMIC "Allocate the internal clipboard on demand from memory region 1" OFF)
+add_compile_definitions(YMGUI_OCCLUSION=$<BOOL:${YMGUI_OCCLUSION}>
+                        YMGUI_CLIPBOARD_DYNAMIC=$<BOOL:${YMGUI_CLIPBOARD_DYNAMIC}>)
+
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Debug)
 endif()
@@ -82,7 +87,17 @@ endif()
 
 # 目标可能被多个 include 重复定义?本脚本每个独立工程各自 configure 一次,不会重入。
 add_library(ymgui STATIC ${YMGUI_SRC})
+option(YMGUI_RESOURCE_STDIO "Use stdio as the default resource backend" ON)
+target_compile_definitions(ymgui PRIVATE YMGUI_RESOURCE_STDIO=$<BOOL:${YMGUI_RESOURCE_STDIO}>)
 
+option(YMGUI_PORTABLE_APP "Build application without SDL" OFF)
+if(YMGUI_PORTABLE_APP)
+    function(ymgui_add_app APP_NAME)
+        add_library(${APP_NAME} STATIC ${ARGN})
+        target_link_libraries(${APP_NAME} PUBLIC ymgui)
+    endfunction()
+    return()
+endif()
 # SDL 假 LCD。桌面 Linux 保留 pkg-config，Windows/Android 使用 SDL2 CMake target。
 option(YMGUI_SDL_STATIC "Prefer the SDL2 static target when available" OFF)
 if(WIN32 OR ANDROID)

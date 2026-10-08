@@ -11,11 +11,21 @@
 
 //标记对象需要重绘(算出其屏幕绝对区域,并入 ctx 脏矩形)
 void YMGUI_Obj_Invalidate(GYOBJ obj);
+/* Clip an old/new object rectangle by its visible ancestors. */
+void YMGUI_Obj_InvalidateVisibleArea(GYOBJ obj, const GYrect *area);
+/* Conservative scope for moving a subtree with custom/unbounded drawing. */
+void YMGUI_Obj_InvalidatePaintScope(GYOBJ obj);
 //标记一块屏幕区域需要重绘(并入 ctx 脏矩形)
+void YMGUI_Ctx_MergeDirtyAreas(GYCTX ctx);
 void YMGUI_Ctx_InvalidateArea(GYCTX ctx, const GYrect* area);
 
 //刷新一帧:合并脏矩形 → 按 buf_px_cnt 切 band → 逐 band 重绘相交对象 → flush
 //  无脏区时直接返回(保留模式空闲不耗)
 void YMGUI_Refresh(GYCTX ctx);
+/* 1: opaque coverage prepass; 0: original painter traversal for comparison. */
+extern volatile uint8 YMGUI_OcclusionEnabled;
+extern volatile uint8 YMGUI_PartialOcclusionEnabled;
+extern volatile uint8 YMGUI_DirtyClipEnabled;
+void YMGUI_DrawStats_GetAndReset(uint32 *candidates, uint32 *skipped);
 
 #endif // !YMGUI_INVALIDATE_H

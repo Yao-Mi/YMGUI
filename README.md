@@ -8,7 +8,7 @@
 
 ## 状态
 
-27 个具名控件 + base 容器 · 5 类图元 · 36 个 CTest · 49 个独立 demo · 15 个完整应用。
+27 个具名控件 + base 容器 · 5 类图元 · 38 个 CTest · 49 个独立 demo · 15 个完整应用。
 （Button/Label/Checkbox/Switch/Slider/Bar/Image/Arc/Spinner/Meter/TextInput/TextView/EditView/List/Chart/Dropdown/Table/Tabview/TreeView/Grid/Canvas/ColorPicker/Roller/BarChart/MsgBox/FileDialog/Joystick + base 容器）
 
 抗锯齿(4bpp 灰度字体 + Wu 斜线 + 距离场圆弧，`YMGUI_ANTIALIAS` 可裁)、中文/CJK(UTF-8 回退链 + 稀疏字模 + 外部 flash 回调，`YMGUI_FONT_CJK` 可裁)、状态/数据绑定和 context 级 UI 属性动画均已落地。
@@ -129,7 +129,7 @@ SDL_VIDEODRIVER=dummy ./build/rgb565/Demo/demo_plugin 120 # 插件系统宿主 d
 ./capture_shots.sh -b                 # 先构建再批量截图到 docs/shots/(无头,需 ffmpeg)
 ./build/rgb565/project_Demo/video_stidio/video_stidio # 视频剪辑器（build_all 后）
 tools/check_repo.sh                   # 文档/字库/计数/路径快速检查
-tools/test_matrix.sh                  # RGB565 + RGB888 构建和 36 个 CTest
+tools/test_matrix.sh                  # RGB565 + RGB888 构建和 38 个 CTest
 ```
 
 默认构建按色深和类型归档：`build/rgb565/Demo/` 集中放控件演示、核心库和根工程测试；`build/rgb565/project_Demo/<项目名>/` 分别放完整应用。RGB888 对应 `build/rgb888/`，用 `./build_all.sh --depth 24` 构建（跳过仅支持 RGB565 的视频剪辑器）。详见 [构建目录说明](docs/BUILD_LAYOUT.md)。
@@ -212,6 +212,8 @@ library，适合由 Gradle/SDL Activity 打包进 APK/AAB。
 YMGUI 采用 **Apache License 2.0（Apache-2.0）**，完整条款见 [LICENSE](LICENSE)。顶部协议徽章可直接打开许可证，徽章图片随仓库保存。
 
 `extern_lib/` 中的第三方依赖与音源、音乐工坊曲库素材，分别遵循各自附带的许可与来源说明；详见 [第三方依赖说明](extern_lib/README.md) 和 [曲库来源与许可](project_Demo/music_studio/library/README.md)。本地 `参考/` 目录和其他位置的 WAV 音频不纳入提交；`extern_lib/` 中运行必需的采样 WAV 随仓库提供。
+
+验证工程的通用回流与无 SDL phone 入口见 [回流清单](docs/AT32_PORT_REVIEW.md) 和 [跨平台移植](docs/CROSS_PLATFORM_PORTING.md)。
 
 ## 维护约定（重要）
 

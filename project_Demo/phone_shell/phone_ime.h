@@ -5,7 +5,9 @@
 
 /* 应用级单实例服务；控件的原生私有数据、事件与析构均保留。 */
 #if YAOMI_IME
-void PhoneIME_Init(GYCTX ctx);
+int PhoneIME_Init(GYCTX ctx);
+GYOBJ PhoneIME_Keyboard(void);
+int PhoneIME_IsKey(GYOBJ obj);
 void PhoneIME_Update(int enabled);
 void PhoneIME_Shutdown(void);
 int PhoneIME_Hide(void);
@@ -19,9 +21,19 @@ GYOBJ PhoneIME_EditView(GYOBJ parent, GYcoord x, GYcoord y, GYcoord w, GYcoord h
 #define YMGUI_Creat_EditView_Creat PhoneIME_EditView
 #endif
 #else
-static inline void PhoneIME_Init(GYCTX ctx)
+static inline int PhoneIME_Init(GYCTX ctx)
 {
 	(void)ctx;
+	return 1;
+}
+static inline GYOBJ PhoneIME_Keyboard(void)
+{
+	return NULL;
+}
+static inline int PhoneIME_IsKey(GYOBJ obj)
+{
+	(void)obj;
+	return 0;
 }
 static inline void PhoneIME_Update(int enabled)
 {

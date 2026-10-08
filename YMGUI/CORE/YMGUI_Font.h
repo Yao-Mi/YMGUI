@@ -41,6 +41,10 @@ extern const GYfont YMGUI_Font_Default;
 //  回调)挂进所有控件的回退链——控件仍用 &YMGUI_Font_Default,零改动即出任意中文。
 //  代价:.bss 一个指针(NULL 时不生效);字体数据本身仍全 const。传 NULL 解除。
 void  YMGUI_Font_SetFallback(GYFONT font);
+/* Diagnostic switch: reject invisible glyphs before accessing their bitmap. */
+extern volatile uint8 YMGUI_GlyphClipEnabled;
+//RGB565 4bpp 字形的等价整数混合（其他色深使用原路径）。
+extern volatile uint8 YMGUI_GlyphBlendOptimizeEnabled;
 GYFONT YMGUI_Font_GetFallback(void);
 
 //---- 文本绘制图元(碰 surface,归 CORE) ----

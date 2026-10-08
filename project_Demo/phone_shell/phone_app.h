@@ -2,6 +2,7 @@
 #define PHONE_APP_H
 
 #include "YMGUI_Obj.h"
+#include "YMGUI_Hal.h"
 #include <stdint.h>
 
 #ifndef PHONE_APP_CATALOG
@@ -34,6 +35,7 @@ typedef struct
 	int (*query)(const char* name);
 	/* 只供回归测试读取句柄/数值，业务通信不得使用。 */
 	intptr_t (*inspect)(const char* name, int index);
+	void (*touch)(const GYtouchpoint* points, uint8 count);
 } PhoneApp;
 
 const PhoneApp* PhoneApps_Get(int id);
@@ -44,6 +46,7 @@ void PhoneApps_SyncRunning(const int* running);
 void PhoneApps_Show(int id, const char* argument);
 void PhoneApps_Hide(void);
 void PhoneApps_Tick(uint32 elapsed);
+void PhoneApps_Touch(const GYtouchpoint* points, uint8 count);
 int PhoneApps_Back(void);
 void PhoneApps_CloseAll(void);
 void PhoneApps_Destroy(void);

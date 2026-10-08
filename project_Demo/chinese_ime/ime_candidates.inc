@@ -3,6 +3,7 @@
 #define YAOMI_IME_CANDIDATES_INC
 #include "YMGUI_PubDefine.h"
 #include "YMGUI_Mem.h"
+#include "YMGUI_Resource.h"
 #include "YMGUI_Debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,7 +13,7 @@
 #define IME_COMPOSITE_CAP 12
 #define IME_COMPOSE_BEAM 6
 #define GY_IME_POOL_CAP 8192
-static const char* g_words[GY_IME_POOL_CAP];
+static const char** g_words;
 static int g_word_count, g_english;
 typedef struct { const char* py; const char* initials; const char* word; uint32 frequency; } PhraseEntry;
 typedef struct { const char* py; const char* ch; uint32 frequency; } ImeCharEntry;
@@ -68,15 +69,9 @@ static uint32 readLe32(const uint8* p)
 #if defined(YMGUI_IME_PHRASES_EXTERNAL)
 static int loadPhraseDictionary(void)
 {
-	FILE* file = fopen(PHRASE_BIN_PATH, "rb");
-	if (!file) { gy_log_print("IME phrase file not found; character-only mode\n"); return 0; }
-	if (fseek(file, 0, SEEK_END) != 0) { fclose(file); return 0; }
-	long file_size_long = ftell(file);
-	if (file_size_long < 28 || fseek(file, 0, SEEK_SET) != 0) { fclose(file); return 0; }
-	size_t file_size = (size_t)file_size_long;
-	uint8* data = (uint8*)GY_malloc1(file_size);
-	if (!data || fread(data, 1, file_size, file) != file_size) { if (data) GY_free1(data); fclose(file); return 0; }
-	fclose(file);
+    size_t file_size = 0;
+    uint8* data = YMGUI_Resource_Load(PHRASE_BIN_PATH, &file_size);
+    if (!data || file_size < 28) { GY_free1(data); return 0; }
 	uint32 count = readLe32(data + 8), blob_size = readLe32(data + 12);
 	uint32 header_size = readLe32(data + 16), record_size = readLe32(data + 20), bucket_count = readLe32(data + 24);
 	size_t records_size = (size_t)count * record_size;
@@ -128,15 +123,9 @@ static void freePhraseDictionary(void) { }
 #if defined(YMGUI_IME_CHARS_EXTERNAL)
 static int loadCharDictionary(void)
 {
-	FILE* file = fopen(CHAR_BIN_PATH, "rb");
-	if (!file) { gy_log_print("IME character file not found; single-character candidates disabled\n"); return 0; }
-	if (fseek(file, 0, SEEK_END) != 0) { fclose(file); return 0; }
-	long file_size_long = ftell(file);
-	if (file_size_long < 136 || fseek(file, 0, SEEK_SET) != 0) { fclose(file); return 0; }
-	size_t file_size = (size_t)file_size_long;
-	uint8* data = (uint8*)GY_malloc1(file_size);
-	if (!data || fread(data, 1, file_size, file) != file_size) { if (data) GY_free1(data); fclose(file); return 0; }
-	fclose(file);
+    size_t file_size = 0;
+    uint8* data = YMGUI_Resource_Load(CHAR_BIN_PATH, &file_size);
+    if (!data || file_size < 136) { GY_free1(data); return 0; }
 	uint32 count = readLe32(data + 8), blob_size = readLe32(data + 12);
 	uint32 header_size = readLe32(data + 16), record_size = readLe32(data + 20), bucket_count = readLe32(data + 24);
 	size_t records_size = (size_t)count * record_size;
@@ -184,15 +173,9 @@ static void freeCharDictionary(void) { }
 #if defined(YMGUI_IME_ENGLISH_EXTERNAL)
 static int loadEnglishDictionary(void)
 {
-	FILE* file = fopen(ENGLISH_BIN_PATH, "rb");
-	if (!file) { gy_log_print("IME English file not found; direct English input mode\n"); return 0; }
-	if (fseek(file, 0, SEEK_END) != 0) { fclose(file); return 0; }
-	long file_size_long = ftell(file);
-	if (file_size_long < 136 || fseek(file, 0, SEEK_SET) != 0) { fclose(file); return 0; }
-	size_t file_size = (size_t)file_size_long;
-	uint8* data = (uint8*)GY_malloc1(file_size);
-	if (!data || fread(data, 1, file_size, file) != file_size) { if (data) GY_free1(data); fclose(file); return 0; }
-	fclose(file);
+    size_t file_size = 0;
+    uint8* data = YMGUI_Resource_Load(ENGLISH_BIN_PATH, &file_size);
+    if (!data || file_size < 136) { GY_free1(data); return 0; }
 	uint32 count = readLe32(data + 8), blob_size = readLe32(data + 12);
 	uint32 header_size = readLe32(data + 16), record_size = readLe32(data + 20), bucket_count = readLe32(data + 24);
 	size_t records_size = (size_t)count * record_size;
@@ -301,7 +284,21 @@ typedef struct { char word[IME_WORD_CAP]; uint32 frequency; } CompositeEntry;
 typedef struct { char word[IME_WORD_CAP]; uint32 score; uint8 parts; } ComposeState;
 static CompositeEntry s_composites[IME_COMPOSITE_CAP];
 static int s_composite_count;
-static ComposeState s_compose_states[IME_QUERY_CAP][IME_COMPOSE_BEAM];
+static ComposeState (*s_compose_states)[IME_COMPOSE_BEAM];
+static int allocateCandidateWorkspace(void)
+{
+    if (g_words && s_compose_states) return 1;
+    g_words=GY_malloc1(GY_IME_POOL_CAP*sizeof(*g_words));
+    s_compose_states=GY_malloc1(IME_QUERY_CAP*sizeof(*s_compose_states));
+    if (!g_words || !s_compose_states) {
+        GY_free1(g_words); GY_free1(s_compose_states);g_words=NULL;s_compose_states=NULL;return 0;
+    }
+    return 1;
+}
+static void freeCandidateWorkspace(void)
+{
+    GY_free1(g_words); GY_free1(s_compose_states);g_words=NULL;s_compose_states=NULL;g_word_count=0;
+}
 static uint8 s_compose_counts[IME_QUERY_CAP];
 typedef struct { const PhraseEntry* entry; uint16 hits; } LearnedPhrase;
 static LearnedPhrase s_learned_phrases[64];

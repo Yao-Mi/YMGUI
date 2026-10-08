@@ -30,6 +30,14 @@ static void baseDrawCb(GYOBJ obj, GYSURFACE s, const GYrect* abs)
 	extern void YMGUI_Draw_Fill(GYSURFACE, const GYrect*, GYcolor, GYopa);
 	YMGUI_Draw_Fill(s, abs, obj->bg_color, GY_OPA_COVER);
 }
+uint8 YMGUI_Obj_DrawIsOpaqueRect(GYOBJ obj)
+{
+	return obj && obj->draw_cb && (obj->draw_cb == baseDrawCb || (obj->state & GY_STATE_OpaqueRect));
+}
+uint8 YMGUI_Obj_DrawIsBounded(GYOBJ obj)
+{
+	return obj && (obj->draw_cb == baseDrawCb || (obj->state & (GY_STATE_OpaqueRect | GY_STATE_BoundedDraw)));
+}
 
 /**
   * @brief 把子对象挂到父的子链表尾

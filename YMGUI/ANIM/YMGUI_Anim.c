@@ -398,37 +398,61 @@ static GYcolor mixColor(GYcolor from, GYcolor to, int32 progress)
 		   (GYcolor)lerpI32(colorPart(from, 0), colorPart(to, 0), progress);
 }
 
+/* A moving subtree can paint outside its own rectangle. */
+static void invalidateOwnerArea(GYOBJ obj, const GYrect* area)
+{
+    if (YMGUI_Obj_DrawIsBounded(obj) && (!obj->child_head || (obj->state & GY_STATE_ClipChildren)))
+        YMGUI_Obj_InvalidateVisibleArea(obj, area);
+    else
+        YMGUI_Obj_InvalidatePaintScope(obj);
+}
+
 static void applyNode(GYanim_node* node, int32 progress)
 {
 	GYrect old_area;
+	GYcoord x, y;
+	GYcolor color;
 	switch (node->kind)
 	{
 	case ANIM_MOVE:
+		x = lerpCoord(node->data.pair.x0, node->data.pair.x1, progress);
+		y = lerpCoord(node->data.pair.y0, node->data.pair.y1, progress);
+		if (YMGUI_DirtyClipEnabled && node->owner->area.x == x && node->owner->area.y == y) break;
 		YMGUI_Obj_GetAbsArea(node->owner, &old_area);
-		node->owner->area.x = lerpCoord(node->data.pair.x0, node->data.pair.x1, progress);
-		node->owner->area.y = lerpCoord(node->data.pair.y0, node->data.pair.y1, progress);
-		YMGUI_Ctx_InvalidateArea(node->owner->ctx, &old_area);
-		YMGUI_Obj_Invalidate(node->owner);
+		invalidateOwnerArea(node->owner, &old_area);
+		node->owner->area.x = x;
+		node->owner->area.y = y;
+		YMGUI_Obj_GetAbsArea(node->owner, &old_area);
+		invalidateOwnerArea(node->owner, &old_area);
 		break;
 	case ANIM_RESIZE:
+		x = lerpCoord(node->data.pair.x0, node->data.pair.x1, progress);
+		y = lerpCoord(node->data.pair.y0, node->data.pair.y1, progress);
+		if (x < 1) x = 1;
+		if (y < 1) y = 1;
+		if (YMGUI_DirtyClipEnabled && node->owner->area.w == x && node->owner->area.h == y) break;
 		YMGUI_Obj_GetAbsArea(node->owner, &old_area);
-		node->owner->area.w = lerpCoord(node->data.pair.x0, node->data.pair.x1, progress);
-		node->owner->area.h = lerpCoord(node->data.pair.y0, node->data.pair.y1, progress);
-		if (node->owner->area.w < 1)
-			node->owner->area.w = 1;
-		if (node->owner->area.h < 1)
-			node->owner->area.h = 1;
-		YMGUI_Ctx_InvalidateArea(node->owner->ctx, &old_area);
-		YMGUI_Obj_Invalidate(node->owner);
+		invalidateOwnerArea(node->owner, &old_area);
+		node->owner->area.w = x;
+		node->owner->area.h = y;
+		YMGUI_Obj_GetAbsArea(node->owner, &old_area);
+		invalidateOwnerArea(node->owner, &old_area);
 		break;
 	case ANIM_COLOR:
-		node->owner->bg_color = mixColor(node->data.color.from, node->data.color.to, progress);
-		YMGUI_Obj_Invalidate(node->owner);
+		color = mixColor(node->data.color.from, node->data.color.to, progress);
+		if (YMGUI_DirtyClipEnabled && node->owner->bg_color == color) break;
+		node->owner->bg_color = color;
+		YMGUI_Obj_GetAbsArea(node->owner, &old_area);
+		invalidateOwnerArea(node->owner, &old_area);
 		break;
 	case ANIM_SCROLL:
-		node->owner->scroll_x = lerpCoord(node->data.pair.x0, node->data.pair.x1, progress);
-		node->owner->scroll_y = lerpCoord(node->data.pair.y0, node->data.pair.y1, progress);
-		YMGUI_Obj_Invalidate(node->owner);
+		x = lerpCoord(node->data.pair.x0, node->data.pair.x1, progress);
+		y = lerpCoord(node->data.pair.y0, node->data.pair.y1, progress);
+		if (YMGUI_DirtyClipEnabled && node->owner->scroll_x == x && node->owner->scroll_y == y) break;
+		node->owner->scroll_x = x;
+		node->owner->scroll_y = y;
+		YMGUI_Obj_GetAbsArea(node->owner, &old_area);
+		invalidateOwnerArea(node->owner, &old_area);
 		break;
 	case ANIM_VALUE:
 		node->data.value.callback(lerpI32(node->data.value.from, node->data.value.to, progress), node->data.value.user);

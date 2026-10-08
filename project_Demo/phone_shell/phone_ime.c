@@ -1,3 +1,4 @@
+#include "YMGUI_TextActions.h"
 #include "phone_ime.h"
 #include "YMGUI_Hal.h"
 #include "YMGUI_Event.h"
@@ -442,6 +443,7 @@ static void make_key(Key* key, int x, int y, int w, const char* text, int code)
 }
 void PhoneIME_Update(int enabled)
 {
+	YMGUI_TextActions_Update(context, visible ? KEYBOARD_Y : 448, (uint8)enabled);
 	if (!context || !keyboard)
 		return;
 	if (!enabled)
@@ -532,21 +534,40 @@ GYOBJ PhoneIME_EditView(GYOBJ p, GYcoord x, GYcoord y, GYcoord w, GYcoord h, siz
 {
 	return bind(YMGUI_Creat_EditView_Creat(p, x, y, w, h, cap), 1);
 }
-void PhoneIME_Init(GYCTX ctx)
+int PhoneIME_Init(GYCTX ctx)
 {
+	if (!ctx || context)
+		return 0;
+	if (!allocateCandidateWorkspace())
+		return 0;
 	context = ctx;
+	key_count = visible = symbols = upper = bypass = page_start = page_count = 0;
+	symbol_panel = symbol_category = symbol_page = 0;
 	loadCharDictionary();
 	loadPhraseDictionary();
 	loadEnglishDictionary();
 	if (S_CHAR_COUNT)
 		s_char_matches = GY_malloc1(S_CHAR_COUNT * sizeof(*s_char_matches));
+	if (S_CHAR_COUNT && !s_char_matches)
+	{
+		PhoneIME_Shutdown();
+		return 0;
+	}
 	keyboard = YMGUI_Creat_Obj_Creat(ctx->top_layer, 0, KEYBOARD_Y, 320, 222);
 	if (!keyboard)
-		return;
+	{
+		PhoneIME_Shutdown();
+		return 0;
+	}
 	keyboard->state |= GY_STATE_ClipChildren;
 	keyboard->event_cb = keyboard_event;
 	YMGUI_Obj_SetBgColor(keyboard, RGB(227, 231, 239));
 	query_label = YMGUI_Creat_Obj_Creat(keyboard, 8, 4, 304, 18);
+	if (!query_label)
+	{
+		PhoneIME_Shutdown();
+		return 0;
+	}
 	query_label->draw_cb = query_draw;
 	query_label->event_cb = keyboard_event;
 	for (int i = 0; i < 5; ++i)
@@ -575,18 +596,51 @@ void PhoneIME_Init(GYCTX ctx)
 	{
 		make_key(&symbol_categories[i], 5 + i % 4 * 79, 26 + i / 4 * 26, 73,
 				 s_symbol_set_names[i], SYMBOL_CATEGORY + i);
+		if (!symbol_categories[i].obj)
+		{
+			PhoneIME_Shutdown();
+			return 0;
+		}
 		symbol_categories[i].obj->area.h = 23;
 	}
 	make_key(&symbol_backspace, 242, 52, 73, "退格", GY_KEY_BACKSPACE);
+	if (!symbol_backspace.obj)
+	{
+		PhoneIME_Shutdown();
+		return 0;
+	}
 	symbol_backspace.obj->area.h = 23;
 	for (int i = 0; i < 15; ++i)
 	{
 		make_key(&symbol_keys[i], 5 + i % 5 * 63, 80 + i / 5 * 32, 58, "", SYMBOL_ITEM + i);
+		if (!symbol_keys[i].obj)
+		{
+			PhoneIME_Shutdown();
+			return 0;
+		}
 		symbol_keys[i].obj->area.h = 28;
+	}
+	for (int i = 0; i < key_count; ++i)
+		if (!keys[i].obj)
+		{
+			PhoneIME_Shutdown();
+			return 0;
+		}
+	for (int i = 0; i < 5; ++i)
+		if (!candidates[i].obj)
+		{
+			PhoneIME_Shutdown();
+			return 0;
+		}
+	if (!candidate_prev.obj || !candidate_next.obj)
+	{
+		PhoneIME_Shutdown();
+		return 0;
 	}
 	update_letters();
 	reset_query();
 	YMGUI_Obj_SetHidden(keyboard, 1);
+	return 1;
 }
 void PhoneIME_Shutdown(void)
 {
@@ -606,5 +660,15 @@ void PhoneIME_Shutdown(void)
 	freeEnglishDictionary();
 	freeCharDictionary();
 	freePhraseDictionary();
+	freeCandidateWorkspace();
 	context = NULL;
+}
+
+GYOBJ PhoneIME_Keyboard(void)
+{
+	return visible ? keyboard : NULL;
+}
+int PhoneIME_IsKey(GYOBJ obj)
+{
+	return obj && obj->event_cb == key_event;
 }

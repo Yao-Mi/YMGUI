@@ -31,13 +31,15 @@ typedef struct
 static void imgDrawCb(GYOBJ obj, GYSURFACE s, const GYrect* abs)
 {
 	GYimg_data* d = (GYimg_data*)obj->user_data;
-	if (d->draw_bg)
-		YMGUI_Draw_Fill(s, abs, obj->bg_color, GY_OPA_COVER);
 	if (d->src == NULL || d->src->data == NULL || d->src->w <= 0 || d->src->h <= 0)
+	{
+		if(d->draw_bg) YMGUI_Draw_Fill(s,abs,obj->bg_color,GY_OPA_COVER);
 		return;
+	}
 
 	if (d->mode == GY_IMG_NONE)
 	{
+		if(d->draw_bg) YMGUI_Draw_Fill(s,abs,obj->bg_color,GY_OPA_COVER);
 		//原尺寸居中(大图溢出由裁剪挡住)
 		GYcoord ix = abs->x + ((abs->w > d->src->w) ? (abs->w - d->src->w) / 2 : 0);
 		GYcoord iy = abs->y + ((abs->h > d->src->h) ? (abs->h - d->src->h) / 2 : 0);
@@ -76,6 +78,18 @@ static void imgDrawCb(GYOBJ obj, GYSURFACE s, const GYrect* abs)
 		dst.y = abs->y + (bh - dh) / 2;
 		dst.w = (GYcoord)dw;
 		dst.h = (GYcoord)dh;
+	}
+	if(d->draw_bg) {
+		if(d->src->use_key) YMGUI_Draw_Fill(s,abs,obj->bg_color,GY_OPA_COVER);
+		else {
+			/* Opaque image replaces its destination. Only fill the letterbox. */
+			GYrect strips[4]={{abs->x,abs->y,abs->w,dst.y-abs->y},
+				{abs->x,dst.y+dst.h,abs->w,abs->y+abs->h-dst.y-dst.h},
+				{abs->x,dst.y,dst.x-abs->x,dst.h},
+				{dst.x+dst.w,dst.y,abs->x+abs->w-dst.x-dst.w,dst.h}};
+			for(unsigned i=0;i<4;++i) if(strips[i].w>0 && strips[i].h>0)
+				YMGUI_Draw_Fill(s,&strips[i],obj->bg_color,GY_OPA_COVER);
+		}
 	}
 	YMGUI_Draw_ImgScaled(s, d->src, dst);
 }

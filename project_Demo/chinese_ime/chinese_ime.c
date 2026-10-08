@@ -937,6 +937,7 @@ static void selftest(void)
 
 int main(int argc, char** argv)
 {
+    if (!allocateCandidateWorkspace()) return 1;
 	GYdisp disp; int max_frames = argc > 1 ? atoi(argv[1]) : -1, frame = 0;
 	disp.hor_res = SCR_W; disp.ver_res = SCR_H; disp.buf_px_cnt = SCR_W * BAND_H;
 	disp.buf1 = (GYpx*)GY_malloc1(disp.buf_px_cnt * sizeof(GYpx)); disp.buf2 = NULL; disp.user_data = NULL;
@@ -1028,6 +1029,6 @@ int main(int argc, char** argv)
 	while (SDL_LCD_PumpEvents()) { YMGUI_Refresh(g_ctx); SDL_LCD_Delay(16); if (max_frames > 0 && ++frame >= max_frames) break; }
 	YMGUI_Inject_SetKeyFilter(NULL, NULL); YMGUI_Free_CtxFree(g_ctx); SDL_LCD_Destroy();
 	if (s_char_matches) GY_free1(s_char_matches);
-	freeEnglishDictionary(); freeCharDictionary(); freePhraseDictionary(); if (s_blob) fclose(s_blob); GY_free1(disp.buf1);
+	freeCandidateWorkspace(); freeEnglishDictionary(); freeCharDictionary(); freePhraseDictionary(); if (s_blob) fclose(s_blob); GY_free1(disp.buf1);
 	gy_log_print("chinese_ime exit ok\n"); return g_selftest_fail ? 1 : 0;
 }

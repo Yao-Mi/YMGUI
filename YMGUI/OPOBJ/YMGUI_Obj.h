@@ -50,6 +50,10 @@ typedef enum
 #define GY_STATE_ClipChildren 0x10  //子对象绘制裁剪到本对象区域(滚动容器用)
 #define GY_STATE_Editing      0x20  //编辑态(焦点两级:选中态仅高亮/Tab 轮转,编辑态吃 Tab 插空格/Enter 出;
                                     //点击进编辑,Tab 轮转落选择态,Enter/打字进编辑)
+/* Explicit draw promises; do not set OpaqueRect for rounded or translucent draws.
+   BoundedDraw means no pixels outside the object's absolute rectangle. */
+#define GY_STATE_OpaqueRect    0x40
+#define GY_STATE_BoundedDraw   0x80
 
 struct GYobj;
 struct GYctx;
@@ -129,6 +133,8 @@ GYOBJ YMGUI_Ctx_GetTopLayer(GYCTX ctx);                       //取顶层容器(
 
 //---- 树/坐标辅助 ----
 void  YMGUI_Obj_GetAbsArea(GYOBJ obj, GYRECT abs);            //算对象的屏幕绝对矩形(累加父原点)
+uint8 YMGUI_Obj_DrawIsOpaqueRect(GYOBJ obj);
+uint8 YMGUI_Obj_DrawIsBounded(GYOBJ obj);
 void  YMGUI_Obj_SetBgColor(GYOBJ obj, GYcolor color);         //设背景色(自动标脏)
 void  YMGUI_Obj_SetHidden(GYOBJ obj, uint8 hidden);           //显示/隐藏(切换 Hidden 位并标脏)
 

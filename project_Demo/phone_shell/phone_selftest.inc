@@ -1,3 +1,4 @@
+#include <SDL.h>
 #if YAOMI_IME
 #include "ime_symbols.h"
 #endif
@@ -772,6 +773,33 @@ static void selftest(void)
 	click_object((GYOBJ)PhoneDesktop_Inspect("restore-button"));
 	step_time(300);
 	CHECK(PhoneDesktop_Inspect("count") == APP_COUNT && PhoneDesktop_Index(TASKS) == 0 && home_index == 0, "blank-area menu restores original desktop and removed entries");
+
+	CHECK(PhoneHost_Open(GALLERY, NULL), "gallery opens for SDL touch adaptation check");
+	step_time(1000);
+	SDL_Event finger;
+	SDL_zero(finger);
+	finger.type = SDL_FINGERDOWN;
+	finger.tfinger.touchId = 9;
+	finger.tfinger.fingerId = 0x100000001LL;
+	finger.tfinger.x = 0.25f;
+	finger.tfinger.y = 0.4f;
+	SDL_PushEvent(&finger);
+	finger.tfinger.fingerId = 0x100000002LL;
+	finger.tfinger.x = 0.5625f;
+	SDL_PushEvent(&finger);
+	SDL_LCD_PumpEvents();
+	finger.type = SDL_FINGERMOTION;
+	finger.tfinger.x = 0.75f;
+	SDL_PushEvent(&finger);
+	SDL_LCD_PumpEvents();
+	CHECK(PhoneApps_Inspect(GALLERY, "gallery_zoom", 0) > 100, "SDL events drive the shared gallery pinch");
+	finger.type = SDL_FINGERUP;
+	SDL_PushEvent(&finger);
+	finger.tfinger.fingerId = 0x100000001LL;
+	finger.tfinger.x = 0.25f;
+	SDL_PushEvent(&finger);
+	SDL_LCD_PumpEvents();
+	CHECK(!PhoneApps_Inspect(GALLERY, "gallery_pinch", 0), "SDL release finishes gallery gesture");
 	GY_free1(test_frame);
 	test_frame = NULL;
 	GY_free1(test_reference);

@@ -20,6 +20,11 @@ else()
 	add_compile_definitions(YMGUI_ANIM=0)
 endif()
 
+option(YMGUI_OCCLUSION "Build the optional opaque coverage draw planner" OFF)
+option(YMGUI_CLIPBOARD_DYNAMIC "Allocate the internal clipboard on demand from memory region 1" OFF)
+add_compile_definitions(YMGUI_OCCLUSION=$<BOOL:${YMGUI_OCCLUSION}>
+                        YMGUI_CLIPBOARD_DYNAMIC=$<BOOL:${YMGUI_CLIPBOARD_DYNAMIC}>)
+
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Debug)
 endif()
@@ -65,6 +70,8 @@ if(NOT YMGUI_ANIM)
 	list(FILTER YMGUI_SRC EXCLUDE REGEX "/ANIM/")
 endif()
 add_library(ymgui STATIC ${YMGUI_SRC})
+option(YMGUI_RESOURCE_STDIO "Use stdio as the default resource backend" ON)
+target_compile_definitions(ymgui PRIVATE YMGUI_RESOURCE_STDIO=$<BOOL:${YMGUI_RESOURCE_STDIO}>)
 
 # SDL_LCD port + demo(Linux 假 LCD)
 find_package(PkgConfig REQUIRED)
@@ -498,3 +505,12 @@ add_test(NAME test_barchart COMMAND test_barchart)
 add_test(NAME test_msgbox COMMAND test_msgbox)
 add_test(NAME test_filedialog COMMAND test_filedialog)
 add_test(NAME test_plugin COMMAND test_plugin)
+
+# Regressions absorbed from the AT32 port (pixel equivalence and real HAL input).
+add_executable(test_port ${CMAKE_SOURCE_DIR}/tests/test_port.c)
+target_link_libraries(test_port ymgui m)
+add_test(NAME test_port COMMAND test_port)
+
+add_executable(test_port_support tests/test_port_support.c)
+target_link_libraries(test_port_support ymgui)
+add_test(NAME test_port_support COMMAND test_port_support)

@@ -1,3 +1,4 @@
+#include "YMGUI_TextActions.h"
 #include "YMGUI_TextInput.h"
 #include "YMGUI_Invalidate.h"
 #include "YMGUI_Event.h"
@@ -59,6 +60,10 @@ static size_t cpBytesAt(GYti_data* d, size_t pos)
 
 static uint8 hasSel(GYti_data* d)
 {
+    /* Stale/collapsed anchors must never delete outside the current text. */
+    if (d->cursor > d->len) d->cursor = d->len;
+    if (d->sel_anchor >= 0 && (size_t)d->sel_anchor > d->len) d->sel_anchor = -1;
+
 	return d->sel_anchor >= 0 && (size_t)d->sel_anchor != d->cursor;
 }
 
@@ -240,6 +245,7 @@ static uint8 insertChar(GYti_data* d, char c)
 	d->len++;
 	d->cursor++;
 	d->text[d->len] = '\0';
+	d->sel_anchor = -1;
 	return 1;
 }
 
@@ -255,6 +261,7 @@ static uint8 backspace(GYti_data* d)
 	for (size_t i = d->cursor; i <= d->len; i++)
 		d->text[i - nb] = d->text[i];
 	d->len -= nb;
+	d->sel_anchor = -1;
 	d->cursor -= nb;
 	return 1;
 }
@@ -272,6 +279,7 @@ static uint8 delChar(GYti_data* d)
 	for (size_t i = d->cursor + nb; i <= d->len; i++)
 		d->text[i - nb] = d->text[i];
 	d->len -= nb;
+	d->sel_anchor = -1;
 	return 1;
 }
 
@@ -312,6 +320,7 @@ static uint8 insertSpan(GYti_data* d, const char* bytes, size_t count)
 	d->len += count;
 	d->cursor += count;
 	d->text[d->len] = '\0';
+	d->sel_anchor = -1;
 	return 1;
 }
 
@@ -320,6 +329,7 @@ static uint8 insertSpan(GYti_data* d, const char* bytes, size_t count)
   */
 static void tiEventCb(GYOBJ obj, GYEvent e)
 {
+    if (YMGUI_TextActions_Event(obj,e,0)) return;
 	GYti_data* d = (GYti_data*)obj->user_data;
 	switch (e)
 	{
@@ -335,12 +345,15 @@ static void tiEventCb(GYOBJ obj, GYEvent e)
 		YMGUI_Obj_Invalidate(obj);
 		break;
 	case GY_EVENT_Pressing:
-		if (d->sel_anchor < 0)
-			d->sel_anchor = (ptrdiff_t)d->cursor;
-		d->cursor = posFromPoint(obj, obj->ctx->point_x);
-		ensureCursorVisible(obj);
-		YMGUI_Obj_Invalidate(obj);
-		break;
+    {
+        size_t pos = posFromPoint(obj, obj->ctx->point_x);
+        if (pos == d->cursor) break;
+        if (d->sel_anchor < 0) d->sel_anchor = (ptrdiff_t)d->cursor;
+        d->cursor = pos;
+        ensureCursorVisible(obj);
+        YMGUI_Obj_Invalidate(obj);
+        break;
+    }
 	case GY_EVENT_Key:
 	{
 		uint32 k = obj->ctx->last_key;
@@ -458,6 +471,7 @@ static void tiEventCb(GYOBJ obj, GYEvent e)
 
 static void tiFreeCb(GYOBJ obj)
 {
+    YMGUI_TextActions_Detach(obj);
 	if (obj->user_data != NULL)
 	{
 		GYti_data* d = (GYti_data*)obj->user_data;

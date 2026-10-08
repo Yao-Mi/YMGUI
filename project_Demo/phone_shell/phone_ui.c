@@ -5,6 +5,8 @@ static const uint8* font_advances[] = {phone_font_regular_advance, phone_font_di
 									   phone_font_small_advance, phone_font_title_advance};
 static const int font_heights[] = {24, 66, 18, 36};
 
+volatile uint8 phone_round_center_batch_enabled = 1;
+
 void PhoneUI_rounded(GYSURFACE surface, const GYrect* area, GYcolor color, int radius, GYopa opa)
 {
 	if (radius > area->h / 2)
@@ -17,6 +19,16 @@ void PhoneUI_rounded(GYSURFACE surface, const GYrect* area, GYcolor color, int r
 		last = area->h;
 	for (int yy = first; yy < last; ++yy)
 	{
+		/* Straight middle has identical coverage; submit one rectangle rather
+		   than clipping and converting the same color for every row. */
+		if (phone_round_center_batch_enabled && radius >= 0 && yy >= radius && yy < area->h - radius)
+		{
+			int end = last < area->h - radius ? last : area->h - radius;
+			GYrect middle = {area->x, (GYcoord)(area->y + yy), area->w, (GYcoord)(end - yy)};
+			YMGUI_Draw_Fill(surface, &middle, color, opa);
+			yy = end - 1;
+			continue;
+		}
 		double d = yy < radius ? radius - yy - 0.5 : yy >= area->h - radius ? yy - (area->h - radius) + 0.5
 																			: 0;
 		double edge = d ? radius - sqrt(radius * radius - d * d) : 0;
@@ -409,9 +421,12 @@ GYOBJ PhoneUI_button(GYOBJ parent, int x, int y, int w, int h,
 
 void PhoneUI_set_pos(GYOBJ obj, GYcoord x, GYcoord y)
 {
+	if (YMGUI_DirtyClipEnabled && obj->area.x == x && obj->area.y == y)
+		return;
+	YMGUI_Obj_InvalidatePaintScope(obj);
 	obj->area.x = x;
 	obj->area.y = y;
-	YMGUI_Obj_Invalidate(obj->ctx->root);
+	YMGUI_Obj_InvalidatePaintScope(obj);
 }
 
 void PhoneUI_move(GYOBJ obj, GYcoord x, GYcoord y, uint32 duration)
