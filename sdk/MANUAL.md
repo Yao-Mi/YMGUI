@@ -83,3 +83,5 @@ YMGRE 和 YMGUI 保持各自的库包及许可；不将另一套引擎的库和�
 仓库中的 `build/` 被 Git 忽略，仅用于本地生成。维护者通过 `./sdk/build.sh --release` 将验收后的压缩包和校验文件写入 `releases/` 并提交；用户可直接解压该目录的包使用。可同时传 `--ymgre-dir` 保留 YMGRE 联用验收日志。
 
 本包沿用 YMGUI 仓库的 Apache-2.0 `LICENSE`。SDL2、YMGRE 等外部依赖遵循各自许可，未把 YMGRE 的许可复制到 YMGUI。
+
+预编译包包含通用 Arena、FontCache、Resource、Bus、StagedFlush、TextActions 及完整 Touch 接口，SDL 已支持多点帧。固定配置为 `GY_TOUCH_MAX=5`、`YMGUI_OCCLUSION=0`、`YMGUI_CLIPBOARD_DYNAMIC=0`、`YMGUI_RESOURCE_STDIO=1`；包内头文件和 CMake 拒绝不匹配的应用配置。需要启用可选遮挡/动态剪贴板或改变触点容量时从源码重新构建。phone 的可移植入口属于完整应用源码，不随此二进制库包分发。

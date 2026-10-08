@@ -61,3 +61,5 @@ target_link_libraries(my_app PRIVATE YMGUI::sdl)
 ```
 
 配置时传 `-DYMGUI_DIR=/absolute/path/YMGUI_libs/cmake -DYMGUI_COLOR_DEPTH=16`。纯核心应用只链接 `YMGUI::ymgui`，并可设 `-DYMGUI_WITH_SDL=OFF`，不需要 SDL 开发环境。详见 [手册](MANUAL.md)。
+
+预编译包包含通用 Arena、FontCache、Resource、Bus、StagedFlush、TextActions 及完整 Touch 接口，SDL 已支持多点帧。固定配置为 `GY_TOUCH_MAX=5`、`YMGUI_OCCLUSION=0`、`YMGUI_CLIPBOARD_DYNAMIC=0`、`YMGUI_RESOURCE_STDIO=1`；包内头文件和 CMake 拒绝不匹配的应用配置。需要启用可选遮挡/动态剪贴板或改变触点容量时从源码重新构建。phone 的可移植入口属于完整应用源码，不随此二进制库包分发。

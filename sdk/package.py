@@ -123,7 +123,9 @@ def main():
             run(["cmake", "-S", standalone / "examples", "-B", Path(relocated) / "invalid-anim",
                  "-DYMGUI_ANIM=OFF"], stage / "verification/reject-anim-option.log", expect_failure=True)
             # The SDK must reject coordinate/layout ABI mismatch at compile time.
-            for flag in ("-DYMGUI_COORD_32=1", "-DGY_INV_MAX=32", "-DYMGUI_COLOR_DEPTH=24", "-DYMGUI_ANIM=0"):
+            for flag in ("-DYMGUI_COORD_32=1", "-DGY_INV_MAX=32", "-DYMGUI_COLOR_DEPTH=24", "-DYMGUI_ANIM=0",
+                         "-DGY_TOUCH_MAX=8", "-DYMGUI_OCCLUSION=1",
+                         "-DYMGUI_CLIPBOARD_DYNAMIC=1", "-DYMGUI_RESOURCE_STDIO=0"):
                 run(["cc", "-x", "c", "-c", "/dev/null", "-include",
                      standalone / "include/YMGUI/CONFIG/YMGUI_PubType.h", flag,
                      "-o", Path(relocated) / "invalid.o"],
@@ -146,6 +148,8 @@ def main():
             "compiler": subprocess.check_output(["cc", "--version"], text=True).splitlines()[0],
             "build_type": "Release", "position_independent": True,
             "color_depths": [16, 24], "coordinate_bits": 16, "GY_INV_MAX": 16, "YMGUI_ANIM": 1,
+            "GY_TOUCH_MAX": 5, "YMGUI_OCCLUSION": 0,
+            "YMGUI_CLIPBOARD_DYNAMIC": 0, "YMGUI_RESOURCE_STDIO": 1,
             "bundled_sdl_adapter": not args.without_sdl, "bundled_sdl2": False,
             "external_ymgre_validated": bool(args.ymgre_dir),
             "source_sha256": digest_files(sources),

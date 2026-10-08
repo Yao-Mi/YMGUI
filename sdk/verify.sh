@@ -27,10 +27,19 @@ done < <(find "$sdk_package/include/YMGUI" -type d)
 for sdk_depth in 16 24; do
     "$sdk_package/build_demos.sh" "$sdk_depth"
     # Exercise the released archive and its matching headers, not the source library.
+    for sdk_test in test_anim test_port test_port_support; do
+        cc -std=gnu99 -DYMGUI_COLOR_DEPTH="$sdk_depth" -DYMGUI_SDK_COLOR_DEPTH="$sdk_depth" \
+            -DYMGUI_ANIM=1 -DYMGUI_SDK_ANIM=1 "${sdk_include_flags[@]}" \
+            "$sdk_repo_dir/tests/$sdk_test.c" "$sdk_package/lib/libymgui_rgb$sdk_depth.a" \
+            -lm -ldl -o "$sdk_verify_dir/$sdk_test$sdk_depth"
+        "$sdk_verify_dir/$sdk_test$sdk_depth"
+    done
     cc -std=gnu99 -DYMGUI_COLOR_DEPTH="$sdk_depth" -DYMGUI_SDK_COLOR_DEPTH="$sdk_depth" \
-        -DYMGUI_ANIM=1 -DYMGUI_SDK_ANIM=1 "${sdk_include_flags[@]}" \
-        "$sdk_repo_dir/tests/test_anim.c" "$sdk_package/lib/libymgui_rgb$sdk_depth.a" \
-        -lm -ldl -o "$sdk_verify_dir/test-anim$sdk_depth"
-    "$sdk_verify_dir/test-anim$sdk_depth"
+        "${sdk_include_flags[@]}" -I"$sdk_package/include/SDL_LCD" \
+        "$sdk_repo_dir/tests/test_sdl_context.c" \
+        "$sdk_package/lib/libymgui_sdl_rgb$sdk_depth.a" "$sdk_package/lib/libymgui_rgb$sdk_depth.a" \
+        $(pkg-config --cflags --libs sdl2) -lm -ldl -o "$sdk_verify_dir/test-sdl$sdk_depth"
+    SDL_VIDEODRIVER=dummy "$sdk_verify_dir/test-sdl$sdk_depth"
+
 done
-echo 'Release archive checks: OK (RGB565/RGB888 examples, ANIM, checksums)'
+echo 'Release archive checks: OK (RGB565/RGB888 examples, ANIM, port/support/SDL regressions, checksums)'

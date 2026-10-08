@@ -28,4 +28,28 @@
 #if YMGUI_ANIM != YMGUI_SDK_ANIM
 #error "YMGUI SDK animation configuration does not match the imported library"
 #endif
+#if defined(GY_TOUCH_MAX) && GY_TOUCH_MAX != 5
+#error "YMGUI SDK uses GY_TOUCH_MAX=5; rebuild to customize"
+#endif
+#ifndef GY_TOUCH_MAX
+#define GY_TOUCH_MAX 5
+#endif
+#if defined(YMGUI_OCCLUSION) && YMGUI_OCCLUSION != 0
+#error "YMGUI SDK uses YMGUI_OCCLUSION=0; rebuild to customize"
+#endif
+#ifndef YMGUI_OCCLUSION
+#define YMGUI_OCCLUSION 0
+#endif
+#if defined(YMGUI_CLIPBOARD_DYNAMIC) && YMGUI_CLIPBOARD_DYNAMIC != 0
+#error "YMGUI SDK uses YMGUI_CLIPBOARD_DYNAMIC=0; rebuild to customize"
+#endif
+#ifndef YMGUI_CLIPBOARD_DYNAMIC
+#define YMGUI_CLIPBOARD_DYNAMIC 0
+#endif
+#if defined(YMGUI_RESOURCE_STDIO) && YMGUI_RESOURCE_STDIO != 1
+#error "YMGUI SDK uses YMGUI_RESOURCE_STDIO=1; rebuild to customize"
+#endif
+#ifndef YMGUI_RESOURCE_STDIO
+#define YMGUI_RESOURCE_STDIO 1
+#endif
 #endif

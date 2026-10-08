@@ -7,9 +7,11 @@
 
 ## 当前版本
 
-2026-09-29 清空构建目录后重新生成，源码基线为 `9700a66`，并包含本次 SDK 目录/脚本整理（与发布包一同提交，构建时标记为未提交修改，精确源码摘要见包内元数据）。默认包含 `YMGUI_ANIM=1` 动效模块、匹配头文件及 RGB565 / RGB888 的核心和 SDL 适配库。预编译包的动效开关属于固定 ABI，应用侧不能单独关闭；需要裁剪时从源码重新构建。
+2026-10-08 更新，库源码基线为 `c08fef4`，同时包含本次 SDK 配置与验证工具更新；精确源码摘要及构建状态见包内 `BUILD_INFO.json`。包括回流后的渲染与脏区修复、Arena、FontCache、Resource、Bus、StagedFlush、TextActions、完整 Touch 接口，以及 SDL 多点适配。提供 RGB565 / RGB888 核心和 SDL 静态库及匹配头文件。
 
-已验证仓库外核心/SDL 示例、配置不匹配拒绝、YMGRE index16/index32 各 30 项测试，以及解压后两种色深的动效核心回归。压缩包和包内文件均通过 SHA-256 校验；确切来源、构建配置与日志见包内 `BUILD_INFO.json`、`verification/`。此包只发布库和 SDK 示例，不包含 Yaomi Phone 等完整应用。
+固定配置为 `YMGUI_ANIM=1`、16位坐标、`GY_INV_MAX=16`、`GY_TOUCH_MAX=5`、`YMGUI_OCCLUSION=0`、`YMGUI_CLIPBOARD_DYNAMIC=0`、`YMGUI_RESOURCE_STDIO=1`。可选遮挡/动态剪贴板沿用通用库默认关闭配置；更改功能配置或平台时从源码重建，不能只改消费端宏。
+
+已验证仓库外两种色深的纯核心各1项、SDL各2项示例和错误配置拒绝；实际压缩包解压后的每种色深均通过动画、移植优化、资源支持和SDL输入四项回归。压缩包与包内文件的SHA-256校验通过；本轮没有重跑外部YMGRE示例。此包发布库和SDK示例，Yaomi Phone可移植应用仍使用仓库源码。
 
 从仓库根目录执行：
 

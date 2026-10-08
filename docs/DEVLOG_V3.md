@@ -74,3 +74,9 @@ V3 是 [V2（第 42～120 轮）](history/DEVLOG_V2.md) 的直接续集，从第
 - 背景：用户要求审查后提交一版。提交仅包含第139–142轮的通用回流、SDL多点及共用phone；工作区已有设计器、YMANIM及其文档/构建修改保留，不并入本次提交，原移植工程不修改。
 - 修正：清理当前说明中SDL仍只跟踪单指、已删除port参考入口等过时描述。独立Release快照发现test_port_support与phone_portable的初始化位于assert内，NDEBUG使调用被跳过；两份新增测试显式保持断言启用，与test_port保持一致，避免Release跳过验证或崩溃。
 - 验证：此前RGB565/RGB888根工程各38/38、phone各2/2及核心/SDL的ASan/UBSan3/3通过。对实际提交内容另建精简快照，Release根38/38、SDL phone2/2、无SDL且关闭默认stdio的phone1/1通过；247处暂存版本本地文档链接及diff空白检查通过。完整副本因磁盘不足失败并已清理，精简副本仅对未改源码和资源使用只读链接。测试不代表当前版本板上验收，现有releases SDK未重发。
+
+## 第 144 轮：更新回流后的二进制 SDK
+
+- 背景：用户要求源码回流后同步更新SDK。以已提交c08fef4的库/SDL源码建立隔离构建快照，只加入本轮SDK工具更新，不混入工作区已有设计器/YMANIM改动。
+- 改动：重新生成Linux x86_64 Release/PIC的RGB565/RGB888核心及SDL库和匹配头文件；包包含Arena/FontCache/Resource/Bus/StagedFlush/TextActions及完整Touch。固定GY_TOUCH_MAX=5、遮挡/动态剪贴板关闭、stdio开启；SDK配置头/CMake检查消费端匹配，元数据记录配置，打包检查新宏错误值被拒绝。verify.sh除动画外新增直接链接压缩包静态库的移植/资源/SDL回归。phone完整应用仍由源码接入，不随库SDK分发。
+- 验证：仓库外两种色深纯核心各1项、SDL各2项及错误配置拒绝通过；实际压缩包和解压内容SHA-256检查通过，解压后双色深各通过动画、移植优化、资源支持、SDL输入4项回归。无外部YMGRE联用复验，无MCU/Windows/Android二进制或板上验收。正式压缩包与校验文件已更新到releases；BUILD_INFO记录库基线c08fef4加SDK更新及精确源码摘要。
